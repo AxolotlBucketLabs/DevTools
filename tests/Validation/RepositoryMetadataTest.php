@@ -39,7 +39,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertSame('8.4.0', $platform['php'] ?? null);
         $requireDev = $composer['require-dev'] ?? null;
         self::assertIsArray($requireDev);
-        self::assertSame('5.50.0', $requireDev['axolotl-pm/pocketmine-mp'] ?? null);
+        self::assertSame('5.51.1', $requireDev['axolotl-pm/pocketmine-mp'] ?? null);
         self::assertArrayNotHasKey('pocketmine/pocketmine-mp', $requireDev);
         self::assertIsString($changelog);
         self::assertStringContainsString('## ' . self::VERSION . ' -', $changelog);

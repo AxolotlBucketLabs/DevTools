@@ -99,7 +99,7 @@ The composite action installs its own locked tool dependencies with scripts and 
 | `sha256` | output | - | SHA-256 of the exact PHAR. |
 | `metadata` | output | - | Absolute path to the CLI JSON build result. |
 
-The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to an Axolotl-PM Git ref before PHPStan: use a verified release tag such as `5.50.0` for ordinary analysis, or a full commit SHA when strict reproducibility is required. Keep the server source ref independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
+The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to an Axolotl-PM Git ref before PHPStan: use the verified release tag `5.51.1` for ordinary analysis, or its full commit SHA `e881fc1bc1c401545baf6bd1f824e41ff3f57bd1` when strict reproducibility is required. Keep the server source ref independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
 
 ## Optional static analysis
 
@@ -109,7 +109,7 @@ Check out the Axolotl-PM source, then pass its local path to the composite actio
       - uses: actions/checkout@v7.0.1
         with:
           repository: axolotl-pm/PocketMine-MP
-          ref: 5.50.0
+          ref: 5.51.1
           path: .devtools-server
           persist-credentials: false
       - id: build

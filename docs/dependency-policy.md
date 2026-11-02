@@ -6,9 +6,9 @@ DevTools targets Axolotl-PM only. Folder loading, virion selection, dependency p
 
 The accepted Composer runtime requirements are PHP `^8.4`, `ext-json`, `ext-phar`, `ext-yaml`, and `nikic/php-parser:^5.6`. The parser is essential for AST-based shading and its existing license is retained. The current lock selects `nikic/php-parser` `v5.9.0`.
 
-The accepted development requirements are `friendsofphp/php-cs-fixer:^3.64`, `phpstan/phpstan:^2.1`, `phpunit/phpunit:^10.5`, and `axolotl-pm/pocketmine-mp:5.50.0`. Axolotl-PM is pinned by `composer.lock`, rather than resolved afresh for a test run. Packages such as Symfony components or Composer utilities are dependencies of those tools/server packages, not direct runtime dependencies introduced by DevTools.
+The accepted development requirements are `friendsofphp/php-cs-fixer:^3.64`, `phpstan/phpstan:^2.1`, `phpunit/phpunit:^10.5`, and `axolotl-pm/pocketmine-mp:5.51.1`. Axolotl-PM is pinned by `composer.lock`, rather than resolved afresh for a test run. Packages such as Symfony components or Composer utilities are dependencies of those tools/server packages, not direct runtime dependencies introduced by DevTools.
 
-Axolotl-PM 5.50.0 requires BedrockProtocol 63.0.1 and NetherNet 0.3.1 in the current lock. Installing the development dependencies therefore also requires `ext-webrtc`; use a current Axolotl-PM PHP binary.
+Axolotl-PM 5.51.1 requires BedrockProtocol 64.0.0 and NetherNet 0.3.2 in the current lock. Installing the development dependencies therefore also requires `ext-webrtc`; use a current Axolotl-PM PHP binary.
 
 The standalone CLI currently uses Axolotl-PM manifest value objects from the development installation. Consequently, its documented source-checkout installation includes development dependencies, even though it never starts a server. On a server, Axolotl-PM itself supplies those classes. The shipped DevTools plugin PHAR does not contain Axolotl-PM, PHPUnit, PHPStan, PHP CS Fixer, or Composer's autoloader.
 
@@ -16,7 +16,7 @@ PHP 8.4 is the source, CLI and build minimum. The complete CI quality gate runs 
 
 ## Abandoned server dependencies
 
-Reviewed on 2026-10-20. All ten packages below are required by [Axolotl-PM 5.50.0](https://github.com/axolotl-pm/PocketMine-MP/blob/fe5b3dee173b5e839783ab6fb7280005aa0a4d73/composer.json) and appear in the development section of DevTools' lockfile. Packagist marks each abandoned without a suggested replacement; their source repositories are archived.
+Reviewed on 2026-11-03. All ten packages below are required by [Axolotl-PM 5.51.1](https://github.com/axolotl-pm/PocketMine-MP/blob/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1/composer.json) and appear in the development section of DevTools' lockfile. Packagist marks each abandoned without a suggested replacement; their source repositories are archived.
 
 | Package | Locked version |
 | --- | --- |

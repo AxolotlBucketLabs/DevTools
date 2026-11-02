@@ -7,8 +7,8 @@ additional boundary.
 
 ## Verified target
 
-- Axolotl-PM **5.50.0**, commit
-  **`fe5b3dee173b5e839783ab6fb7280005aa0a4d73`**, the development dependency in
+- Axolotl-PM **5.51.1**, commit
+  **`e881fc1bc1c401545baf6bd1f824e41ff3f57bd1`**, the development dependency in
   DevTools' `composer.lock`.
 - Windows x64, **PHP 8.4.24 ZTS** with Axolotl-PM's required extensions, including
   `pmmpthread`. PHP 8.4 is the source compatibility baseline. The complete CI
@@ -87,10 +87,10 @@ The [upstream folder loader](https://github.com/pmmp/DevTools/blob/37a4db84df23f
 audited at commit `37a4db84df23f26f26fa4d1431abc279e99c0540`
 registers its source root with the server's `ThreadSafeClassLoader`. DevTools
 retains that integration and adds its own manifest and path diagnostics.
-Axolotl-PM's [pinned plugin manager](https://github.com/axolotl-pm/PocketMine-MP/blob/fe5b3dee173b5e839783ab6fb7280005aa0a4d73/src/plugin/PluginManager.php)
+Axolotl-PM's [pinned plugin manager](https://github.com/axolotl-pm/PocketMine-MP/blob/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1/src/plugin/PluginManager.php)
 owns API compatibility and ordering for hard and soft dependencies and enable failures.
 DevTools does not implement a parallel plugin manager.
-The [pinned thread-safe class loader](https://github.com/axolotl-pm/PocketMine-MP/blob/fe5b3dee173b5e839783ab6fb7280005aa0a4d73/src/thread/ThreadSafeClassLoader.php)
+The [pinned thread-safe class loader](https://github.com/axolotl-pm/PocketMine-MP/blob/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1/src/thread/ThreadSafeClassLoader.php)
 uses shared synchronized lookup tables. The runtime scenarios verify actual
 worker autoloading. They do not exhaust every possible registration timing.
 

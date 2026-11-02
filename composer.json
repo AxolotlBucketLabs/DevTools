@@ -24,7 +24,7 @@
         "nikic/php-parser": "^5.6"
     },
     "require-dev": {
-        "axolotl-pm/pocketmine-mp": "5.50.0",
+        "axolotl-pm/pocketmine-mp": "5.51.1",
         "friendsofphp/php-cs-fixer": "^3.64",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^10.5"
