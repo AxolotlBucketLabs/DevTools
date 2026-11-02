@@ -189,7 +189,9 @@ jobs:
           DEVTOOLS_REF: ${{ steps.workflow-identity.outputs.sha }}
         run: |
           set -euo pipefail
-          test "$(git -C .devtools-dependencies/tool rev-parse HEAD)" = "$DEVTOOLS_REF"
+          CHECKED_OUT_COMMIT="$(git -C .devtools-dependencies/tool rev-parse HEAD)"
+          EXPECTED_COMMIT="$(git -C .devtools-dependencies/tool rev-parse "$DEVTOOLS_REF^{commit}")"
+          test "$CHECKED_OUT_COMMIT" = "$EXPECTED_COMMIT"
           if [ ! -f .devtools-dependencies/tool/bin/devtools.php ] || [ ! -f .devtools-dependencies/tool/.github/scripts/artifact-contract.mjs ]; then
             echo "Selected DevTools commit does not provide the required CLI metadata contract. Pin the same commit as this workflow revision." >&2
             exit 1

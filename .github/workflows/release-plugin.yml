@@ -86,7 +86,11 @@ jobs:
         shell: bash
         env:
           WORKFLOW_SHA: ${{ steps.workflow-identity.outputs.sha }}
-        run: test "$(git -C .devtools-tool rev-parse HEAD)" = "$WORKFLOW_SHA"
+        run: |
+          set -euo pipefail
+          CHECKED_OUT_COMMIT="$(git -C .devtools-tool rev-parse HEAD)"
+          EXPECTED_COMMIT="$(git -C .devtools-tool rev-parse "$WORKFLOW_SHA^{commit}")"
+          test "$CHECKED_OUT_COMMIT" = "$EXPECTED_COMMIT"
 
       - name: Download the exact build artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
