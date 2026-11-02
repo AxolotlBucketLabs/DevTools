@@ -52,6 +52,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           printf 'Latest stable: %s at %s. Baseline: %s at %s. Run gate: %s.\n' "$tag" "$sha" "$BASELINE_TAG" "$BASELINE_SHA" "$candidate"
 
+      - name: Check out DevTools fixture source
+        if: steps.release.outputs.candidate == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
       - name: Check out candidate Axolotl-PM source
         if: steps.release.outputs.candidate == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
