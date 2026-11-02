@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1 - 2026-11-03
+
+- Let the composite action install its own builder and prepared Composer dependencies without requiring the optional `ext-webrtc` extension.
+
 ## 2.0.0 - Unreleased
 
 - Remove the obsolete `devtools-ref` reusable-workflow input; builder identity now always follows the called workflow revision.
