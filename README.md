@@ -5,6 +5,7 @@ Load [Axolotl-PM](https://github.com/axolotl-pm/PocketMine-MP) plugins from fold
 [![CI](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml/badge.svg)](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/NhanAZ/DevTools)](https://github.com/NhanAZ/DevTools/releases/latest)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Discord server online members](https://img.shields.io/discord/986553214889517088?label=Discord&amp;logo=discord&amp;logoColor=white&amp;color=5865F2)](https://discord.gg/j2X83ujT6c)
 
 ## Quick start
 

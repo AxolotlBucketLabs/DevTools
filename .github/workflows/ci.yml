@@ -1,4 +1,4 @@
-name: Test DevTools and build examples
+name: DevTools CI
 
 on:
   pull_request:
