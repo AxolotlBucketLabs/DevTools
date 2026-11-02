@@ -225,6 +225,31 @@ final class VirionManagerTest extends TestCase
         self::assertStringStartsWith('phar://', str_replace('\\', '/', $registrar->registrations[0][1]));
     }
 
+    public function test_folder_virion_wins_over_same_name_phar_and_records_a_warning(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $folder = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $source = $this->copyFixture('SharedVirion', 'source/SharedVirion');
+        $this->filesystem->ensureDirectory($virions);
+        $path = $virions . DIRECTORY_SEPARATOR . 'SharedVirion.phar';
+        $phar = new Phar($path);
+        $phar->buildFromDirectory($source);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        unset($phar);
+        $registry = new VirionRegistry();
+
+        $this->manager(new FakeClassLoaderRegistrar(), $registry)->discoverAndLoad($virions);
+
+        self::assertCount(1, $registry->loaded());
+        self::assertSame(realpath($folder), realpath($registry->loaded()[0]->location));
+        self::assertCount(1, array_filter(
+            $registry->entries(),
+            static fn($entry): bool => $entry->status === VirionStatus::SKIPPED
+                && str_contains($entry->message, 'folder')
+                && str_contains($entry->message, 'packaged PHAR'),
+        ));
+    }
+
     public function test_highest_version_satisfying_all_requirements_is_loaded_once(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';

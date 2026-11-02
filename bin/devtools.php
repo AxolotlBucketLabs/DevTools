@@ -8,7 +8,10 @@ use NhanAZ\DevTools\Build\ComposerVirionPreparer;
 use NhanAZ\DevTools\Build\NamespaceShader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
+use NhanAZ\DevTools\Build\ProjectRoleDetector;
+use NhanAZ\DevTools\Build\VirionBuilder;
 use NhanAZ\DevTools\Build\VirionResolver;
+use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Cli\Application;
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
@@ -35,7 +38,10 @@ try {
     $reader = new PluginManifestReader($yaml);
     $validator = new PluginProjectValidator($reader, $inspector);
     $config = new BuildConfigResolver($yaml);
-    $resolver = new VirionResolver(new VirionDiscovery($filesystem), new VirionProjectFactory(new VirionManifestReader($yaml)), new VirionProjectSelector());
+    $virionManifestReader = new VirionManifestReader($yaml);
+    $virionFactory = new VirionProjectFactory($virionManifestReader);
+    $virionDiscovery = new VirionDiscovery($filesystem);
+    $resolver = new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector());
     $version = $reader->read(dirname(__DIR__) . '/plugin.yml')->description->getVersion();
     $application = new Application(
         $version,
@@ -44,9 +50,13 @@ try {
         $config,
         $resolver,
         new PharBuilder($filesystem, $validator, $reader, $config, $resolver, new VirionClassScanner($inspector), new NamespaceShader()),
+        new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, new VirionClassScanner($inspector)),
         new PharExtractor($filesystem),
-        new ArtifactInspector($reader),
+        new ZipArchiveWriter($filesystem),
+        new ArtifactInspector($reader, $virionManifestReader),
         new ComposerVirionPreparer($filesystem),
+        $virionManifestReader,
+        new ProjectRoleDetector(),
     );
     exit($application->run(array_slice($argv ?? [], 1)));
 } catch (Throwable $error) {

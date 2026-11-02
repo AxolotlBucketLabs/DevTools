@@ -31,6 +31,7 @@ Build code works without a running server. Commands orchestrate services rather 
 | `bin/verify-version.php` | Verify synchronized release metadata |
 | `action.yml` | Build an external plugin through the same CLI |
 | `.github/workflows/build-plugin.yml` | Reusable plugin build workflow |
+| `.github/workflows/build-virion.yml` | Reusable virion build workflow |
 | `.github/workflows/release-plugin.yml` | Reusable plugin publication workflow |
 | `.github/workflows/release-candidate.yml` | Build and validate one explicit DevTools candidate |
 | `.github/workflows/release.yml` | Publish that candidate's verified original bytes |

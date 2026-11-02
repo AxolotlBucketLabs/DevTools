@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Tests\Command;
 
+use NhanAZ\DevTools\Build\ArtifactInspector;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\PharExtractor;
 use NhanAZ\DevTools\Build\PluginProjectLocator;
+use NhanAZ\DevTools\Build\ProjectRoleDetector;
+use NhanAZ\DevTools\Build\VirionBuilder;
+use NhanAZ\DevTools\Build\VirionProjectLocator;
 use NhanAZ\DevTools\Build\VirionResolver;
+use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Command\DevToolsCommandHandler;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
 use NhanAZ\DevTools\Support\YamlReader;
@@ -84,19 +89,37 @@ final class DevToolsCommandHandlerTest extends TestCase
         self::assertFileExists($this->temporaryDirectory . '/plugins/BuildFixture/plugin.yml');
     }
 
+    public function test_server_builds_virions_and_archives_plugin_phars(): void
+    {
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $messages = $this->command(['build', 'virion', 'SharedVirion']);
+        self::assertStringContainsString('Built virion SharedVirion successfully', $messages);
+        self::assertFileExists($this->temporaryDirectory . '/build/SharedVirion.phar');
+
+        $this->copyFixture('BuildPlugin', 'plugins/Source');
+        $messages = $this->command(['build', 'BuildFixture']);
+        self::assertStringContainsString('Built BuildFixture successfully', $messages);
+        $messages = $this->command(['extract', 'BuildFixture.phar', '--format=zip']);
+        self::assertStringContainsString('Archived', $messages);
+        self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.zip');
+    }
+
     /** @param list<string> $arguments */
     private function command(array $arguments, string $label = 'devtools'): string
     {
         [$reader, $validator] = $this->validationServices();
         $discovery = new FolderPluginDiscovery();
         $yaml = new YamlReader();
+        $virionManifestReader = new VirionManifestReader($yaml);
+        $virionFactory = new VirionProjectFactory($virionManifestReader);
+        $virionDiscovery = new VirionDiscovery($this->filesystem);
         $handler = new DevToolsCommandHandler(
             $this->createMock(Plugin::class),
             $discovery,
             $validator,
             $reader,
             new BuildConfigResolver($yaml),
-            new VirionResolver(new VirionDiscovery($this->filesystem), new VirionProjectFactory(new VirionManifestReader($yaml)), new VirionProjectSelector()),
+            new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector()),
             new PluginProjectLocator($discovery, $reader),
             $this->builder(),
             new PharExtractor($this->filesystem),
@@ -104,6 +127,11 @@ final class DevToolsCommandHandlerTest extends TestCase
             $this->temporaryDirectory . '/plugins',
             $this->temporaryDirectory . '/virions',
             $this->temporaryDirectory . '/build',
+            new VirionBuilder($this->filesystem, $virionManifestReader, $virionFactory, new \NhanAZ\DevTools\Virion\VirionClassScanner(new \NhanAZ\DevTools\Support\PhpSourceInspector())),
+            new ZipArchiveWriter($this->filesystem),
+            new ArtifactInspector($reader, $virionManifestReader),
+            new ProjectRoleDetector(),
+            new VirionProjectLocator($virionDiscovery, $virionFactory),
         );
         $messages = [];
         $sender = $this->createMock(CommandSender::class);

@@ -80,7 +80,7 @@ final class ApplicationTest extends TestCase
 
     public function test_invalid_options_do_not_create_outputs(): void
     {
-        foreach ([['extract', '--out=output'], ['doctor', '--overwrite'], ['inspect', '--artifact=https://example.com/test.phar'], ['build', '--project=one', '--project=two']] as $arguments) {
+        foreach ([['extract', '--out=output'], ['doctor', '--overwrite'], ['inspect', '--artifact=https://example.com/test.phar'], ['build', '--project=one', '--project=two'], ['build', '--type=auto']] as $arguments) {
             [$code, $result] = $this->cli($arguments);
             self::assertSame(2, $code, json_encode($result, JSON_THROW_ON_ERROR));
             self::assertSame('cli.usage', $result['diagnostics'][0]['code']);
@@ -94,6 +94,51 @@ final class ApplicationTest extends TestCase
         [$code, $result] = $this->cli(['--project=project', '--virions=virions', '--out=output'], 'devtools-build.php');
         self::assertSame(0, $code, json_encode($result, JSON_THROW_ON_ERROR));
         self::assertFileExists($this->temporaryDirectory . '/output/BuildFixture.phar');
+    }
+
+    public function test_cli_builds_a_virion_and_converts_a_plugin_to_zip(): void
+    {
+        $virion = $this->copyFixture('SharedVirion', 'virion');
+        [$code, $built] = $this->cli(['build', '--type=virion', '--project=' . $virion]);
+        self::assertSame(0, $code, json_encode($built, JSON_THROW_ON_ERROR));
+        self::assertSame('virion', $built['data']['type']);
+        self::assertFileExists($virion . '/build/SharedVirion.phar');
+
+        $plugin = $this->copyFixture('BuildPlugin', 'plugin');
+        $this->copyFixture('SharedVirion', 'plugin/virions/SharedVirion');
+        [$code, $pluginBuild] = $this->cli(['build', '--project=' . $plugin]);
+        self::assertSame(0, $code, json_encode($pluginBuild, JSON_THROW_ON_ERROR));
+        self::assertIsString($pluginBuild['data']['artifact']);
+        [$code, $zip] = $this->cli([
+            'extract',
+            '--artifact=' . $pluginBuild['data']['artifact'],
+            '--out=' . $plugin . '/converted.zip',
+            '--format=zip',
+        ]);
+        self::assertSame(0, $code, json_encode($zip, JSON_THROW_ON_ERROR));
+        self::assertSame('zip', $zip['data']['format']);
+        self::assertFileExists($plugin . '/converted.zip');
+    }
+
+    public function test_cli_builds_dual_role_project_as_two_artifacts(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'dual');
+        $this->filesystem->ensureDirectory($project . '/src/Fixture/Library');
+        file_put_contents(
+            $project . '/src/Fixture/Library/Library.php',
+            "<?php\nnamespace Fixture\\Library;\nfinal class Library {}\n",
+        );
+        file_put_contents(
+            $project . '/virion.yml',
+            "name: DualLibrary\nversion: 1.0.0\nantigen: Fixture\\Library\napi: 5.0.0\n",
+        );
+        [$code, $result] = $this->cli(['build', '--type=both', '--project=' . $project]);
+
+        self::assertSame(0, $code, json_encode($result, JSON_THROW_ON_ERROR));
+        self::assertIsArray($result['data']['artifacts']);
+        self::assertCount(2, $result['data']['artifacts']);
+        self::assertFileExists($project . '/build/FixturePlugin-plugin.phar');
+        self::assertFileExists($project . '/build/DualLibrary-virion.phar');
     }
 
     public function test_bootstrap_failure_still_emits_json(): void

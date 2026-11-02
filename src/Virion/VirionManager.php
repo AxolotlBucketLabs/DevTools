@@ -59,7 +59,7 @@ final class VirionManager
         $hasTransitive = false;
         $available = [];
         foreach ($projectsByName as $nameKey => $candidates) {
-            foreach ($candidates as [, $project]) {
+            foreach ($this->preferredCandidates($candidates) as [, $project]) {
                 $hasTransitive = $hasTransitive || $project->manifest->requirements !== [];
                 try {
                     $this->assertCompatible($project->manifest);
@@ -92,8 +92,9 @@ final class VirionManager
             }
         }
         foreach ($projectsByName as $nameKey => $candidates) {
+            $preferredCandidates = $this->preferredCandidates($candidates);
             $compatibleCandidates = [];
-            foreach ($candidates as [$location, $candidateProject]) {
+            foreach ($preferredCandidates as [$location, $candidateProject]) {
                 try {
                     $this->assertCompatible($candidateProject->manifest);
                     $compatibleCandidates[] = [$location, $candidateProject];
@@ -107,6 +108,7 @@ final class VirionManager
                 }
             }
             if ($compatibleCandidates === []) {
+                $this->recordPreferredPhars($candidates);
                 unset($requirementsByName[$nameKey]);
                 continue;
             }
@@ -131,9 +133,11 @@ final class VirionManager
                     $this->load($location);
                     continue;
                 }
-                $reason = $this->satisfies($project, $nameRequirements)
-                    ? "a higher compatible version {$selected->manifest->version} was selected"
-                    : 'it does not satisfy ' . $this->selector->describeRequirements($nameRequirements);
+                $reason = $project->phar && $this->hasFolderCandidate($candidates)
+                    ? 'a development folder for this virion name is preferred over a packaged PHAR'
+                    : ($this->satisfies($project, $nameRequirements)
+                        ? "a higher compatible version {$selected->manifest->version} was selected"
+                        : 'it does not satisfy ' . $this->selector->describeRequirements($nameRequirements));
                 $this->recordUnloaded(
                     $location,
                     $project,
@@ -141,6 +145,7 @@ final class VirionManager
                     "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: {$reason}.",
                 );
             }
+            $this->recordPreferredPhars($candidates);
             unset($requirementsByName[$nameKey]);
         }
 
@@ -293,5 +298,51 @@ final class VirionManager
         }
         $this->processedLocations[$locationKey] = true;
         $this->registry->record(new VirionRegistryEntry($location, $project->manifest, $status, $message));
+    }
+
+    /** @param list<array{string, VirionProject}> $candidates */
+    private function hasFolderCandidate(array $candidates): bool
+    {
+        foreach ($candidates as [, $candidate]) {
+            if (!$candidate->phar) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param list<array{string, VirionProject}> $candidates
+     * @return list<array{string, VirionProject}>
+     */
+    private function preferredCandidates(array $candidates): array
+    {
+        if (!$this->hasFolderCandidate($candidates)) {
+            return $candidates;
+        }
+
+        return array_values(array_filter(
+            $candidates,
+            static fn(array $candidate): bool => !$candidate[1]->phar,
+        ));
+    }
+
+    /** @param list<array{string, VirionProject}> $candidates */
+    private function recordPreferredPhars(array $candidates): void
+    {
+        if (!$this->hasFolderCandidate($candidates)) {
+            return;
+        }
+        foreach ($candidates as [$location, $project]) {
+            if (!$project->phar) {
+                continue;
+            }
+            $this->recordUnloaded(
+                $location,
+                $project,
+                VirionStatus::SKIPPED,
+                "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: a development folder for this virion name is preferred over a packaged PHAR.",
+            );
+        }
     }
 }

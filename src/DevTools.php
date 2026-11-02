@@ -8,15 +8,21 @@ use Closure;
 
 use function is_file;
 
+use NhanAZ\DevTools\Build\ArtifactInspector;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\NamespaceShader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
 use NhanAZ\DevTools\Build\PluginProjectLocator;
+use NhanAZ\DevTools\Build\ProjectRoleDetector;
+use NhanAZ\DevTools\Build\VirionBuilder;
+use NhanAZ\DevTools\Build\VirionProjectLocator;
 use NhanAZ\DevTools\Build\VirionResolver;
+use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Command\DevToolsCommandHandler;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
 use NhanAZ\DevTools\Loader\FolderPluginLoader;
+use NhanAZ\DevTools\Loader\PluginSourceConflictDetector;
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
@@ -58,6 +64,7 @@ final class DevTools extends PluginBase
         $manifestReader = new PluginManifestReader($yaml);
         $validator = new PluginProjectValidator($manifestReader, $sourceInspector);
         $pluginDiscovery = new FolderPluginDiscovery();
+        $sourceConflictDetector = new PluginSourceConflictDetector($manifestReader);
 
         $server = $this->getServer();
         $pluginsDirectory = $server->getPluginPath();
@@ -66,6 +73,9 @@ final class DevTools extends PluginBase
         $buildDirectory = $server->getDataPath() . 'build';
         $filesystem->ensureDirectory($virionsDirectory);
         $filesystem->ensureDirectory($buildDirectory);
+        foreach ($sourceConflictDetector->detect($pluginsDirectory) as $warning) {
+            $this->getLogger()->warning($warning);
+        }
 
         $virionManifestReader = new VirionManifestReader($yaml);
         $virionFactory = new VirionProjectFactory($virionManifestReader);
@@ -125,6 +135,12 @@ final class DevTools extends PluginBase
             $pluginsDirectory,
             $virionsDirectory,
             $buildDirectory,
+            new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner),
+            new ZipArchiveWriter($filesystem),
+            new ArtifactInspector($manifestReader, $virionManifestReader),
+            new ProjectRoleDetector(),
+            new VirionProjectLocator($virionDiscovery, $virionFactory),
+            $virionManifestReader,
         );
 
         foreach ($registry->entries() as $entry) {

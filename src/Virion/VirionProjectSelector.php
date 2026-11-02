@@ -18,6 +18,16 @@ final class VirionProjectSelector
      */
     public function select(string $name, array $projects, array $requirements): VirionProject
     {
+        $hasFolder = count(array_filter(
+            $projects,
+            static fn(VirionProject $project): bool => !$project->phar,
+        )) > 0;
+        if ($hasFolder) {
+            $projects = array_values(array_filter(
+                $projects,
+                static fn(VirionProject $project): bool => !$project->phar,
+            ));
+        }
         $compatible = array_values(array_filter(
             $projects,
             static function (VirionProject $project) use ($requirements): bool {

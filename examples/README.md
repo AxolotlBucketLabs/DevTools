@@ -13,10 +13,10 @@ HelloShared and SharedGreeting are dedicated examples maintained by DevTools. Th
 
 This example also contains `.github/workflows/build.yml`. Extract the complete examples ZIP into an empty GitHub repository and push it. The public action builds `HelloShared.phar` on every push and pull request, then uploads it to that run's **Artifacts** section.
 
-The bundled workflow uses the release action `NhanAZ/DevTools@v1.0.18`. For reusable workflows, follow the main GitHub Actions guide and pin the workflow reference to the full commit resolved from that release tag. The called workflow selects its builder from the same commit. The action step performs the build. The following `actions/upload-artifact` step makes the resulting PHAR downloadable. The PHAR is not committed back into the repository. New plugin repositories can use the reusable workflow described in the main guide instead.
+The bundled workflow uses the release action `NhanAZ/DevTools@v1.0.19`. For reusable workflows, follow the main GitHub Actions guide and pin the workflow reference to the full commit resolved from that release tag. The called workflow selects its builder from the same commit. The action step performs the build. The following `actions/upload-artifact` step makes the resulting PHAR downloadable. The PHAR is not committed back into the repository. New plugin repositories can use the reusable workflow described in the main guide instead.
 
-The example intentionally omits `phpstan`, so analysis is off. The [GitHub Actions guide](https://github.com/NhanAZ/DevTools/blob/v1.0.18/docs/github-actions.md) shows how to opt in with an explicitly pinned server source.
+The example intentionally omits `phpstan`, so analysis is off. The [GitHub Actions guide](https://github.com/NhanAZ/DevTools/blob/v1.0.19/docs/github-actions.md) shows how to opt in with an explicitly pinned server source.
 
 ## Coding agent template
 
-The ZIP also includes `agent/AGENTS.md`. Copy it to the root of a plugin repository when AI coding agents should preserve DevTools workflow rules across sessions. For a one-time setup, paste the [versioned AI agent prompt](https://github.com/NhanAZ/DevTools/blob/v1.0.18/docs/ai-agent.md) into the agent instead.
+The ZIP also includes `agent/AGENTS.md`. Copy it to the root of a plugin repository when AI coding agents should preserve DevTools workflow rules across sessions. For a one-time setup, paste the [versioned AI agent prompt](https://github.com/NhanAZ/DevTools/blob/v1.0.19/docs/ai-agent.md) into the agent instead.

@@ -1,0 +1,72 @@
+name: Build and validate virion PHAR
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: Virion project path relative to the checked-out repository.
+        required: false
+        default: .
+        type: string
+      output:
+        description: Build output directory relative to the checked-out repository.
+        required: false
+        default: build
+        type: string
+      overwrite:
+        description: Replace an existing PHAR in the output directory.
+        required: false
+        default: false
+        type: boolean
+      php-version:
+        description: PHP version supplied by axolotl-pm/setup-php-action.
+        required: false
+        default: '8.4'
+        type: string
+      pm-version-major:
+        description: Axolotl-PM server major version supplied by the PHP setup helper.
+        required: false
+        default: '5'
+        type: string
+      artifact-name:
+        description: Uploaded artifact name.
+        required: false
+        default: ''
+        type: string
+      retention-days:
+        description: Number of days to retain the uploaded artifact.
+        required: false
+        default: 14
+        type: number
+    outputs:
+      sha256:
+        description: SHA-256 of the built virion PHAR.
+        value: ${{ jobs.build.outputs.sha256 }}
+      artifact-id:
+        description: Immutable uploaded artifact ID.
+        value: ${{ jobs.build.outputs.artifact-id }}
+      artifact-type:
+        description: Artifact type.
+        value: ${{ jobs.build.outputs.artifact-type }}
+      artifact-name:
+        description: Virion name from the build result.
+        value: ${{ jobs.build.outputs.source-name }}
+      artifact-version:
+        description: Virion version from the build result.
+        value: ${{ jobs.build.outputs.source-version }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-plugin.yml
+    with:
+      type: virion
+      project: ${{ inputs.project }}
+      output: ${{ inputs.output }}
+      overwrite: ${{ inputs.overwrite }}
+      php-version: ${{ inputs.php-version }}
+      pm-version-major: ${{ inputs.pm-version-major }}
+      artifact-name: ${{ inputs.artifact-name }}
+      retention-days: ${{ inputs.retention-days }}

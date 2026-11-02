@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.19 - 2026-11-02
+
+- Add standalone virion PHAR building through the CLI, server command and reusable GitHub Actions workflow.
+- Add plugin, virion and dual-role project detection. Dual-role projects build as separate plugin and virion artifacts.
+- Prefer virion source folders over same-name PHARs and report packaged duplicates as skipped with a warning.
+- Add PHAR extraction to folders or ZIP archives for both plugin and virion artifacts.
+- Extend the composite action and reusable workflow metadata contract with plugin/virion artifact identity.
+- Detect folder/PHAR plugin duplicates and document the Axolotl-PM loader-order limitation without altering upstream loader state.
+
 ## 1.0.18 - 2026-10-20
 
 - Verify Axolotl-PM 5.50.0 and synchronize the development dependency, CI and compatibility monitor with source commit `fe5b3dee173b5e839783ab6fb7280005aa0a4d73`.

@@ -60,6 +60,7 @@ final class PharBuilder
         string $virionsDirectory,
         string $outputDirectory,
         bool $overwrite = false,
+        ?string $outputName = null,
     ): BuildResult {
         $validation = $this->validator->validate($projectRoot);
         if ($validation->hasErrors()) {
@@ -115,7 +116,11 @@ final class PharBuilder
                 "Refusing build output inside plugin source or resources: {$realOutput}. Choose build/ or another separate directory.",
             );
         }
-        $outputPath = Path::join($outputDirectory, $manifest->description->getName() . '.phar');
+        $artifactName = $outputName ?? $manifest->description->getName();
+        if (preg_match('/^[A-Za-z0-9_.-]+$/D', $artifactName) !== 1) {
+            throw new BuildException("Cannot derive a safe plugin artifact name from {$artifactName}.");
+        }
+        $outputPath = Path::join($outputDirectory, $artifactName . '.phar');
         $this->assertOutputDestination($outputPath, $overwrite);
 
         $nonce = bin2hex(random_bytes(8));

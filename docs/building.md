@@ -9,13 +9,20 @@ Run these commands as an operator.
 ```text
 /devtools doctor MyPlugin
 /devtools build MyPlugin
+/devtools build virion SharedGreeting
+/devtools build both MyDualProject
+/devtools extract SharedGreeting.phar --type=virion --format=zip
 ```
 
 The artifact is written to server-root `build/MyPlugin.phar`. Existing output is protected. Use `/devtools build MyPlugin --overwrite` only after confirming that replacement is intended.
 
+`build virion <name-or-folder>` writes `build/<VirionName>.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically; use `--type` when a dual-role archive contains both manifests. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`; it creates `<PluginName>-plugin.phar` and `<VirionName>-virion.phar` so each artifact has one unambiguous role.
+
 Server `doctor` checks project structure, build declarations and that project's local dependency selection using the same resolver as the CLI. It does not prove that all installed plugins have compatible shared requirements or that a plugin enabled successfully. Use `/devtools virions` for the actual shared registry and the server log for enable failures. A doctor run does not perform shading, PHPStan or a runtime test.
 
-Unknown or repeated server build and extract options are rejected before writing output. If two source folders declare the same plugin name, select an explicit folder path immediately under `plugins/` or remove the duplicate name. DevTools will not choose by discovery order.
+Unknown or repeated server build and extract options are rejected before writing output. Declared virions are the supported injection boundary: plugin builds shade selected virions into a private namespace; virion builds preserve their own source and do not merge plugins or other virions. A plugin folder supplied as a virion is rejected by virion manifest validation.
+
+Virion discovery prefers a source folder over a same-name PHAR, records the PHAR as skipped and logs the reason. For plugin duplicates, DevTools emits a warning when a folder and PHAR declare the same plugin name. Axolotl-PM 5.50 exposes only append-only loader registration, so its built-in PHAR loader can still win that plugin duplicate during server triage; remove the duplicate PHAR or verify the startup log before relying on the folder copy.
 
 ## What the builder validates
 

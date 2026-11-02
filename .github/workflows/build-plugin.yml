@@ -1,4 +1,4 @@
-name: Build and validate plugin PHAR
+name: Build and validate plugin or virion PHAR
 
 on:
   workflow_call:
@@ -32,6 +32,11 @@ on:
         description: Plugin project path relative to the checked-out repository.
         required: false
         default: .
+        type: string
+      type:
+        description: Artifact type to build. Use plugin for this workflow or virion for a shared library.
+        required: false
+        default: plugin
         type: string
       virions:
         description: Local virion directory relative to the checked-out repository.
@@ -78,10 +83,10 @@ on:
         description: SHA-256 of the built PHAR.
         value: ${{ jobs.build.outputs.sha256 }}
       plugin-name:
-        description: Plugin name read from plugin.yml.
+        description: Backward-compatible identity name output for the built artifact.
         value: ${{ jobs.build.outputs.plugin-name }}
       plugin-version:
-        description: Plugin version read from plugin.yml.
+        description: Backward-compatible identity version output for the built artifact.
         value: ${{ jobs.build.outputs.plugin-version }}
       artifact-name:
         description: Name of the uploaded PHAR artifact.
@@ -89,13 +94,22 @@ on:
       artifact-id:
         description: Immutable ID of the uploaded PHAR artifact.
         value: ${{ jobs.build.outputs.artifact-id }}
+      artifact-type:
+        description: Artifact type from the build result.
+        value: ${{ jobs.build.outputs.artifact-type }}
+      source-name:
+        description: Source artifact name from the build result.
+        value: ${{ jobs.build.outputs.source-name }}
+      source-version:
+        description: Source artifact version from the build result.
+        value: ${{ jobs.build.outputs.source-version }}
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Build downloadable PHAR
+    name: Build downloadable plugin or virion PHAR
     runs-on: ubuntu-24.04
     outputs:
       plugin-name: ${{ steps.devtools.outputs.plugin-name }}
@@ -103,6 +117,9 @@ jobs:
       artifact-name: ${{ steps.metadata.outputs.artifact-name }}
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
       sha256: ${{ steps.devtools.outputs.sha256 }}
+      artifact-type: ${{ steps.devtools.outputs.artifact-type }}
+      source-name: ${{ steps.devtools.outputs.artifact-name }}
+      source-version: ${{ steps.devtools.outputs.artifact-version }}
     steps:
       - name: Verify the reusable workflow revision
         id: workflow-identity
@@ -122,7 +139,7 @@ jobs:
             echo "::warning::devtools-ref is deprecated and ignored; the builder follows the called workflow revision."
           fi
 
-      - name: Check out plugin source
+      - name: Check out project source
         uses: actions/checkout@v7.0.1
 
       - name: Require an immutable Axolotl-PM revision
@@ -206,11 +223,12 @@ jobs:
             exit 1
           fi
 
-      - name: Build standalone plugin PHAR
+      - name: Build standalone PHAR
         id: devtools
         uses: ./.devtools-dependencies/tool
         with:
           prepare-dependencies: ${{ inputs.prepare-dependencies }}
+          type: ${{ inputs.type }}
           project: ${{ inputs.project }}
           virions: ${{ inputs.virions }}
           output: ${{ inputs.output }}
@@ -231,7 +249,7 @@ jobs:
         shell: bash
         env:
           INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name }}
-          INPUT_PLUGIN_NAME: ${{ steps.devtools.outputs.plugin-name }}
+          INPUT_ARTIFACT_NAME_FROM_BUILD: ${{ steps.devtools.outputs.artifact-name }}
           BUILD_METADATA: ${{ steps.devtools.outputs.metadata }}
           BUILD_PHAR: ${{ steps.devtools.outputs.phar }}
         run: |
@@ -242,7 +260,7 @@ jobs:
           if [ -n "$INPUT_ARTIFACT_NAME" ]; then
             ARTIFACT_NAME="$INPUT_ARTIFACT_NAME"
           else
-            ARTIFACT_NAME="${INPUT_PLUGIN_NAME}-${GITHUB_SHA}"
+            ARTIFACT_NAME="${INPUT_ARTIFACT_NAME_FROM_BUILD}-${GITHUB_SHA}"
           fi
 
           if [[ "$ARTIFACT_NAME" == *$'\n'* || "$ARTIFACT_NAME" == *$'\r'* ]]; then

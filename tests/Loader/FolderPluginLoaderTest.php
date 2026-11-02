@@ -6,7 +6,9 @@ namespace NhanAZ\DevTools\Tests\Loader;
 
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
 use NhanAZ\DevTools\Loader\FolderPluginLoader;
+use NhanAZ\DevTools\Loader\PluginSourceConflictDetector;
 use NhanAZ\DevTools\Tests\TestCase;
+use Phar;
 use pocketmine\plugin\PluginDescriptionParseException;
 use pocketmine\thread\ThreadSafeClassLoader;
 
@@ -78,5 +80,25 @@ final class FolderPluginLoaderTest extends TestCase
         $this->expectExceptionMessage('plugin.yml is missing');
 
         $loader->getPluginDescription($project);
+    }
+
+    public function test_folder_and_phar_with_the_same_plugin_name_are_reported(): void
+    {
+        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+        $this->filesystem->ensureDirectory($plugins);
+        $this->copyFixture('ValidPlugin', 'plugins/ValidPlugin');
+        $source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
+        $path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
+        $phar = new Phar($path);
+        $phar->buildFromDirectory($source);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        unset($phar);
+        [$reader] = $this->validationServices();
+
+        $warnings = (new PluginSourceConflictDetector($reader))->detect($plugins);
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('development folder', $warnings[0]);
+        self::assertStringContainsString('PHAR', $warnings[0]);
     }
 }

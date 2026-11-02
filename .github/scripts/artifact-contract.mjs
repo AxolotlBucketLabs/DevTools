@@ -16,13 +16,16 @@ export function readBuild(path) {
     throw new Error('Expected a successful DevTools build JSON schema version 1.');
   }
   const build = result.data;
+  const type = build?.type ?? 'plugin';
+  if (!['plugin', 'virion'].includes(type)) throw new Error('Unsupported build artifact type.');
+  const identity = type === 'virion' ? build?.virion : build?.plugin;
   singleLine(build?.artifact, 'Artifact path');
-  singleLine(build?.plugin?.name, 'Plugin name');
-  singleLine(build?.plugin?.version, 'Plugin version');
+  singleLine(identity?.name, type === 'virion' ? 'Virion name' : 'Plugin name');
+  singleLine(identity?.version, type === 'virion' ? 'Virion version' : 'Plugin version');
   if (!/^[a-f0-9]{64}$/.test(build.sha256)) throw new Error('Invalid build SHA-256.');
   const filename = basename(build.artifact.replaceAll('\\', '/'));
   if (!/^[A-Za-z0-9_.-]+\.phar$/.test(filename)) throw new Error('Unsafe PHAR filename.');
-  return { build, filename };
+  return { build, filename, type, identity };
 }
 
 export function verifyArtifact(path, sha256) {
@@ -53,20 +56,38 @@ export function releaseFlags(version, mode, tag, sha, prerelease) {
 }
 
 export function run(mode, metadata, env = process.env) {
-  const { build, filename } = readBuild(metadata);
+  const { build, filename, type, identity } = readBuild(metadata);
   let values;
   if (mode === 'build') {
     if (!isAbsolute(build.artifact)) throw new Error('CLI artifact path must be absolute.');
     const artifact = realpathSync(build.artifact);
     verifyArtifact(artifact, build.sha256);
-    values = { phar: artifact, sha256: build.sha256, metadata: realpathSync(metadata), 'plugin-name': build.plugin.name, 'plugin-version': build.plugin.version };
+    values = {
+      phar: artifact,
+      sha256: build.sha256,
+      metadata: realpathSync(metadata),
+      'artifact-type': type,
+      'artifact-name': identity.name,
+      'artifact-version': identity.version,
+      'plugin-name': identity.name,
+      'plugin-version': identity.version,
+    };
   } else if (mode === 'release') {
     if (build.sha256 !== env.EXPECTED_SHA256) throw new Error('Downloaded metadata differs from the build job SHA-256.');
     const artifact = join(env.ARTIFACT_DIRECTORY, filename);
     verifyArtifact(artifact, build.sha256);
-    const flags = releaseFlags(build.plugin.version, env.RELEASE_MODE, env.RELEASE_TAG, env.RELEASE_SHA, env.RELEASE_PRERELEASE);
+    const flags = releaseFlags(identity.version, env.RELEASE_MODE, env.RELEASE_TAG, env.RELEASE_SHA, env.RELEASE_PRERELEASE);
     writeFileSync(join(env.ARTIFACT_DIRECTORY, 'SHA256SUMS.txt'), `${build.sha256}  ${filename}\n`);
-    values = { phar: realpathSync(artifact), tag: flags.tag, prerelease: String(flags.prerelease), 'plugin-name': build.plugin.name, 'plugin-version': build.plugin.version };
+    values = {
+      phar: realpathSync(artifact),
+      tag: flags.tag,
+      prerelease: String(flags.prerelease),
+      'artifact-type': type,
+      'artifact-name': identity.name,
+      'artifact-version': identity.version,
+      'plugin-name': identity.name,
+      'plugin-version': identity.version,
+    };
   } else {
     throw new Error('Expected build or release mode.');
   }

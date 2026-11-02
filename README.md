@@ -23,9 +23,11 @@ Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to 
 ## What it does
 
 - Loads folder plugins through the server's plugin manager, which handles API compatibility, dependencies, duplicates, load order, and enable failures.
-- Loads one compatible copy of each local development virion from `virions/` on the shared thread-safe class loader.
+- Loads one compatible copy of each local development virion from a folder or PHAR in `virions/` on the shared thread-safe class loader. A folder is preferred over a same-name PHAR and the PHAR is reported as skipped.
 - Selects the highest semantic virion version satisfying every declared constraint and reports dependency conflicts.
 - Builds a SHA-256 PHAR with declared virions rewritten into private namespaces using a PHP syntax tree.
+- Builds standalone virion PHARs and dual-role projects as separate plugin and virion artifacts.
+- Extracts plugin or virion PHARs to a folder or ZIP through the server command and CLI.
 - Offers optional PHPStan analysis in GitHub Actions against an explicitly selected server source.
 - Validates PHAR entries before extraction and stages replacement with a backup of existing output.
 
@@ -50,7 +52,7 @@ All paths below are relative to the server directory.
 | `plugins/MyPlugin/src/` | Plugin source |
 | `plugins/MyPlugin/resources/` | Optional plugin resources |
 | `plugins/MyPlugin/devtools.yml` | Optional build and virion declarations |
-| `virions/ExampleVirion/` | Local library with `virion.yml` and `src/` |
+| `virions/ExampleVirion/` or `virions/ExampleVirion.phar` | Local library with `virion.yml` and `src/` |
 | `build/` | Generated PHARs |
 
 If your plugin uses a shared library, put the package in `virions/ExampleVirion/` and declare it for both development loading and the standalone build.
@@ -80,8 +82,8 @@ All commands require `devtools.command`, which operators receive by default.
 /devtools status
 /devtools doctor [plugin]
 /devtools virions
-/devtools build <plugin> [--overwrite]
-/devtools extract <phar> [--overwrite]
+/devtools build [plugin|virion|both] <project> [--overwrite]
+/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]
 ```
 
 Migration aliases `/makeplugin` and `/extractplugin` are also available.
@@ -116,7 +118,7 @@ Migration aliases `/makeplugin` and `/extractplugin` are also available.
 
 ## Production guidance
 
-Use folder plugins and shared virions for development. Deploy tested PHARs to production; editing source in place can leave partially changed code after a restart.
+Use folder plugins and shared virions for development. Deploy tested PHARs to production; editing source in place can leave partially changed code after a restart. For a project containing both `plugin.yml` and `virion.yml`, use `build both` to create two role-specific PHARs; DevTools never merges a plugin into a virion or a virion into another virion. Plugin-to-virion injection is rejected because a plugin manifest is not a virion contract.
 
 ## License and provenance
 

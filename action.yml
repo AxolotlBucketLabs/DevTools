@@ -1,14 +1,18 @@
-name: Build Axolotl-PM plugin PHAR
-description: Build a standalone Axolotl-PM plugin PHAR with optional local virions and opt-in PHPStan analysis.
+name: Build Axolotl-PM plugin or virion PHAR
+description: Build a standalone Axolotl-PM plugin or virion PHAR with optional local dependencies and opt-in PHPStan analysis.
 author: NhanAZ
 
 inputs:
+  type:
+    description: Artifact type to build.
+    required: false
+    default: plugin
   project:
-    description: Plugin project path, relative to the checked-out repository or absolute.
+    description: Plugin or virion project path, relative to the checked-out repository or absolute.
     required: false
     default: .
   virions:
-    description: Local virion directory, relative to the checked-out repository or absolute.
+    description: Local virion directory for plugin builds, relative to the checked-out repository or absolute.
     required: false
     default: virions
   output:
@@ -41,11 +45,20 @@ outputs:
     description: Absolute path to the validated PHAR.
     value: ${{ steps.build.outputs.phar }}
   plugin-name:
-    description: Plugin name read from the validated plugin.yml.
+    description: Backward-compatible identity name output; plugin name for plugin builds and virion name for virion builds.
     value: ${{ steps.build.outputs.plugin-name }}
   plugin-version:
-    description: Plugin version from the build result.
+    description: Backward-compatible identity version output for the built artifact.
     value: ${{ steps.build.outputs.plugin-version }}
+  artifact-type:
+    description: Artifact type from the build result.
+    value: ${{ steps.build.outputs.artifact-type }}
+  artifact-name:
+    description: Artifact name from the build result.
+    value: ${{ steps.build.outputs.artifact-name }}
+  artifact-version:
+    description: Artifact version from the build result.
+    value: ${{ steps.build.outputs.artifact-version }}
   sha256:
     description: SHA-256 of the exact PHAR.
     value: ${{ steps.build.outputs.sha256 }}
@@ -74,6 +87,7 @@ runs:
       env:
         DEVTOOLS_ACTION_PATH: ${{ github.action_path }}
         INPUT_PREPARE: ${{ inputs.prepare-dependencies }}
+        INPUT_TYPE: ${{ inputs.type }}
         INPUT_PROJECT: ${{ inputs.project }}
         INPUT_VIRIONS: ${{ inputs.virions }}
       run: |
@@ -83,6 +97,10 @@ runs:
           true) ;;
           *) echo "Input prepare-dependencies must be true or false." >&2; exit 2 ;;
         esac
+        if [ "$INPUT_TYPE" = "virion" ]; then
+          echo "Composer dependency preparation is only supported for plugin builds; build virion source from its checked-out project instead." >&2
+          exit 2
+        fi
         PROJECT_PATH="$GITHUB_WORKSPACE/$INPUT_PROJECT"
         VIRIONS_PATH="$GITHUB_WORKSPACE/$INPUT_VIRIONS"
         case "$INPUT_PROJECT" in /*) PROJECT_PATH="$INPUT_PROJECT" ;; esac
@@ -105,6 +123,7 @@ runs:
         INPUT_PHPSTAN: ${{ inputs.phpstan }}
         INPUT_PHPSTAN_SERVER: ${{ inputs.phpstan-server }}
         INPUT_PHPSTAN_PATHS: ${{ inputs.phpstan-paths }}
+        INPUT_TYPE: ${{ inputs.type }}
       run: |
         set -euo pipefail
 
@@ -126,6 +145,10 @@ runs:
             exit 2
             ;;
         esac
+        if [ "$INPUT_TYPE" = "virion" ]; then
+          echo "PHPStan analysis for virion artifacts is not available through this action yet; use phpstan=off or analyze the virion project with its own configuration." >&2
+          exit 2
+        fi
 
         PROJECT_PATH="$(resolve_from_workspace "$INPUT_PROJECT")"
         VIRIONS_PATH="$(resolve_from_workspace "$INPUT_VIRIONS")"
@@ -192,6 +215,7 @@ runs:
         INPUT_PROJECT: ${{ inputs.project }}
         INPUT_VIRIONS: ${{ inputs.virions }}
         INPUT_OUTPUT: ${{ inputs.output }}
+        INPUT_TYPE: ${{ inputs.type }}
         INPUT_OVERWRITE: ${{ inputs.overwrite }}
       run: |
         set -euo pipefail
@@ -206,10 +230,15 @@ runs:
         PROJECT_PATH="$(resolve_from_workspace "$INPUT_PROJECT")"
         VIRIONS_PATH="$(resolve_from_workspace "$INPUT_VIRIONS")"
         OUTPUT_PATH="$(resolve_from_workspace "$INPUT_OUTPUT")"
+        case "$INPUT_TYPE" in
+          plugin|virion) ;;
+          *) echo "Input type must be plugin or virion. Received $INPUT_TYPE." >&2; exit 2 ;;
+        esac
         BUILD_ARGS=(
           "--project=$PROJECT_PATH"
           "--virions=$VIRIONS_PATH"
           "--out=$OUTPUT_PATH"
+          "--type=$INPUT_TYPE"
         )
 
         case "$INPUT_OVERWRITE" in

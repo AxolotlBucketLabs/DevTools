@@ -12,15 +12,20 @@ php bin/devtools.php --help
 php bin/devtools.php --version
 php bin/devtools.php doctor --project=/path/to/MyPlugin
 php -d phar.readonly=0 bin/devtools.php build --project=/path/to/MyPlugin
+php -d phar.readonly=0 bin/devtools.php build --type=virion --project=/path/to/SharedGreeting
+php -d phar.readonly=0 bin/devtools.php build --type=both --project=/path/to/DualProject
 php bin/devtools.php inspect --project=/path/to/MyPlugin --artifact=build/MyPlugin.phar
 php bin/devtools.php extract --artifact=/path/to/MyPlugin.phar --out=/path/to/extracted
+php bin/devtools.php extract --artifact=/path/to/SharedGreeting.phar --out=build/SharedGreeting.zip --type=virion --format=zip
 ```
 
 ## Paths and options
 
 `--project` defaults to the current directory and resolves relative to it. All other relative paths resolve from that project, regardless of option order. Defaults are `PROJECT/virions` and `PROJECT/build`. Use an absolute path for a server's shared virions directory.
 
-`--out` selects a directory rather than a PHAR filename. Options use `--name=value`. Unknown, duplicate path and command-inapplicable options fail. Commands never prompt for input. Replacement requires `--overwrite`.
+`--out` selects an extraction directory for `--format=folder` and a `.zip` filename for `--format=zip`; build `--out` remains a directory. Options use `--name=value`. Unknown, duplicate path and command-inapplicable options fail. Commands never prompt for input. Replacement requires `--overwrite`.
+
+`build --type=plugin` is the default and requires `plugin.yml`. `build --type=virion` requires `virion.yml`. `build --type=both` requires both manifests and writes two role-specific artifacts. A plugin build injects declared virions by AST shading; it does not accept a plugin as a virion dependency. `extract --format=folder` is the default, and selects `plugins/` or `virions/` when the destination is relative to a project. `extract --format=zip` writes a safe ZIP without executing archive code.
 
 For supported Composer libraries, install from the reviewed plugin lockfile before preparation.
 
@@ -38,7 +43,7 @@ php -d phar.readonly=0 bin/devtools.php build --project=/path/to/MyPlugin --viri
 | --- | --- | --- |
 | `doctor` | Manifest, main source structure, declarations and local dependency selection | Complete shading, static analysis or server boot |
 | `prepare` | Supported locked package graph, installed metadata and import structure | Independent authenticity of vendor bytes or server boot |
-| `build` | Package validation, AST shading, archive content and SHA-256 | Server boot or gameplay behavior |
+| `build` | Plugin or virion validation, optional AST shading, archive content and SHA-256 | Server boot or gameplay behavior |
 | `inspect` | Manifest, main entry, signature and whole-file SHA-256 without running the PHAR stub | Publisher identity or safe executable code |
 | `extract` | Transactional extraction and archive path validation | That the extracted project boots |
 
@@ -62,7 +67,7 @@ The [JSON Schema](cli.schema.json) defines these fields.
 | `diagnostics` | List of objects with `code`, `severity`, `message`, `file`, `line` and `suggestion`. File, line and suggestion may be null |
 | `checks` | Status of `structure`, `dependencies`, `artifact`, `static_analysis` and `runtime`. Each is `passed`, `failed` or `not_run` |
 
-Build and inspect results include `artifact`, `sha256`, `plugin`, `files` and `signature`. The artifact path is absolute. The plugin object has `name` and `version`. Build also returns `dependencies` and `shaded_namespaces`. Prepare returns `directory` and `dependencies`. Extract returns `destination` and `files`. A successful doctor result returns `project`, `plugin` and `dependencies`.
+Plugin build and inspect results include `artifact`, `type: plugin`, `sha256`, `plugin`, `files` and `signature`. Virion results use `type: virion` and a `virion` object with `name`, `version` and `antigen`. Dual builds return `artifacts`, one inspected object for each role. Plugin builds also return `dependencies` and `shaded_namespaces`. Prepare returns `directory` and `dependencies`. Extract returns `destination`, `format` and `files`. A successful doctor result returns `project`, `plugin` and `dependencies`.
 
 Validator codes such as `plugin.manifest_missing` identify specific project problems. Operation failures use `operation.build_failed`, `operation.doctor_failed`, `operation.prepare_failed`, `operation.inspect_failed` or `operation.extract_failed`. Argument errors use `cli.usage`. Missing tooling dependencies use `cli.environment`. Read `message` for the cause without parsing exception substrings.
 

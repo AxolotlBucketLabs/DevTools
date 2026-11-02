@@ -53,3 +53,33 @@ test('build and publication consume the same bytes; tampering and metadata injec
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('virion build metadata uses the virion identity and the same artifact checks', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'devtools-virion-action-'));
+  try {
+    const phar = join(dir, 'SharedGreeting.phar');
+    const metadata = join(dir, 'build-metadata.json');
+    const output = join(dir, 'output');
+    const bytes = Buffer.from('representative virion artifact bytes');
+    writeFileSync(phar, bytes);
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    writeFileSync(metadata, JSON.stringify({
+      schema_version: 1,
+      success: true,
+      command: 'build',
+      data: {
+        type: 'virion',
+        artifact: phar,
+        sha256,
+        virion: { name: 'SharedGreeting', version: '1.0.0', antigen: 'Example\\SharedGreeting' },
+      },
+    }));
+    run('build', metadata, { GITHUB_OUTPUT: output });
+    const values = readFileSync(output, 'utf8');
+    assert.match(values, /artifact-type=virion\n/);
+    assert.match(values, /artifact-name=SharedGreeting\n/);
+    assert.match(values, /artifact-version=1.0.0\n/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

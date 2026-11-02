@@ -1,5 +1,5 @@
 name: DevTools
-version: 1.0.18
+version: 1.0.19
 main: NhanAZ\DevTools\DevTools
 api: 5.0.0
 load: STARTUP
@@ -9,7 +9,7 @@ author: NhanAZ
 website: https://github.com/NhanAZ/DevTools
 commands:
   devtools:
-    description: Inspect and build development plugins
+    description: Inspect and build development plugins and virions
     usage: "/devtools <status|doctor|build|extract|virions>"
     aliases: [makeplugin, extractplugin]
     permission: devtools.command

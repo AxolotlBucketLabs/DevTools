@@ -19,6 +19,7 @@ final class ArtifactInspectorTest extends TestCase
         self::assertSame(realpath($path), $result['artifact']);
         self::assertSame(hash_file('sha256', $path), $result['sha256']);
         self::assertSame('SHA-256', $result['signature']);
+        self::assertIsArray($result['plugin']);
         self::assertSame('FixturePlugin', $result['plugin']['name']);
     }
 

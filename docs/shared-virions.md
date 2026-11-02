@@ -11,7 +11,7 @@ A shared virion is trusted local development code registered once on Axolotl-PM'
 | `resources/` | Optional resources |
 | `LICENSE` | Library license |
 
-Source folders are preferred. Local `.phar` virions are also accepted. Symlinks are rejected.
+Source folders are preferred over local `.phar` virions with the same manifest name. The PHAR is not selected as a fallback and is recorded as skipped with a warning, because a development folder is the authoritative local source. Symlinks are rejected.
 
 ```yaml
 name: ExampleVirion
@@ -33,7 +33,7 @@ virions:
     version: ">=1.2.0 <2.0.0"
 ```
 
-At startup, DevTools gathers folder-plugin requirements, filters packages incompatible with the current PHP and server API, then loads the highest semantic version satisfying all declarations. Lower or incompatible versions are recorded as skipped. If no version satisfies every plugin, no copy of that virion is loaded and every candidate is recorded as conflicting. Two copies of the selected version are ambiguous and rejected instead of choosing by path order.
+At startup, DevTools gathers folder-plugin requirements, prefers a source folder over same-name PHAR candidates, filters the preferred packages incompatible with the current PHP and server API, then loads the highest semantic version satisfying all declarations. Lower or incompatible versions are recorded as skipped. If no preferred version satisfies every plugin, no packaged fallback is loaded. Two source folders of the selected version are ambiguous and rejected instead of choosing by path order.
 
 The same resolver is used during standalone builds. A missing package or version mismatch fails the build before an artifact is written.
 

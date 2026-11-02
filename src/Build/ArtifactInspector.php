@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Build;
 
 use NhanAZ\DevTools\Validation\PluginManifestReader;
+use NhanAZ\DevTools\Virion\VirionManifestReader;
 use Phar;
 
 final class ArtifactInspector
 {
-    public function __construct(private readonly PluginManifestReader $manifestReader) {}
+    public function __construct(
+        private readonly PluginManifestReader $manifestReader,
+        private readonly ?VirionManifestReader $virionManifestReader = null,
+    ) {}
 
-    /** @return array{artifact: string, sha256: string, plugin: array{name: string, version: string}, files: int, signature: string} */
+    /** @return array<string, mixed> */
     public function inspect(string $path): array
     {
         $real = realpath($path);
@@ -19,10 +23,35 @@ final class ArtifactInspector
             throw new BuildException("Artifact does not exist: {$path}");
         }
         $phar = new Phar($real);
-        $manifest = $this->manifestReader->read('phar://' . str_replace('\\', '/', $real) . '/plugin.yml');
-        $main = $manifest->expectedMainRelativePath();
-        if ($main === null || !isset($phar['src/' . $main])) {
-            throw new BuildException("Artifact is missing its declared main class source: {$path}");
+        $prefix = 'phar://' . str_replace('\\', '/', $real) . '/';
+        $hasPlugin = isset($phar['plugin.yml']);
+        $hasVirion = isset($phar['virion.yml']);
+        if (!$hasPlugin && !$hasVirion) {
+            throw new BuildException("Artifact is missing plugin.yml and virion.yml: {$path}");
+        }
+        if ($hasVirion && $this->virionManifestReader === null) {
+            throw new BuildException('Virion artifact inspection is not configured.');
+        }
+        $type = $hasPlugin && $hasVirion ? ProjectRole::DUAL->value : ($hasPlugin ? ProjectRole::PLUGIN->value : ProjectRole::VIRION->value);
+        $data = [
+            'artifact' => $real,
+            'type' => $type,
+            'files' => count($phar),
+        ];
+        if ($hasPlugin) {
+            $manifest = $this->manifestReader->read($prefix . 'plugin.yml');
+            $main = $manifest->expectedMainRelativePath();
+            if ($main === null || !isset($phar['src/' . $main])) {
+                throw new BuildException("Artifact is missing its declared main class source: {$path}");
+            }
+            $data['plugin'] = ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()];
+        }
+        if ($hasVirion) {
+            $manifest = $this->virionManifestReader->read($prefix . 'virion.yml');
+            if (!isset($phar['src'])) {
+                throw new BuildException("Artifact is missing its virion source directory: {$path}");
+            }
+            $data['virion'] = ['name' => $manifest->name, 'version' => $manifest->version, 'antigen' => $manifest->antigen];
         }
         /** @var array{hash: string, hash_type: string}|false $signature */
         $signature = $phar->getSignature();
@@ -34,13 +63,7 @@ final class ArtifactInspector
             throw new BuildException("Cannot hash artifact: {$path}");
         }
 
-        return [
-            'artifact' => $real,
-            'sha256' => $hash,
-            'plugin' => ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()],
-            'files' => count($phar),
-            'signature' => $signature['hash_type'],
-        ];
+        return $data + ['sha256' => $hash, 'signature' => $signature['hash_type']];
     }
 
 }
