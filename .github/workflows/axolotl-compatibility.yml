@@ -52,24 +52,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           printf 'Latest stable: %s at %s. Baseline: %s at %s. Run gate: %s.\n' "$tag" "$sha" "$BASELINE_TAG" "$BASELINE_SHA" "$candidate"
 
-      - name: Check out representative consumer
-        if: steps.release.outputs.candidate == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: NhanAZ-Plugins/VisibleBorder
-          ref: 558bd62cd4e815f13255357b38f105d36ee3c532
-          path: compatibility/VisibleBorder
-          persist-credentials: false
-
-      - name: Check out pinned libRegRsp
-        if: steps.release.outputs.candidate == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: NhanAZ-Libraries/libRegRsp
-          ref: 04766ae683a1ba63ed297730f7f2e8628aac3666
-          path: compatibility/VisibleBorder/virions/libRegRsp
-          persist-credentials: false
-
       - name: Check out candidate Axolotl-PM source
         if: steps.release.outputs.candidate == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -97,26 +79,25 @@ jobs:
           INPUT_INSTALL-PATH: ./.php-bin
         run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
 
-      - name: Validate dependency and source
+      - name: Validate DevTools-owned compatibility fixture
         if: steps.release.outputs.candidate == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          composer validate --strict --working-dir=compatibility/VisibleBorder/virions/libRegRsp
-          find compatibility/VisibleBorder/src compatibility/VisibleBorder/tools -name '*.php' -print0 | xargs -0 -n1 php -l
+          find examples/HelloShared/src examples/SharedGreeting/src -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Build and analyze representative PHAR
+      - name: Build and analyze DevTools-owned example PHAR
         if: steps.release.outputs.candidate == 'true'
         id: build
         uses: NhanAZ/DevTools@c735c409609cbf6a421394f5413ea803cd50e93b # v1.0.18
         with:
-          project: compatibility/VisibleBorder
-          virions: compatibility/VisibleBorder/virions
+          project: examples/HelloShared
+          virions: examples
           output: compatibility/build
           phpstan: max
           phpstan-server: .devtools-dependencies/axolotl-pm
 
-      - name: Verify PHAR content
+      - name: Verify example PHAR content and metadata
         if: steps.release.outputs.candidate == 'true'
         shell: bash
         env:
@@ -124,7 +105,27 @@ jobs:
           BUILD_METADATA: ${{ steps.build.outputs.metadata }}
         run: |
           set -euo pipefail
-          php compatibility/VisibleBorder/tools/verify-build.php "$PHAR_PATH" "$BUILD_METADATA" compatibility/VisibleBorder/virions/libRegRsp 1.0.18
+          jq -e '(.success == true) and (.data.plugin.name == "HelloShared") and (.data.plugin.version == "1.0.0") and ((.data.dependencies | length) == 1) and (.data.dependencies[0].name == "SharedGreeting")' "$BUILD_METADATA" >/dev/null
+          php -r '
+          $phar = new Phar($argv[1]);
+          $manifest = $phar["plugin.yml"]->getContent();
+          foreach (["name: HelloShared", "main: DevToolsExample\\HelloShared\\Main"] as $expected) {
+              if (!str_contains($manifest, $expected)) {
+                  throw new RuntimeException("Missing manifest field: {$expected}");
+              }
+          }
+          $greeting = false;
+          foreach (new RecursiveIteratorIterator($phar) as $entry) {
+              $path = str_replace(chr(92), "/", $entry->getPathName());
+              if (str_ends_with($path, "/Greeting.php")) {
+                  $greeting = true;
+              }
+          }
+          if (!$greeting) {
+              throw new RuntimeException("Shaded SharedGreeting source is missing.");
+          }
+          echo "HelloShared PHAR content is valid.\n";
+          ' "$PHAR_PATH"
           mkdir -p compatibility/evidence
           cp "$BUILD_METADATA" compatibility/evidence/devtools-build.json
 
@@ -155,7 +156,6 @@ jobs:
           import shutil
           import subprocess
           import time
-          import zipfile
           from pathlib import Path
 
           run = Path("compatibility/runtime").resolve()
@@ -177,7 +177,7 @@ jobs:
               encoding="utf-8",
           )
           log = run / "console.log"
-          pack_seen = False
+          plugin_enabled = False
           with log.open("w", encoding="utf-8") as output:
               process = subprocess.Popen(
                   ["php", str(server), "--no-wizard", "--disable-ansi", f"--data={run}", f"--plugins={plugins}"],
@@ -190,11 +190,8 @@ jobs:
               deadline = time.monotonic() + 60
               while time.monotonic() < deadline and process.poll() is None:
                   content = log.read_text(encoding="utf-8", errors="replace")
-                  packs = list(run.rglob("VisibleBorder.mcpack"))
-                  if "Done (" in content and "Enabling VisibleBorder" in content and packs:
-                      with zipfile.ZipFile(packs[0]) as archive:
-                          assert "manifest.json" in archive.namelist()
-                      pack_seen = True
+                  if "Done (" in content and "Enabling HelloShared" in content and "Hello from one shared development virion." in content:
+                      plugin_enabled = True
                       break
                   time.sleep(0.25)
               if process.poll() is None and process.stdin:
@@ -210,22 +207,22 @@ jobs:
           result = {
               "server_tag": os.environ["SERVER_TAG"],
               "server_sha": os.environ["SERVER_SHA"],
+              "fixture": "examples/HelloShared",
               "plugin_sha256": hashlib.sha256(plugin.read_bytes()).hexdigest(),
-              "pack_seen": pack_seen,
-              "pack_removed_on_stop": not list(run.rglob("VisibleBorder.mcpack")),
+              "plugin_enabled": plugin_enabled,
               "exit_code": exit_code,
               "errors": errors,
           }
           (run / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
           print(json.dumps(result, indent=2))
-          assert pack_seen and result["pack_removed_on_stop"] and exit_code == 0 and not errors
+          assert plugin_enabled and exit_code == 0 and not errors
           PY
 
       - name: Upload compatibility evidence
         if: always() && steps.release.outputs.candidate == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: axolotl-${{ steps.release.outputs.tag }}-visibleborder
+          name: axolotl-${{ steps.release.outputs.tag }}-devtools-fixture
           path: |
             compatibility/runtime/console.log
             compatibility/runtime/result.json
@@ -246,9 +243,9 @@ jobs:
           {
             echo "Axolotl-PM $SERVER_TAG at $SERVER_SHA"
             echo
-            echo "Representative VisibleBorder gate: $GATE_STATUS."
+            echo "DevTools-owned HelloShared compatibility gate: $GATE_STATUS."
             echo "See $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID for PHPStan max, dependency validation, PHAR build, content validation and isolated runtime smoke."
-            echo "This result does not certify every repository. Review the dependency graph and run affected consumers before changing their source or pins."
+            echo "This result covers DevTools-owned fixtures only and does not certify every external plugin."
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
             exit 0
@@ -261,8 +258,8 @@ jobs:
           {
             printf 'Stable release: https://github.com/axolotl-pm/PocketMine-MP/releases/tag/%s\n\n' "$SERVER_TAG"
             printf 'Source commit: `%s`\n\n' "$SERVER_SHA"
-            printf 'Representative check: %s\n\n' "$GATE_STATUS"
+            printf 'DevTools-owned fixture check: %s\n\n' "$GATE_STATUS"
             printf 'Workflow evidence: %s/%s/actions/runs/%s\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
-            printf 'Review affected repositories using the dependency graph. Run their applicable PHPStan max, dependency, PHAR and runtime checks before updating pins. Do not merge or release based on this issue alone.\n'
+            printf 'This gate covers examples/HelloShared with examples/SharedGreeting only. It does not certify every external plugin; run consumer-specific checks before changing external projects.\n'
           } > compatibility/issue-body.md
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file compatibility/issue-body.md

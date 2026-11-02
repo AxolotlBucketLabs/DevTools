@@ -157,11 +157,16 @@ final class RepositoryMetadataTest extends TestCase
         self::assertIsArray(yaml_parse($workflow));
 
         self::assertSame(1, preg_match('/uses: NhanAZ\\/DevTools@[a-f0-9]{40} # v([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $pin));
-        self::assertSame(1, preg_match('/verify-build\\.php[^\\r\\n]*libRegRsp ([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $verifier));
-        if (!isset($pin[1], $verifier[1])) {
-            self::fail('Compatibility monitor must declare both builder versions.');
+        if (!isset($pin[1])) {
+            self::fail('Compatibility monitor must declare its pinned builder version.');
         }
-        self::assertSame($pin[1], $verifier[1]);
+        self::assertStringContainsString('project: examples/HelloShared', $workflow);
+        self::assertStringContainsString('virions: examples', $workflow);
+        self::assertStringContainsString('SharedGreeting', $workflow);
+        self::assertStringNotContainsString('VisibleBorder', $workflow);
+        self::assertStringNotContainsString('libRegRsp', $workflow);
+        self::assertStringNotContainsString('NhanAZ-Plugins', $workflow);
+        self::assertStringNotContainsString('NhanAZ-Libraries', $workflow);
     }
 
     public function test_composite_action_and_per_commit_example_are_valid(): void
