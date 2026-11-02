@@ -110,7 +110,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringNotContainsString('retention-days', $virion);
         self::assertStringNotContainsString('retention-days', $ci);
         self::assertStringNotContainsString('retention-days', $candidate);
-        self::assertStringContainsString('axolotl-ref must be a full lowercase commit SHA', $reusable);
+        self::assertStringContainsString('Optional Axolotl-PM Git ref (release tag, branch, or full commit SHA)', $reusable);
         self::assertStringContainsString('repository: axolotl-pm/PocketMine-MP', $reusable);
         self::assertStringContainsString('Inspect built PHAR archive', $reusable);
         self::assertStringContainsString('Build pinned fixture with PHPStan max', $ci);
@@ -156,7 +156,7 @@ final class RepositoryMetadataTest extends TestCase
             $reference = $source['reference'] ?? null;
             self::assertIsString($reference);
             self::assertMatchesRegularExpression('/^[a-f0-9]{40}$/', $reference);
-            self::assertStringContainsString('axolotl-ref: ' . $reference, $ci);
+            self::assertStringContainsString('axolotl-ref: ' . $version, $ci);
             self::assertStringContainsString('BASELINE_TAG: "' . $version . '"', $monitor);
             self::assertStringContainsString('BASELINE_SHA: ' . $reference, $monitor);
             return;

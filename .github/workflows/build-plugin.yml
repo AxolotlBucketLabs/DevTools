@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       axolotl-ref:
-        description: Optional full Axolotl-PM source commit SHA to check out for PHPStan.
+        description: Optional Axolotl-PM Git ref (release tag, branch, or full commit SHA) to check out for PHPStan.
         required: false
         default: ''
         type: string
@@ -128,18 +128,7 @@ jobs:
       - name: Check out project source
         uses: actions/checkout@v7.0.1
 
-      - name: Require an immutable Axolotl-PM revision
-        if: inputs.axolotl-ref != ''
-        shell: bash
-        env:
-          AXOLOTL_REF: ${{ inputs.axolotl-ref }}
-        run: |
-          if [[ ! "$AXOLOTL_REF" =~ ^[a-f0-9]{40}$ ]]; then
-            echo "axolotl-ref must be a full lowercase commit SHA." >&2
-            exit 2
-          fi
-
-      - name: Check out pinned Axolotl-PM source
+      - name: Check out selected Axolotl-PM source
         if: inputs.axolotl-ref != ''
         uses: actions/checkout@v7.0.1
         with:
@@ -155,9 +144,6 @@ jobs:
           AXOLOTL_REF: ${{ inputs.axolotl-ref }}
           EXTRA_SERVER_SOURCES: ${{ inputs.phpstan-server }}
         run: |
-          if [ -n "$AXOLOTL_REF" ]; then
-            test "$(git -C .devtools-dependencies/axolotl-pm rev-parse HEAD)" = "$AXOLOTL_REF"
-          fi
           if [ -z "$AXOLOTL_REF" ] && [ -z "$EXTRA_SERVER_SOURCES" ]; then
             echo 'paths=' >> "$GITHUB_OUTPUT"
             exit 0

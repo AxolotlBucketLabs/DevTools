@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds; virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in `v2.0.0`. Most repositories should use the maintained `v2` channel: `NhanAZ/DevTools@v2` for the composite action and `NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2` or `build-virion.yml@v2` for reusable workflows. Use `@v2.0.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
+These interfaces are available in `v2.0.0`. Most repositories should use the maintained `v2` channel: `NhanAZ/DevTools@v2` for the composite action and `NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2` or `build-virion.yml@v2` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `NhanAZ/DevTools@latest` or the corresponding reusable workflow reference. Use `@v2.0.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
 
 ## Short build workflow
 
@@ -99,7 +99,7 @@ The composite action installs its own locked tool dependencies with scripts and 
 | `sha256` | output | - | SHA-256 of the exact PHAR. |
 | `metadata` | output | - | Absolute path to the CLI JSON build result. |
 
-The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to a full Axolotl-PM source commit SHA to let the workflow check out that revision before PHPStan. Keep the server source commit independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
+The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to an Axolotl-PM Git ref before PHPStan: use a verified release tag such as `5.50.0` for ordinary analysis, or a full commit SHA when strict reproducibility is required. Keep the server source ref independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
 
 ## Optional static analysis
 
@@ -109,7 +109,7 @@ Check out the Axolotl-PM source, then pass its local path to the composite actio
       - uses: actions/checkout@v7.0.1
         with:
           repository: axolotl-pm/PocketMine-MP
-          ref: b9a3b244993fb8a6df97241f3a3fbe44e2076f4c
+          ref: 5.50.0
           path: .devtools-server
           persist-credentials: false
       - id: build
@@ -121,7 +121,7 @@ Check out the Axolotl-PM source, then pass its local path to the composite actio
 
 The analysis helper installs that server's production dependencies with scripts and plugins disabled. It analyzes plugin `src/` and discovers symbols from Axolotl-PM, declared virions, and optional `phpstan-paths`. Level 4 is an example, not the default. Missing sources or analysis errors fail the action. This is static analysis, not a running server test. Newline-separated server paths remain accepted for existing callers, but only Axolotl-PM is officially supported.
 
-For the reusable workflow, set `phpstan: max` and `axolotl-ref` to the exact Axolotl-PM source commit used for analysis. It checks out and verifies that source revision. Use `phpstan-server` only for additional sources already present in the caller workspace.
+For the reusable workflow, set `phpstan: max` and `axolotl-ref` to the Axolotl-PM release tag or source ref used for analysis. Use a full SHA when the repository needs an immutable source snapshot. Use `phpstan-server` only for additional sources already present in the caller workspace.
 
 ## Tag release
 
@@ -168,11 +168,19 @@ jobs:
       mode: nightly
 ```
 
-Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never latest. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
+Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never the shared `latest` channel. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
 
 ## Select the builder revision
 
 Use the `v2` major channel for the normal developer workflow. DevTools moves that tag only to a compatible stable v2 release after its release checks pass. This avoids requiring every consumer repository to edit its workflow for each compatible patch or minor release.
+
+Use the `latest` channel only when the repository intentionally accepts stable releases across major versions:
+
+```yaml
+uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@latest
+```
+
+DevTools moves `latest` only to a validated stable release. It may move from v2 to v3, so a repository using it must be prepared for breaking changes. This is an opt-in convenience channel, not the default recommendation.
 
 Use an exact release when a repository wants controlled upgrades:
 
@@ -194,7 +202,7 @@ The called job reads its own `workflow_sha` and `workflow_repository`, checks ou
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v2` and remove legacy inputs that v2 no longer declares. Use `@v2.0.0` or a full SHA when the repository requires a controlled or strict pin:
+Update the reusable workflow reference to `@v2` and remove legacy inputs that v2 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v2.0.0` or a full SHA when the repository requires a controlled or strict pin:
 
 ```diff
  with:

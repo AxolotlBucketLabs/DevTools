@@ -19,7 +19,7 @@ Install DevTools itself as a PHAR so its folder loader can start. Restart the se
 
 ## Build a plugin on GitHub
 
-Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v2` workflow channel by default. Use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`; no server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
+Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v2` workflow channel by default. Use `@latest` when you intentionally want every stable release, including future major versions; use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`; no server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
 
 ## What it does
 
