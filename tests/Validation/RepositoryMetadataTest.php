@@ -250,7 +250,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('--no-plugins', $actionContents);
         self::assertIsString($exampleContents);
         self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
-        self::assertStringContainsString('uses: NhanAZ/DevTools@v' . self::VERSION, $exampleContents);
+        self::assertStringContainsString('uses: NhanAZ/DevTools@v2', $exampleContents);
         self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
         self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
         self::assertStringNotContainsString('retention-days', $exampleContents);
@@ -275,7 +275,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('(dependencies.md)', $agentGuide);
         self::assertStringContainsString('(github-actions.md)', $agentGuide);
         self::assertIsString($agentTemplate);
-        self::assertStringContainsString('build-plugin.yml` at the full commit resolved from `v' . self::VERSION, $agentTemplate);
+        self::assertStringContainsString('build-plugin.yml@v2` by default', $agentTemplate);
         self::assertStringContainsString('Do not guess virion repositories', $agentTemplate);
         self::assertStringContainsString('Upload exactly one artifact', $agentTemplate);
     }
