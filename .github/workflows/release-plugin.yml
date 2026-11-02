@@ -3,11 +3,6 @@ name: Publish verified plugin release
 on:
   workflow_call:
     inputs:
-      devtools-ref:
-        description: Deprecated compatibility input. The workflow checks out its own immutable revision.
-        type: string
-        required: false
-        default: ''
       mode:
         description: tag for an existing version tag, or nightly for an immutable commit prerelease.
         type: string
@@ -69,7 +64,6 @@ jobs:
         shell: bash
         env:
           JOB_CONTEXT: ${{ toJSON(job) }}
-          LEGACY_REF: ${{ inputs.devtools-ref }}
         run: |
           set -euo pipefail
           WORKFLOW_SHA="$(jq -r '.workflow_sha // empty' <<< "$JOB_CONTEXT")"
@@ -79,9 +73,6 @@ jobs:
             exit 2
           fi
           printf 'sha=%s\nrepository=%s\n' "$WORKFLOW_SHA" "$WORKFLOW_REPOSITORY" >> "$GITHUB_OUTPUT"
-          if [ -n "$LEGACY_REF" ]; then
-            echo "::warning::devtools-ref is deprecated and ignored; release verification follows the called workflow revision."
-          fi
 
       - name: Check out release verification tools
         uses: actions/checkout@v7.0.1

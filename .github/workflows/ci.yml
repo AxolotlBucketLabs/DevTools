@@ -124,7 +124,6 @@ jobs:
           name: HelloShared-${{ github.sha }}
           path: ${{ steps.example-build-phpstan.outputs.phar }}
           if-no-files-found: error
-          retention-days: 14
 
       - name: Upload checked PHAR
         if: matrix.php == '8.4'
@@ -133,4 +132,3 @@ jobs:
           name: DevTools-${{ github.sha }}
           path: build/DevTools.phar
           if-no-files-found: error
-          retention-days: 14

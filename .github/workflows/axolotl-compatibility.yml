@@ -235,7 +235,6 @@ jobs:
             compatibility/runtime/result.json
             compatibility/evidence/devtools-build.json
           if-no-files-found: warn
-          retention-days: 30
 
       - name: Record candidate result
         if: always() && steps.release.outputs.candidate == 'true'

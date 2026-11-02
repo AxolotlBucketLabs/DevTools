@@ -3,11 +3,6 @@ name: Build and validate plugin or virion PHAR
 on:
   workflow_call:
     inputs:
-      devtools-ref:
-        description: Deprecated compatibility input. The workflow checks out its own immutable revision.
-        required: false
-        default: ''
-        type: string
       axolotl-ref:
         description: Optional full Axolotl-PM source commit SHA to check out for PHPStan.
         required: false
@@ -73,11 +68,6 @@ on:
         required: false
         default: ''
         type: string
-      retention-days:
-        description: Number of days to retain the uploaded artifact.
-        required: false
-        default: 14
-        type: number
     outputs:
       sha256:
         description: SHA-256 of the built PHAR.
@@ -126,7 +116,6 @@ jobs:
         shell: bash
         env:
           JOB_CONTEXT: ${{ toJSON(job) }}
-          LEGACY_REF: ${{ inputs.devtools-ref }}
         run: |
           WORKFLOW_SHA="$(jq -r '.workflow_sha // empty' <<< "$JOB_CONTEXT")"
           WORKFLOW_REPOSITORY="$(jq -r '.workflow_repository // empty' <<< "$JOB_CONTEXT")"
@@ -135,9 +124,6 @@ jobs:
             exit 2
           fi
           printf 'sha=%s\nrepository=%s\n' "$WORKFLOW_SHA" "$WORKFLOW_REPOSITORY" >> "$GITHUB_OUTPUT"
-          if [ -n "$LEGACY_REF" ]; then
-            echo "::warning::devtools-ref is deprecated and ignored; the builder follows the called workflow revision."
-          fi
 
       - name: Check out project source
         uses: actions/checkout@v7.0.1
@@ -276,4 +262,3 @@ jobs:
           name: ${{ steps.metadata.outputs.artifact-name }}
           path: ${{ runner.temp }}/devtools-artifact/
           if-no-files-found: error
-          retention-days: ${{ inputs.retention-days }}

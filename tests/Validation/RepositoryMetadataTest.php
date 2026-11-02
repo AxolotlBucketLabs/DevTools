@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 final class RepositoryMetadataTest extends TestCase
 {
-    private const VERSION = '1.0.19';
+    private const VERSION = '2.0.0';
     private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 
     public function test_release_version_is_synchronized(): void
@@ -52,20 +52,28 @@ final class RepositoryMetadataTest extends TestCase
         $root = dirname(__DIR__, 2);
         $ciPath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'ci.yml';
         $releasePath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'release.yml';
+        $releasePluginPath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'release-plugin.yml';
+        $virionPath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'build-virion.yml';
         $reusablePath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'build-plugin.yml';
         $candidatePath = $root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'release-candidate.yml';
         $ci = file_get_contents($ciPath);
         $release = file_get_contents($releasePath);
+        $releasePlugin = file_get_contents($releasePluginPath);
+        $virion = file_get_contents($virionPath);
         $reusable = file_get_contents($reusablePath);
         $candidate = file_get_contents($candidatePath);
 
         self::assertIsArray(yaml_parse_file($ciPath));
         self::assertIsArray(yaml_parse_file($releasePath));
+        self::assertIsArray(yaml_parse_file($releasePluginPath));
+        self::assertIsArray(yaml_parse_file($virionPath));
         self::assertIsArray(yaml_parse_file($reusablePath));
         self::assertIsArray(yaml_parse_file($candidatePath));
         self::assertIsString($candidate);
         self::assertIsString($ci);
         self::assertIsString($release);
+        self::assertIsString($releasePlugin);
+        self::assertIsString($virion);
         self::assertIsString($reusable);
         self::assertStringContainsString('pull_request:', $ci);
         self::assertStringContainsString('branches: [main]', $ci);
@@ -95,7 +103,13 @@ final class RepositoryMetadataTest extends TestCase
         self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $reusable));
         self::assertStringContainsString('artifact-id: ${{ steps.upload.outputs.artifact-id }}', $reusable);
         self::assertStringContainsString('contents: read', $reusable);
-        self::assertStringContainsString('devtools-ref is deprecated and ignored', $reusable);
+        self::assertStringNotContainsString('devtools-ref', $reusable);
+        self::assertStringNotContainsString('retention-days', $reusable);
+        self::assertStringNotContainsString('devtools-ref', $releasePlugin);
+        self::assertStringNotContainsString('retention-days', $releasePlugin);
+        self::assertStringNotContainsString('retention-days', $virion);
+        self::assertStringNotContainsString('retention-days', $ci);
+        self::assertStringNotContainsString('retention-days', $candidate);
         self::assertStringContainsString('axolotl-ref must be a full lowercase commit SHA', $reusable);
         self::assertStringContainsString('repository: axolotl-pm/PocketMine-MP', $reusable);
         self::assertStringContainsString('Inspect built PHAR archive', $reusable);
@@ -239,6 +253,8 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('uses: NhanAZ/DevTools@v' . self::VERSION, $exampleContents);
         self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
         self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
+        self::assertStringNotContainsString('retention-days', $exampleContents);
+        self::assertStringNotContainsString('cancel-in-progress: true', $exampleContents);
         self::assertStringContainsString('repository: axolotl-pm/setup-php-action', $exampleContents);
         self::assertStringContainsString('ref: ' . self::PHP_ACTION_COMMIT, $exampleContents);
         self::assertStringContainsString('Set up Axolotl-PM PHP on Node.js 24', $exampleContents);

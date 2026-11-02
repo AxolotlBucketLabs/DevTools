@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0 - Unreleased
+
+- Remove the obsolete `devtools-ref` reusable-workflow input; builder identity now always follows the called workflow revision.
+- Let GitHub repository and organization policy control Actions artifact retention instead of imposing a DevTools-specific default.
+- Keep consumer builds eligible to finish for every push and pull request by removing template cancellation of in-progress runs.
+- Add migration guidance for v1 workflow callers.
+
 ## 1.0.19 - 2026-11-02
 
 - Add standalone virion PHAR building through the CLI, server command and reusable GitHub Actions workflow.

@@ -33,11 +33,6 @@ on:
         required: false
         default: ''
         type: string
-      retention-days:
-        description: Number of days to retain the uploaded artifact.
-        required: false
-        default: 14
-        type: number
     outputs:
       sha256:
         description: SHA-256 of the built virion PHAR.
@@ -69,4 +64,3 @@ jobs:
       php-version: ${{ inputs.php-version }}
       pm-version-major: ${{ inputs.pm-version-major }}
       artifact-name: ${{ inputs.artifact-name }}
-      retention-days: ${{ inputs.retention-days }}
