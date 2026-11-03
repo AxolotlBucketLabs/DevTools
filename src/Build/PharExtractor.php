@@ -87,6 +87,11 @@ final class PharExtractor
             }
             $pending[] = [$entry, $relative, $target];
         }
+        try {
+            Path::assertPortablePaths(array_map(static fn(array $item): string => $item[1], $pending));
+        } catch (FilesystemException $error) {
+            throw new BuildException('Archive contains non-portable paths: ' . $error->getMessage(), 0, $error);
+        }
 
         $nonce = bin2hex(random_bytes(8));
         $stage = Path::join($realParent, '.devtools-extract-' . $nonce);

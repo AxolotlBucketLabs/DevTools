@@ -22,6 +22,9 @@ use NhanAZ\DevTools\Validation\PluginManifestReader;
 use NhanAZ\DevTools\Validation\PluginProjectValidator;
 use NhanAZ\DevTools\Virion\VirionClassScanner;
 use NhanAZ\DevTools\Virion\VirionProject;
+
+use function pathinfo;
+
 use Phar;
 
 use function preg_replace;
@@ -34,7 +37,6 @@ use function rename;
 
 use SplFileInfo;
 
-use function str_ends_with;
 use function str_replace;
 use function strrpos;
 use function strtolower;
@@ -144,7 +146,7 @@ final class PharBuilder
         $failure = null;
         try {
             $this->stagePlugin($projectRoot, $stage, $config, $realOutput);
-            $this->assertPluginDeclarationsDoNotOverlapVirions($manifest, $virions, $stage . DIRECTORY_SEPARATOR . 'src');
+            $this->assertPluginDeclarationsDoNotOverlapVirions($manifest, $virions, $stage);
             $this->namespaceShader->shadeDirectory($stage, $shaded, false);
             $virionDirectories = $this->stageVirions($virions, $manifest, $stage, $shaded);
             foreach ($virionDirectories as $virionDirectory) {
@@ -337,7 +339,7 @@ final class PharBuilder
             new RecursiveDirectoryIterator($sourceDirectory, FilesystemIterator::SKIP_DOTS),
         );
         foreach ($files as $file) {
-            if (!$file instanceof SplFileInfo || !$file->isFile() || !str_ends_with(strtolower($file->getFilename()), '.php')) {
+            if (!$file instanceof SplFileInfo || !$file->isFile() || !$this->isPhpSourceFile($file->getFilename())) {
                 continue;
             }
             $symbols = $this->sourceInspector->inspect($file->getPathname());
@@ -358,6 +360,11 @@ final class PharBuilder
                 }
             }
         }
+    }
+
+    private function isPhpSourceFile(string $filename): bool
+    {
+        return in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), ['php', 'inc', 'phtml'], true);
     }
 
     private function shadedNamespace(PluginManifest $plugin, VirionProject $virion): string

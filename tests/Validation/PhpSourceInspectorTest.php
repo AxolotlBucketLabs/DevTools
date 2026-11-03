@@ -261,6 +261,27 @@ PHP);
         self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
     }
 
+    public function test_closure_capture_does_not_hide_namespace_function(): void
+    {
+        $path = $this->temporaryDirectory . '/ClosureCapture.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace ExternalHelpers;
+
+$captured = 'captured';
+(function () use ($captured) {
+    function collision(): string
+    {
+        return 'collision';
+    }
+})();
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
+    }
+
     public function test_nested_anonymous_class_in_constructor_argument_keeps_outer_class_scope(): void
     {
         $path = $this->temporaryDirectory . '/NestedAnonymousClass.php';

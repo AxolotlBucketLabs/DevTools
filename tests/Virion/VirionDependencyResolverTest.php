@@ -51,6 +51,23 @@ final class VirionDependencyResolverTest extends TestCase
         self::assertSame([$a1, $c, $b], $this->resolver()->resolve(['a' => [$a1, $a2], 'b' => [$b], 'c' => [$c]], $this->roots('A', 'C')));
     }
 
+    public function test_dependency_selection_converges_when_dependency_declaration_order_changes(): void
+    {
+        $a1 = $this->project('A', '1.0.0', ['D' => '*', 'B' => '*']);
+        $a2 = $this->project('A', '2.0.0', ['B' => '*', 'D' => '*']);
+        $b = $this->project('B', '1.0.0');
+        $c = $this->project('C', '1.0.0', ['A' => '1.0.0']);
+        $d = $this->project('D', '1.0.0');
+
+        self::assertSame(
+            [$a1, $c, $b, $d],
+            $this->resolver()->resolve(
+                ['a' => [$a1, $a2], 'b' => [$b], 'c' => [$c], 'd' => [$d]],
+                $this->roots('A', 'C'),
+            ),
+        );
+    }
+
     public function test_incompatible_current_parent_constraint_still_fails(): void
     {
         $a = $this->project('A', '1.0.0', ['B' => '^2.0.0']);

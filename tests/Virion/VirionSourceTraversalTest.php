@@ -110,10 +110,13 @@ PHP);
 namespace ExternalHelpers;
 
 new class((function () {
+    $captured = 'captured';
+    return (function () use ($captured) {
     function collision(): string
     {
         return 'collision';
     }
+    })();
 })()) {};
 PHP);
         $project = new VirionProject(

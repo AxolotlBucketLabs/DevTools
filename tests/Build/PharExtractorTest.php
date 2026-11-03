@@ -153,6 +153,25 @@ final class PharExtractorTest extends TestCase
         self::assertFileDoesNotExist($destination . DIRECTORY_SEPARATOR . 'first.php');
     }
 
+    public function test_case_conflicting_archive_paths_are_rejected_before_writing(): void
+    {
+        $destination = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'extracted';
+
+        try {
+            (new PharExtractor($this->filesystem))->extract(
+                new FakeArchiveReader([
+                    new ArchiveEntry('src/Foo/A.php', 'upper'),
+                    new ArchiveEntry('src/foo/B.php', 'lower'),
+                ]),
+                $destination,
+            );
+            self::fail('Expected case-conflicting archive paths to be rejected.');
+        } catch (BuildException $error) {
+            self::assertStringContainsString('case-conflicting path component', $error->getMessage());
+        }
+        self::assertFileDoesNotExist($destination);
+    }
+
     public function test_destination_symlink_is_rejected(): void
     {
         $outside = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'outside';

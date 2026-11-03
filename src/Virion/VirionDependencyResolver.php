@@ -51,7 +51,7 @@ final class VirionDependencyResolver
                 }
             }
             $next = array_intersect_key($next, $reachable);
-            if ($next === $selected) {
+            if ($this->sameSelection($next, $selected)) {
                 if ($reachableFailure !== null) {
                     throw $reachableFailure;
                 }
@@ -89,6 +89,18 @@ final class VirionDependencyResolver
             $selected = $next;
         }
         throw new VirionException('Virion dependency graph exceeds 100 selection passes. Reduce or pin the local dependency graph.');
+    }
+
+    /**
+     * @param array<string, VirionProject> $left
+     * @param array<string, VirionProject> $right
+     */
+    private function sameSelection(array $left, array $right): bool
+    {
+        ksort($left);
+        ksort($right);
+
+        return $left === $right;
     }
 
     /**

@@ -14,6 +14,7 @@ use NhanAZ\DevTools\Virion\VirionManifestReader;
 use NhanAZ\DevTools\Virion\VirionProjectFactory;
 use Phar;
 use PharFileInfo;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class PharBuilderTest extends TestCase
 {
@@ -601,6 +602,47 @@ PHP,
             $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
             $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build',
         );
+    }
+
+    #[DataProvider('pluginDeclarationOverlapProvider')]
+    public function test_plugin_declarations_in_all_staged_php_sources_are_rejected(
+        string $relativePath,
+        string $configuration,
+    ): void {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $path = $project . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        $parent = dirname($path);
+        $this->filesystem->ensureDirectory($parent);
+        file_put_contents($path, "<?php\nnamespace Shared\\Virion;\nfinal class Extra {}\n");
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', $configuration);
+
+        $output = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build';
+        $this->filesystem->ensureDirectory($output);
+        $artifact = $output . DIRECTORY_SEPARATOR . 'BuildFixture.phar';
+        file_put_contents($artifact, 'previous artifact');
+
+        try {
+            $this->builder()->build($project, $virions, $output, true);
+            self::fail('Expected overlapping plugin declaration to be rejected.');
+        } catch (BuildException $error) {
+            self::assertStringContainsString('Plugin declaration Shared\\Virion\\Extra overlaps virion antigen', $error->getMessage());
+        }
+        self::assertSame('previous artifact', file_get_contents($artifact));
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function pluginDeclarationOverlapProvider(): iterable
+    {
+        yield 'include path php file' => [
+            'runtime/Extra.php',
+            "virions:\n  - SharedVirion\ninclude-paths:\n  - runtime\n",
+        ];
+        yield 'src include file' => [
+            'src/Extra.inc',
+            "virions:\n  - SharedVirion\n",
+        ];
     }
 
     public function test_plugin_class_declarations_overlapping_a_virion_are_rejected_before_shading(): void

@@ -120,7 +120,8 @@ final class PhpSourceInspector
                     }
                 }
             } elseif ($id === T_USE) {
-                $inUseStatement = true;
+                $inUseStatement = $classBraceDepths === []
+                    && !$this->isClosureUse($tokens, $index, $previousSignificant);
             } elseif ($id === T_FUNCTION) {
                 $classBodyDepth = $classBraceDepths === [] ? null : end($classBraceDepths);
                 if (($classBodyDepth === null || $classBodyDepth !== $braceDepth)
@@ -152,6 +153,27 @@ final class PhpSourceInspector
             array_values(array_unique($constants)),
             $unconditionalFunctions,
         );
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     */
+    private function isClosureUse(array $tokens, int $index, int|string|null $previousSignificant): bool
+    {
+        if ($previousSignificant !== ')') {
+            return false;
+        }
+        $count = count($tokens);
+        for (++$index; $index < $count; ++$index) {
+            $token = $tokens[$index];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return $token === '(';
+        }
+
+        return false;
     }
 
     /**
