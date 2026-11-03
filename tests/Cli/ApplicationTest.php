@@ -25,6 +25,30 @@ final class ApplicationTest extends TestCase
         self::assertSame('build', $invalid['command']);
     }
 
+    public function test_version_does_not_leave_isolated_parser_directories(): void
+    {
+        $pattern = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-*';
+        $before = glob($pattern) ?: [];
+
+        [$code] = $this->cli(['--version']);
+
+        self::assertSame(0, $code);
+        self::assertSame($before, glob($pattern) ?: []);
+    }
+
+    public function test_build_cleans_isolated_parser_directory_when_the_process_exits(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'parser-cleanup');
+        $this->copyFixture('SharedVirion', 'parser-cleanup/virions/SharedVirion');
+        $pattern = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-*';
+        $before = glob($pattern) ?: [];
+
+        [$code, $result] = $this->cli(['build', '--project=' . $project]);
+
+        self::assertSame(0, $code, json_encode($result, JSON_THROW_ON_ERROR));
+        self::assertSame($before, glob($pattern) ?: []);
+    }
+
     public function test_doctor_preserves_structured_validation_failure(): void
     {
         [$code, $result] = $this->cli(['doctor', '--project=' . $this->temporaryDirectory]);

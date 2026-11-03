@@ -70,7 +70,7 @@ Builds reject unsafe dynamic class references, affected namespaces stored in str
 
 The shader accepts specific dynamic patterns whose behavior it can verify:
 
-- The variable target type in a two-argument global `is_a()` call. Supplying a third argument keeps the call subject to the dynamic-reference guard.
+- Static class expressions, including literal class strings and `::class` references, in class-name arguments. Variable class-name arguments in `is_a()` and variable `instanceof` targets are rejected because shading can change their runtime identity.
 - A factory annotated with `@devtools-allow-dynamic-class $variable`, where `return new $variable()` immediately follows top-level throwing `class_exists()` and `is_subclass_of(..., Interface::class)` guards. An annotated factory may also select from a local static map of explicit `::class` values immediately before returning.
 - Annotated object-class expressions such as `match ($object::class)` or an error message containing `$object::class`. The annotation does not permit dynamic static operations.
 - Unannotated `return $object::class` immediately after `$object instanceof StaticClass || throw ...` in the same function.

@@ -168,6 +168,26 @@ PHP);
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }
 
+    public function test_comment_does_not_count_as_an_autoload_shim(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/CommentShim';
+        $this->filesystem->ensureDirectory($source . '/Elsewhere');
+        file_put_contents($source . '/Bar.php', '<?php namespace Audit\\CommentShim; final class Bar {} final class Foo {}');
+        file_put_contents($source . '/Elsewhere/Bar.php', '<?php namespace Audit\\CommentShim\\Elsewhere; final class Bar {}');
+        file_put_contents($source . '/Foo.php', "<?php\n// require_once __DIR__ . '/Elsewhere/Bar.php';");
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('CommentShim', '1.0.0', 'Audit\\CommentShim', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('class Audit\\CommentShim\\Foo is declared');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
     /** @dataProvider validAutoloadShimProvider */
     public function test_autoload_shim_accepts_relative_require_syntax(string $require): void
     {

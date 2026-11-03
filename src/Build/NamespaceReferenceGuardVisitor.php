@@ -59,10 +59,6 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
         if (($node instanceof New_ || $node instanceof Instanceof_ || $node instanceof StaticCall
             || $node instanceof StaticPropertyFetch || $node instanceof ClassConstFetch)
             && $node->class instanceof Expr) {
-            if ($node instanceof Instanceof_
-                && DynamicClassReferencePolicy::allowsNonAutoloadingInstanceofTarget($node)) {
-                return null;
-            }
             if ($node instanceof StaticCall && DynamicClassReferencePolicy::allowsCurrentFiberSuspend($node)) {
                 return null;
             }
@@ -84,7 +80,6 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
             $function = DynamicClassReferencePolicy::resolvedName($node->name);
             foreach (DynamicClassReferencePolicy::classNameArguments($node) as $argument) {
                 if ($argument->unpack || (!$this->isStaticClassExpression($argument->value)
-                    && !($function === 'is_a' && DynamicClassReferencePolicy::allowsNonAutoloadingIsATypeArgument($node))
                     && !($function === 'is_subclass_of' && DynamicClassReferencePolicy::allowsNonAutoloadingIsSubclassOfObjectOrClassArgument($node))
                     && !($function === 'class_exists'
                         && DynamicClassReferencePolicy::allowsAnnotated($node, $argument->value)))) {

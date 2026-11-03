@@ -15,8 +15,8 @@ use function ltrim;
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
+use ParseError;
 
-use function preg_match;
 use function realpath;
 
 use RecursiveDirectoryIterator;
@@ -26,8 +26,10 @@ use SplFileInfo;
 use function str_ends_with;
 use function str_replace;
 use function str_starts_with;
+use function stripcslashes;
 use function strtolower;
 use function substr;
+use function token_get_all;
 
 final class VirionClassScanner
 {
@@ -186,10 +188,10 @@ final class VirionClassScanner
             return false;
         }
         $relative = null;
-        if (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])([^\'\"]+)\\1\\s*;/D', $contents, $matches) === 1) {
-            $relative = $matches[2];
-        } elseif (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])([^\'\"]*)\\1\\s*\\.\\s*([\'\"])([^\'\"]+)\\3\\s*;/D', $contents, $matches) === 1) {
-            $relative = $matches[2] . $matches[4];
+        try {
+            $relative = $this->readRequireOncePath(token_get_all($contents, TOKEN_PARSE));
+        } catch (ParseError) {
+            return false;
         }
         if ($relative === null) {
             return false;
@@ -215,6 +217,88 @@ final class VirionClassScanner
         }
 
         return $this->normalizePath($targetReal) === $this->normalizePath($actualReal);
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     */
+    private function readRequireOncePath(array $tokens): ?string
+    {
+        $braceDepth = 0;
+        $count = count($tokens);
+        for ($index = 0; $index < $count; ++$index) {
+            $token = $tokens[$index];
+            if (is_string($token)) {
+                if ($token === '{') {
+                    ++$braceDepth;
+                } elseif ($token === '}') {
+                    --$braceDepth;
+                }
+                continue;
+            }
+            if ($token[0] !== T_REQUIRE_ONCE || $braceDepth !== 0) {
+                continue;
+            }
+
+            $cursor = $index;
+            $dir = $this->nextSignificantToken($tokens, $cursor);
+            $dot = $this->nextSignificantToken($tokens, $cursor);
+            $first = $this->nextSignificantToken($tokens, $cursor);
+            if (!is_array($dir) || $dir[0] !== T_DIR || $dot !== '.'
+                || !is_array($first) || $first[0] !== T_CONSTANT_ENCAPSED_STRING) {
+                continue;
+            }
+            $relative = $this->decodeStringToken($first);
+            $separator = $this->nextSignificantToken($tokens, $cursor);
+            if ($separator === '.') {
+                $second = $this->nextSignificantToken($tokens, $cursor);
+                if (!is_array($second) || $second[0] !== T_CONSTANT_ENCAPSED_STRING) {
+                    continue;
+                }
+                $relative .= $this->decodeStringToken($second);
+            } elseif ($separator !== ';') {
+                continue;
+            }
+            if ($separator === '.') {
+                $terminator = $this->nextSignificantToken($tokens, $cursor);
+                if ($terminator !== ';') {
+                    continue;
+                }
+            }
+
+            return $relative;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     * @return array{int, string, int}|string|null
+     */
+    private function nextSignificantToken(array $tokens, int &$index): array|string|null
+    {
+        $count = count($tokens);
+        for (++$index; $index < $count; ++$index) {
+            $token = $tokens[$index];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return $token;
+        }
+
+        return null;
+    }
+
+    /** @param array{int, string, int} $token */
+    private function decodeStringToken(array $token): string
+    {
+        $raw = $token[1];
+        $quote = $raw[0] ?? '';
+        $value = substr($raw, 1, -1);
+
+        return $quote === "'" ? str_replace(['\\\\', "\\'"], ['\\', "'"], $value) : stripcslashes($value);
     }
 
     private function isVirtualPath(string $path): bool

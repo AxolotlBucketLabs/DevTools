@@ -43,6 +43,8 @@ final class PhpParserNamespaceLoader
 
     private static ?string $temporaryRoot = null;
 
+    private static bool $shutdownRegistered = false;
+
     public static function register(string $sourceRoot): void
     {
         $sourceRoot = rtrim($sourceRoot, '/\\');
@@ -50,18 +52,7 @@ final class PhpParserNamespaceLoader
             return;
         }
         self::unregister();
-        $temporaryRoot = null;
-        for ($attempt = 0; $attempt < 5; ++$attempt) {
-            $candidate = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-' . bin2hex(random_bytes(12));
-            if (mkdir($candidate, 0700)) {
-                $temporaryRoot = $candidate;
-                break;
-            }
-        }
-        if ($temporaryRoot === null) {
-            throw new RuntimeException('Cannot create an isolated PHP-Parser directory.');
-        }
-        $loader = static function (string $class) use ($sourceRoot, $temporaryRoot): void {
+        $loader = static function (string $class) use ($sourceRoot): void {
             if (!str_starts_with($class, self::PREFIX)) {
                 return;
             }
@@ -73,13 +64,17 @@ final class PhpParserNamespaceLoader
             if (!is_file($sourceRoot . '/' . $relative . '.php')) {
                 return;
             }
-            self::prepareSource($sourceRoot, self::$temporaryRoot ?? $temporaryRoot, $relative);
+            $temporaryRoot = self::temporaryRoot();
+            self::prepareSource($sourceRoot, $temporaryRoot, $relative);
             require($temporaryRoot . DIRECTORY_SEPARATOR . $relative . '.php');
         };
         self::$sourceRoot = $sourceRoot;
-        self::$temporaryRoot = $temporaryRoot;
         self::$autoloader = $loader;
         spl_autoload_register($loader, true, true);
+        if (!self::$shutdownRegistered) {
+            register_shutdown_function([self::class, 'unregister']);
+            self::$shutdownRegistered = true;
+        }
     }
 
     public static function unregister(): void
@@ -87,12 +82,28 @@ final class PhpParserNamespaceLoader
         if (self::$autoloader !== null) {
             spl_autoload_unregister(self::$autoloader);
             self::$autoloader = null;
-            self::$sourceRoot = null;
-            if (self::$temporaryRoot !== null) {
-                self::removeTree(self::$temporaryRoot);
-                self::$temporaryRoot = null;
+        }
+        self::$sourceRoot = null;
+        if (self::$temporaryRoot !== null) {
+            self::removeTree(self::$temporaryRoot);
+            self::$temporaryRoot = null;
+        }
+    }
+
+    private static function temporaryRoot(): string
+    {
+        if (self::$temporaryRoot !== null) {
+            return self::$temporaryRoot;
+        }
+
+        for ($attempt = 0; $attempt < 5; ++$attempt) {
+            $candidate = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-' . bin2hex(random_bytes(12));
+            if (mkdir($candidate, 0700)) {
+                return self::$temporaryRoot = $candidate;
             }
         }
+
+        throw new RuntimeException('Cannot create an isolated PHP-Parser directory.');
     }
 
     private static function prepareSource(string $sourceRoot, string $temporaryRoot, string $relative): void

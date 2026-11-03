@@ -87,6 +87,63 @@ PHP);
         self::assertSame(['Fixture\Virion\value'], $symbols->functions);
     }
 
+    public function test_imported_functions_are_not_reported_as_declarations(): void
+    {
+        $path = $this->temporaryDirectory . '/ImportedFunctions.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+use function strlen;
+use function count as item_count;
+
+final class Value
+{
+    public static function length(string $value): int
+    {
+        return strlen($value) + item_count([$value]);
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame([], $symbols->functions);
+        self::assertSame([], $symbols->unconditionalFunctions);
+    }
+
+    public function test_commas_inside_constant_expressions_do_not_create_symbols(): void
+    {
+        $path = $this->temporaryDirectory . '/Constants.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+const VALUES = [1, Existing::class, true];
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\VALUES'], $symbols->constants);
+    }
+
+    public function test_duplicate_function_declarations_are_preserved_for_validation(): void
+    {
+        $path = $this->temporaryDirectory . '/DuplicateFunctions.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+function helper(): void {}
+function helper(): void {}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\helper', 'Fixture\Virion\helper'], $symbols->functions);
+        self::assertSame(['Fixture\Virion\helper', 'Fixture\Virion\helper'], $symbols->unconditionalFunctions);
+    }
+
     public function test_interpolated_string_does_not_end_a_class_scope(): void
     {
         $path = $this->temporaryDirectory . '/InterpolatedString.php';

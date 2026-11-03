@@ -117,7 +117,8 @@ final class PhpSourceInspector
                 }
             } elseif ($id === T_FUNCTION) {
                 $classBodyDepth = $classBraceDepths === [] ? null : end($classBraceDepths);
-                if ($classBodyDepth === null || $classBodyDepth !== $braceDepth) {
+                if (($classBodyDepth === null || $classBodyDepth !== $braceDepth)
+                    && $previousSignificant !== T_USE) {
                     $name = $this->readDeclarationName($tokens, $index);
                     if ($name !== null) {
                         $fullName = ltrim($namespace . '\\' . $name, '\\');
@@ -141,9 +142,9 @@ final class PhpSourceInspector
         return new PhpFileSymbols(
             $classes,
             $namespaces,
-            array_values(array_unique($functions)),
+            $functions,
             array_values(array_unique($constants)),
-            array_values(array_unique($unconditionalFunctions)),
+            $unconditionalFunctions,
         );
     }
 
@@ -317,13 +318,40 @@ final class PhpSourceInspector
     {
         $constants = [];
         $expectName = true;
+        $squareDepth = 0;
+        $parenthesisDepth = 0;
+        $braceDepth = 0;
         $count = count($tokens);
         for (++$index; $index < $count; ++$index) {
             $token = $tokens[$index];
             if ($token === ';') {
                 break;
             }
-            if ($token === ',') {
+            if ($token === '[') {
+                ++$squareDepth;
+                continue;
+            }
+            if ($token === ']') {
+                --$squareDepth;
+                continue;
+            }
+            if ($token === '(') {
+                ++$parenthesisDepth;
+                continue;
+            }
+            if ($token === ')') {
+                --$parenthesisDepth;
+                continue;
+            }
+            if ($token === '{') {
+                ++$braceDepth;
+                continue;
+            }
+            if ($token === '}') {
+                --$braceDepth;
+                continue;
+            }
+            if ($token === ',' && $squareDepth === 0 && $parenthesisDepth === 0 && $braceDepth === 0) {
                 $expectName = true;
                 continue;
             }

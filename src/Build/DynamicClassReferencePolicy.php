@@ -56,26 +56,6 @@ use function substr;
  */
 final class DynamicClassReferencePolicy
 {
-    /**
-     * Allows the target type argument to is_a() when PHP's allow_string argument is omitted.
-     * With its default false value, the dynamic target type is only compared; it is not loaded.
-     */
-    public static function allowsNonAutoloadingIsATypeArgument(FuncCall $node): bool
-    {
-        $name = $node->name;
-        $argument = self::argument($node, 1, 'class');
-        if (!$name instanceof Name || self::resolvedName($name) !== 'is_a'
-            || count($node->args) !== 2 || $argument === null
-            || $argument->unpack || !$argument->value instanceof Variable) {
-            return false;
-        }
-
-        $resolvedName = $name->getAttribute('resolvedName');
-        return $name->isFullyQualified()
-            || ($resolvedName instanceof Name && $resolvedName->isFullyQualified()
-                && strtolower(ltrim($resolvedName->toString(), '\\')) === 'is_a');
-    }
-
     public static function resolvedName(Name $name): string
     {
         $resolved = $name->getAttribute('resolvedName');
@@ -174,12 +154,6 @@ final class DynamicClassReferencePolicy
         }
 
         return null;
-    }
-
-    /** The variable class operand of instanceof performs a type check without autoloading. */
-    public static function allowsNonAutoloadingInstanceofTarget(Instanceof_ $node): bool
-    {
-        return $node->class instanceof Variable && is_string($node->class->name);
     }
 
     /**

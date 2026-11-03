@@ -125,7 +125,7 @@ PHP);
         }
     }
 
-    public function test_named_static_class_arguments_and_aliased_non_autoloading_check_are_allowed(): void
+    public function test_named_static_class_arguments_are_allowed(): void
     {
         $directory = $this->temporaryDirectory . '/src';
         $this->filesystem->ensureDirectory($directory);
@@ -133,10 +133,8 @@ PHP);
         file_put_contents($path, <<<'PHP'
 <?php
 namespace Fixture;
-use function is_a as matches;
 class_exists(autoload: false, class: \Shared\Virion\Greeting::class);
 is_subclass_of(class: \Shared\Virion\Greeting::class, object_or_class: new \stdClass());
-matches(class: $className, object_or_class: $value);
 PHP);
         $shader = new NamespaceShader();
 
@@ -148,7 +146,7 @@ PHP);
         self::assertSame(2, substr_count($result, '\\Fixture\\Shade\\Shared\\Greeting::class'));
     }
 
-    public function test_dynamic_is_a_target_type_is_allowed_with_default_non_autoloading_mode(): void
+    public function test_dynamic_is_a_target_type_is_rejected_even_with_default_non_autoloading_mode(): void
     {
         $directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
         $this->filesystem->ensureDirectory($directory);
@@ -168,25 +166,11 @@ final class Matcher
 }
 PHP);
 
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('dynamic class-name argument to is_a()');
+
         $shader = new NamespaceShader();
         $shader->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
-        $shader->assertNoNamespaceReferences($directory, ['Shared\Virion']);
-
-        $result = file_get_contents($path);
-        self::assertIsString($result);
-        self::assertStringContainsString('is_a($throwable, $class)', $result);
-
-        $autoloaded = [];
-        $autoload = static function (string $className) use (&$autoloaded): void {
-            $autoloaded[] = $className;
-        };
-        spl_autoload_register($autoload);
-        try {
-            self::assertFalse(\is_a(new \stdClass(), 'Fixture\\MissingTarget'));
-        } finally {
-            spl_autoload_unregister($autoload);
-        }
-        self::assertSame([], $autoloaded);
     }
 
     /** @dataProvider autoloading_object_or_class_provider */
@@ -278,7 +262,7 @@ PHP);
         yield 'is_a named allow string' => ['return is_a(object_or_class: $class, class: \\stdClass::class, allow_string: true);'];
     }
 
-    public function test_dynamic_instanceof_target_variable_is_allowed_without_autoloading(): void
+    public function test_dynamic_instanceof_target_variable_is_rejected_without_a_static_source(): void
     {
         $directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
         $this->filesystem->ensureDirectory($directory);
@@ -296,29 +280,11 @@ final class Matcher
 }
 PHP);
 
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('dynamic class reference');
+
         $shader = new NamespaceShader();
         $shader->shadeDirectory($directory, ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
-        $shader->assertNoNamespaceReferences($directory, ['Shared\\Virion']);
-
-        $result = file_get_contents($path);
-        self::assertIsString($result);
-        self::assertStringContainsString('$value instanceof $className', $result);
-
-        require_once $path;
-        $autoloaded = [];
-        $autoload = static function (string $className) use (&$autoloaded): void {
-            $autoloaded[] = $className;
-        };
-        spl_autoload_register($autoload);
-        try {
-            $matcherClass = $this->runtimeFixtureClass('Matcher');
-            $matcher = (new \ReflectionClass($matcherClass))->newInstance();
-            $matches = new \ReflectionMethod($matcher, 'matches');
-            self::assertFalse($matches->invoke($matcher, new \stdClass(), 'Fixture\\MissingTarget'));
-        } finally {
-            spl_autoload_unregister($autoload);
-        }
-        self::assertSame([], $autoloaded);
     }
 
     public function test_static_class_map_factory_is_allowed_and_static_values_are_shaded(): void
