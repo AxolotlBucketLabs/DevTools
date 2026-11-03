@@ -71,6 +71,10 @@ See [shared virions](docs/shared-virions.md) for package requirements and versio
 
 The reusable workflow supports push and pull-request builds. Use the [step-level action](docs/github-actions.md#step-level-action) for extra setup or checkouts. PHPStan is off unless you select a level and server source. A complete example lives in `examples/.github/workflows/build.yml`.
 
+## Integrations
+
+- [BedrockNexus](https://bedrocknexus.com/) provides an official [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml) powered by DevTools.
+
 ## Build with a coding agent
 
 Use the [coding agent guide](docs/ai-agent.md) for CLI automation or GitHub workflow setup. An [`AGENTS.md` template](examples/agent/AGENTS.md) is included in the examples ZIP.
