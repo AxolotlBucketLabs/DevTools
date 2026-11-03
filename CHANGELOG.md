@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.2 - 2026-11-04
+
+- Reject virion classes declared only in `.inc` or `.phtml` files when no matching `.php` autoload path exists.
+- Pin first-party GitHub Actions to immutable SHAs and disable checkout credential persistence in every maintained workflow.
+
 ## 2.0.1 - 2026-11-03
 
 - Let the composite action install its own builder and prepared Composer dependencies without requiring the optional `ext-webrtc` extension.

@@ -1,8 +1,8 @@
-# DevTools 2.0.1
+# DevTools 2.0.2
 
-This patch release keeps the v2 workflow contract and makes the composite action usable with PHP environments that do not provide the optional `ext-webrtc` extension.
+This patch release keeps the v2 workflow contract while tightening virion autoload validation and the security posture of the maintained GitHub Actions workflows.
 
 ## Fixes
 
-- The composite action now ignores only `ext-webrtc` when installing its build-time Composer graph and when preparing project dependencies. This extension is not needed by DevTools' build or shading operations.
-- PHPStan server dependencies continue to use the existing `--ignore-platform-reqs` behavior.
+- Virion classes declared only in `.inc` or `.phtml` files are now rejected unless a matching `.php` autoload path or validated `.php` shim exists. This prevents a source folder from being reported as loaded while PocketMine's class loader cannot find the class.
+- Maintained workflows pin `actions/checkout`, `actions/cache`, and artifact actions to immutable commit SHAs. All checkouts disable credential persistence so project build steps do not inherit a writable GitHub token configuration.

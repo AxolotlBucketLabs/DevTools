@@ -149,9 +149,6 @@ final class VirionClassScanner
                 );
             }
             $relative = str_replace('\\', '/', substr($class, strlen($project->manifest->antigen) + 1)) . '.php';
-            if (strtolower(pathinfo($files[0] ?? '', PATHINFO_EXTENSION)) !== 'php') {
-                continue;
-            }
             if (!$this->caseSensitiveFileExists($project->sourceRoot, $relative)) {
                 throw new VirionException(
                     "Cannot load {$project->manifest->name}: expected source file {$project->sourceRoot}/{$relative} for class {$class}. "

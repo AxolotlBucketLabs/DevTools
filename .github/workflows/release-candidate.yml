@@ -32,13 +32,13 @@ jobs:
           fi
 
       - name: Check out candidate source
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.candidate-commit }}
           persist-credentials: false
 
       - name: Check out Axolotl-PM PHP setup helper
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: axolotl-pm/setup-php-action
           ref: b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e
@@ -54,7 +54,7 @@ jobs:
         run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
 
       - name: Restore Composer download cache
-        uses: actions/cache@v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/composer/files
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload release-candidate assets
         id: upload
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: DevTools-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: dist/

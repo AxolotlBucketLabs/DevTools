@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 final class RepositoryMetadataTest extends TestCase
 {
-    private const VERSION = '2.0.1';
+    private const VERSION = '2.0.2';
     private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 
     public function test_release_version_is_synchronized(): void
@@ -100,7 +100,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('repository: ${{ steps.workflow-identity.outputs.repository }}', $reusable);
         self::assertStringContainsString("'.workflow_sha // empty'", $reusable);
         self::assertStringContainsString("'.workflow_repository // empty'", $reusable);
-        self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $reusable));
+        self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $reusable));
         self::assertStringContainsString('artifact-id: ${{ steps.upload.outputs.artifact-id }}', $reusable);
         self::assertStringContainsString('contents: read', $reusable);
         self::assertStringNotContainsString('devtools-ref', $reusable);
@@ -256,7 +256,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertIsString($exampleContents);
         self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
         self::assertStringContainsString('uses: NhanAZ/DevTools@v2', $exampleContents);
-        self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
+        self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
         self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
         self::assertStringNotContainsString('retention-days', $exampleContents);
         self::assertStringNotContainsString('cancel-in-progress: true', $exampleContents);
@@ -293,5 +293,26 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('relative paths resolve from that project', $contents);
         self::assertStringContainsString('writes files directly under the resolved `--out` directory', $contents);
         self::assertStringNotContainsString('selects `plugins/` or `virions/` when the destination is relative to a project', $contents);
+    }
+
+    public function test_workflow_actions_are_immutable_and_checkouts_do_not_persist_tokens(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $paths = array_merge(
+            glob($root . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . '*.yml') ?: [],
+            [$root . DIRECTORY_SEPARATOR . 'examples' . DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR . 'workflows' . DIRECTORY_SEPARATOR . 'build.yml'],
+        );
+        $checkoutCount = 0;
+        $credentialOptOutCount = 0;
+        foreach ($paths as $path) {
+            $contents = file_get_contents($path);
+            self::assertIsString($contents);
+            $checkoutCount += preg_match_all('/uses:\s*actions\\/checkout@[a-f0-9]{40}(?:\s+# [^\r\n]+)?/', $contents);
+            $credentialOptOutCount += preg_match_all('/persist-credentials:\s*false/', $contents);
+            self::assertDoesNotMatchRegularExpression('/uses:\s*actions\\/(?:checkout|cache|upload-artifact|download-artifact)@v/', $contents);
+        }
+
+        self::assertGreaterThan(0, $checkoutCount);
+        self::assertSame($checkoutCount, $credentialOptOutCount);
     }
 }

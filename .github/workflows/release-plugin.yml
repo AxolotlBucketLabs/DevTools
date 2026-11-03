@@ -75,7 +75,7 @@ jobs:
           printf 'sha=%s\nrepository=%s\n' "$WORKFLOW_SHA" "$WORKFLOW_REPOSITORY" >> "$GITHUB_OUTPUT"
 
       - name: Check out release verification tools
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.workflow-identity.outputs.repository }}
           ref: ${{ steps.workflow-identity.outputs.sha }}

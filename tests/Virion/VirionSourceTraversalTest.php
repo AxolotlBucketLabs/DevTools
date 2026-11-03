@@ -170,6 +170,24 @@ PHP);
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }
 
+    public function test_class_declared_only_in_non_php_source_file_is_rejected(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/NonPhp';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Greeting.inc', '<?php namespace Audit\\NonPhp; final class Greeting {}');
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('NonPhpClass', '1.0.0', 'Audit\\NonPhp', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('expected source file');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
     public function test_autoload_shim_must_require_the_actual_class_file(): void
     {
         $source = $this->temporaryDirectory . '/src/Audit/Shim';
