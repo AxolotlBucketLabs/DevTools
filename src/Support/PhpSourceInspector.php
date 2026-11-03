@@ -35,6 +35,7 @@ final class PhpSourceInspector
         $functions = [];
         $constants = [];
         $classBraceDepths = [];
+        $interpolationBraceDepth = 0;
         $pendingClass = false;
         $braceDepth = 0;
         $previousSignificant = null;
@@ -42,6 +43,10 @@ final class PhpSourceInspector
         for ($index = 0; $index < $count; ++$index) {
             $token = $tokens[$index];
             if (!is_array($token)) {
+                if ($token === '}' && $interpolationBraceDepth > 0) {
+                    --$interpolationBraceDepth;
+                    continue;
+                }
                 if ($token === '{') {
                     ++$braceDepth;
                     if ($pendingClass) {
@@ -61,7 +66,9 @@ final class PhpSourceInspector
             }
 
             [$id] = $token;
-            if ($id === T_NAMESPACE) {
+            if ($id === T_CURLY_OPEN || $id === T_DOLLAR_OPEN_CURLY_BRACES) {
+                ++$interpolationBraceDepth;
+            } elseif ($id === T_NAMESPACE) {
                 $namespace = $this->readName($tokens, $index);
                 if (!in_array($namespace, $namespaces, true)) {
                     $namespaces[] = $namespace;

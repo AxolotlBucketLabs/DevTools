@@ -4,23 +4,38 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Loader;
 
+use function array_unique;
+use function array_values;
+
 use FilesystemIterator;
 
 use function is_dir;
 use function is_file;
 
 use NhanAZ\DevTools\Support\Filesystem;
+use NhanAZ\DevTools\Support\PhpSourceInspector;
 use NhanAZ\DevTools\Validation\PluginManifestReader;
 use Phar;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use SplFileInfo;
 
+use function str_ends_with;
+use function str_starts_with;
 use function strtolower;
 
 use Throwable;
 
 final class PluginSourceConflictDetector
 {
-    public function __construct(private readonly PluginManifestReader $manifestReader) {}
+    private readonly PhpSourceInspector $sourceInspector;
+
+    public function __construct(
+        private readonly PluginManifestReader $manifestReader,
+        ?PhpSourceInspector $sourceInspector = null,
+    ) {
+        $this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
+    }
 
     /** @return list<string> */
     public function detect(string $pluginsDirectory): array
@@ -67,5 +82,60 @@ final class PluginSourceConflictDetector
         }
 
         return $warnings;
+    }
+
+    /**
+     * @param list<string> $virionAntigens
+     * @param list<string> $virionClasses
+     * @return list<string>
+     */
+    public function detectVirionConflicts(string $pluginRoot, array $virionAntigens, array $virionClasses): array
+    {
+        $sourceRoot = $pluginRoot . DIRECTORY_SEPARATOR . 'src';
+        if (!is_dir($sourceRoot)) {
+            return [];
+        }
+        $antigens = [];
+        foreach ($virionAntigens as $antigen) {
+            $antigens[strtolower(trim($antigen, '\\'))] = trim($antigen, '\\');
+        }
+        $classes = [];
+        foreach ($virionClasses as $class) {
+            $classes[strtolower(trim($class, '\\'))] = trim($class, '\\');
+        }
+
+        $conflicts = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceRoot, FilesystemIterator::SKIP_DOTS),
+        );
+        foreach ($iterator as $entry) {
+            if (!$entry instanceof SplFileInfo || !$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+                continue;
+            }
+            $symbols = $this->sourceInspector->inspect($entry->getPathname());
+            foreach (array_merge($symbols->classes, $symbols->functions, $symbols->constants) as $declaration) {
+                $key = strtolower(trim($declaration, '\\'));
+                if (isset($classes[$key])) {
+                    $conflicts[] = "Plugin declaration {$declaration} shadows shared virion class {$classes[$key]}.";
+                    continue;
+                }
+                foreach ($antigens as $antigenKey => $antigen) {
+                    if ($this->isNamespaceMember($declaration, $antigenKey)) {
+                        $conflicts[] = "Plugin declaration {$declaration} overlaps shared virion antigen {$antigen}.";
+                        break;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($conflicts));
+    }
+
+    private function isNamespaceMember(string $candidate, string $prefix): bool
+    {
+        $candidate = strtolower(trim($candidate, '\\'));
+        $prefix = strtolower(trim($prefix, '\\'));
+
+        return $candidate === $prefix || str_starts_with($candidate, $prefix . '\\');
     }
 }

@@ -93,7 +93,8 @@ final class PharExtractor
         $this->filesystem->ensureDirectory($stage);
         try {
             if (is_dir($base)) {
-                $this->filesystem->copyTree($base, $stage);
+                $this->filesystem->copyTree($base, $stage, null, true);
+                $this->filesystem->copyPermissions($base, $stage);
             }
             foreach ($pending as [$entry, $relative]) {
                 $target = Path::join($stage, $relative);
@@ -102,6 +103,7 @@ final class PharExtractor
                     throw new BuildException("Cannot write extracted file: {$target}");
                 }
             }
+            $this->filesystem->assertPortableTree($stage);
             if (is_dir($base)) {
                 $backup = Path::join($realParent, '.devtools-extract-backup-' . $nonce);
                 if (!rename($base, $backup)) {

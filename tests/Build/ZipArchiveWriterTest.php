@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Tests\Build;
 
+use NhanAZ\DevTools\Build\ArchiveEntry;
+use NhanAZ\DevTools\Build\BuildException;
 use NhanAZ\DevTools\Build\PharArchiveReader;
 use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Tests\TestCase;
@@ -37,6 +39,23 @@ final class ZipArchiveWriterTest extends TestCase
         (new ZipArchiveWriter($this->filesystem))->write(
             new FakeArchiveReader([]),
             $zip,
+        );
+    }
+
+    public function test_case_conflicting_directory_components_are_rejected(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            self::markTestSkipped('Case-conflicting directories are merged by Windows filesystem semantics.');
+        }
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('case-conflicting path component');
+
+        (new ZipArchiveWriter($this->filesystem))->write(
+            new FakeArchiveReader([
+                new ArchiveEntry('src/Foo/A.php', '<?php'),
+                new ArchiveEntry('src/foo/B.php', '<?php'),
+            ]),
+            $this->temporaryDirectory . '/conflicting.zip',
         );
     }
 }

@@ -183,7 +183,6 @@ runs:
             echo "Each phpstan-server path must contain composer.json and src/. Check $SERVER_PATH." >&2
             exit 2
           fi
-
           echo "Running PHPStan level $INPUT_PHPSTAN against server source $SERVER_PATH ($server_index of ${#SERVER_PATHS[@]})."
           composer install \
             --working-dir="$SERVER_PATH" \
@@ -194,6 +193,11 @@ runs:
             --no-scripts \
             --no-plugins \
             --ignore-platform-reqs
+          PHPSTAN_AUTOLOAD="$SERVER_PATH/vendor/autoload.php"
+          if [ ! -f "$PHPSTAN_AUTOLOAD" ]; then
+            echo "Composer autoload was not installed for PHPStan server $SERVER_PATH." >&2
+            exit 2
+          fi
 
           PHPSTAN_CONFIG="$RUNNER_TEMP/devtools-phpstan-$server_index.neon"
           php "$DEVTOOLS_ACTION_PATH/bin/devtools-phpstan-config.php" \
@@ -204,11 +208,17 @@ runs:
             "--out=$PHPSTAN_CONFIG" \
             "--tmp-dir=$RUNNER_TEMP/devtools-phpstan-cache-$server_index" \
             "${PHPSTAN_SCAN_ARGS[@]}"
-          php "$PHPSTAN_PHAR" analyse \
-            --configuration="$PHPSTAN_CONFIG" \
-            --no-progress \
-            --error-format=table \
-            --memory-limit=1G
+          PHPSTAN_WORKDIR="$RUNNER_TEMP/devtools-phpstan-work-$server_index"
+          mkdir -p "$PHPSTAN_WORKDIR"
+          (
+            cd "$PHPSTAN_WORKDIR"
+            php "$PHPSTAN_PHAR" analyse \
+              --configuration="$PHPSTAN_CONFIG" \
+              --autoload-file="$PHPSTAN_AUTOLOAD" \
+              --no-progress \
+              --error-format=table \
+              --memory-limit=1G
+          )
         done
 
     - name: Build standalone PHAR

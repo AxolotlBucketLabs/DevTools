@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Loader;
 
 use function basename;
+
+use Closure;
+
 use function implode;
 use function is_dir;
 use function is_file;
@@ -30,11 +33,13 @@ final class FolderPluginLoader implements PluginLoader
     /** @var array<string, true> */
     private array $registeredPaths = [];
 
+    /** @param (Closure(string): list<string>)|null $virionConflictChecker */
     public function __construct(
         private readonly ThreadSafeClassLoader $classLoader,
         private readonly PluginManifestReader $manifestReader,
         private readonly PluginProjectValidator $validator,
         ?string $excludedProject = null,
+        private readonly ?Closure $virionConflictChecker = null,
     ) {
         $this->excludedProject = $excludedProject === null ? null : self::normalizePath($excludedProject);
     }
@@ -77,6 +82,14 @@ final class FolderPluginLoader implements PluginLoader
         }
 
         $manifest = $this->manifestReader->read($root . DIRECTORY_SEPARATOR . 'plugin.yml');
+        if ($this->virionConflictChecker !== null) {
+            $conflicts = ($this->virionConflictChecker)($root);
+            if ($conflicts !== []) {
+                throw new RuntimeException(
+                    "Cannot load folder plugin at {$root}: it shadows a loaded shared virion.\n- " . implode("\n- ", $conflicts),
+                );
+            }
+        }
         $this->classLoader->addPath(
             $manifest->description->getSrcNamespacePrefix(),
             $root . DIRECTORY_SEPARATOR . 'src',

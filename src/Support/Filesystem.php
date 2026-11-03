@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Support;
 
+use function chmod;
 use function copy;
 use function dirname;
 use function file_exists;
+use function fileperms;
 
 use FilesystemIterator;
 
@@ -70,7 +72,7 @@ final class Filesystem
     /**
      * @param callable(string): bool|null $include Receives a normalized relative path.
      */
-    public function copyTree(string $source, string $destination, ?callable $include = null): void
+    public function copyTree(string $source, string $destination, ?callable $include = null, bool $preservePermissions = false): void
     {
         if (self::isLink($source)) {
             throw new FilesystemException("Refusing to copy symbolic-link directory: {$source}");
@@ -106,6 +108,17 @@ final class Filesystem
                     throw new FilesystemException("Cannot copy {$entry->getPathname()} to {$target}");
                 }
             }
+            if ($preservePermissions) {
+                $this->copyPermissions($entry->getPathname(), $target);
+            }
+        }
+    }
+
+    public function copyPermissions(string $source, string $destination): void
+    {
+        $permissions = fileperms($source);
+        if ($permissions === false || !chmod($destination, $permissions & 07777)) {
+            throw new FilesystemException("Cannot preserve permissions from {$source} to {$destination}");
         }
     }
 

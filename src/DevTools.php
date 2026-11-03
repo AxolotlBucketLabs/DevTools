@@ -110,8 +110,22 @@ final class DevTools extends PluginBase
         );
         $manager->discoverAndLoad($virionsDirectory, $requirements);
 
+        $sharedVirionAntigens = [];
+        $sharedVirionClasses = [];
+        foreach ($registry->loaded() as $entry) {
+            if ($entry->manifest !== null) {
+                $sharedVirionAntigens[] = $entry->manifest->antigen;
+            }
+            foreach ($entry->classes as $class) {
+                $sharedVirionClasses[] = $class;
+            }
+        }
+        $virionConflictChecker = static function (string $root) use ($sourceConflictDetector, $sharedVirionAntigens, $sharedVirionClasses): array {
+            return $sourceConflictDetector->detectVirionConflicts($root, $sharedVirionAntigens, $sharedVirionClasses);
+        };
+
         $server->getPluginManager()->registerInterface(
-            new FolderPluginLoader($server->getLoader(), $manifestReader, $validator, $ownSourceProject),
+            new FolderPluginLoader($server->getLoader(), $manifestReader, $validator, $ownSourceProject, $virionConflictChecker),
         );
 
         $builder = new PharBuilder(

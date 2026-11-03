@@ -134,6 +134,46 @@ final class Path
         return $candidate === $base || str_starts_with($candidate, $base . '/');
     }
 
+    /** @param list<string> $paths */
+    public static function assertPortablePaths(array $paths): void
+    {
+        /** @var array<string, array{path: string, directory: bool}> $seen */
+        $seen = [];
+        foreach ($paths as $path) {
+            $normalized = self::normalizeRelative($path);
+            $components = explode('/', $normalized);
+            $prefix = [];
+            foreach ($components as $index => $component) {
+                $prefix[] = $component;
+                $relative = implode('/', $prefix);
+                $directory = $index < count($components) - 1;
+                $key = strtolower($relative);
+                if (isset($seen[$key])) {
+                    $previous = $seen[$key];
+                    if ($previous['path'] !== $relative) {
+                        throw new FilesystemException("Cannot stage {$relative}: it has a case-conflicting path component with {$previous['path']}.");
+                    }
+                    if ($previous['directory'] !== $directory) {
+                        throw new FilesystemException("Cannot stage {$relative}: it conflicts with {$previous['path']} as a file and directory path.");
+                    }
+                    if (!$directory) {
+                        throw new FilesystemException("Cannot stage {$relative}: it is duplicated.");
+                    }
+                    continue;
+                }
+                foreach ($seen as $seenKey => $previous) {
+                    if (str_starts_with($key, $seenKey . '/') && !$previous['directory']) {
+                        throw new FilesystemException("Cannot stage {$relative}: it conflicts with file {$previous['path']} as a file and directory path.");
+                    }
+                    if (str_starts_with($seenKey, $key . '/') && !$directory) {
+                        throw new FilesystemException("Cannot stage {$relative}: it conflicts with {$previous['path']} as a file and directory path.");
+                    }
+                }
+                $seen[$key] = ['path' => $relative, 'directory' => $directory];
+            }
+        }
+    }
+
     private static function comparable(string $path): string
     {
         $path = rtrim(str_replace('\\', '/', $path), '/');

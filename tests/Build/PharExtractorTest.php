@@ -198,4 +198,67 @@ final class PharExtractorTest extends TestCase
         self::assertSame('keep', file_get_contents($destination . DIRECTORY_SEPARATOR . 'keep.txt'));
         self::assertFileExists($destination . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php');
     }
+
+    public function test_existing_permissions_survive_extraction(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            self::markTestSkipped('POSIX permission bits are not reliable on Windows.');
+        }
+        $destination = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'private';
+        $nested = $destination . DIRECTORY_SEPARATOR . 'nested';
+        $this->filesystem->ensureDirectory($nested);
+        file_put_contents($nested . DIRECTORY_SEPARATOR . 'credentials.json', 'secret');
+        file_put_contents($destination . DIRECTORY_SEPARATOR . 'script.sh', '#!/bin/sh');
+        chmod($destination, 0700);
+        chmod($nested, 0700);
+        chmod($nested . DIRECTORY_SEPARATOR . 'credentials.json', 0600);
+        chmod($destination . DIRECTORY_SEPARATOR . 'script.sh', 0755);
+
+        (new PharExtractor($this->filesystem))->extract(
+            new FakeArchiveReader([new ArchiveEntry('plugin.yml', 'name: FixturePlugin')]),
+            $destination,
+        );
+
+        self::assertSame(0700, fileperms($destination) & 0777);
+        self::assertSame(0700, fileperms($nested) & 0777);
+        self::assertSame(0600, fileperms($nested . DIRECTORY_SEPARATOR . 'credentials.json') & 0777);
+        self::assertSame(0755, fileperms($destination . DIRECTORY_SEPARATOR . 'script.sh') & 0777);
+    }
+
+    public function test_case_conflicting_directory_components_are_rejected(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            self::markTestSkipped('Case-conflicting directories are merged by Windows filesystem semantics.');
+        }
+        $destination = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'extracted';
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('case-conflicting path component');
+
+        (new PharExtractor($this->filesystem))->extract(
+            new FakeArchiveReader([
+                new ArchiveEntry('src/Foo/A.php', '<?php'),
+                new ArchiveEntry('src/foo/B.php', '<?php'),
+            ]),
+            $destination,
+        );
+    }
+
+    public function test_case_conflict_with_existing_destination_is_rejected(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            self::markTestSkipped('Case-conflicting directories are merged by Windows filesystem semantics.');
+        }
+        $destination = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'extracted';
+        $this->filesystem->ensureDirectory($destination . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Foo');
+        file_put_contents($destination . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Foo' . DIRECTORY_SEPARATOR . 'A.php', '<?php');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('case-conflicting path component');
+
+        (new PharExtractor($this->filesystem))->extract(
+            new FakeArchiveReader([new ArchiveEntry('src/foo/B.php', '<?php')]),
+            $destination,
+        );
+    }
 }

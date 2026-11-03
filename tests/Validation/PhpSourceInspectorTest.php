@@ -86,4 +86,30 @@ PHP);
 
         self::assertSame(['Fixture\Virion\value'], $symbols->functions);
     }
+
+    public function test_interpolated_string_does_not_end_a_class_scope(): void
+    {
+        $path = $this->temporaryDirectory . '/InterpolatedString.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+final class Value
+{
+    public function first(string $value): string
+    {
+        return "{$value}";
+    }
+
+    public function second(): string
+    {
+        return 'second';
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame([], $symbols->functions);
+    }
 }

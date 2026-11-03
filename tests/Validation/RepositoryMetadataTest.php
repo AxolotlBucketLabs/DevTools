@@ -243,6 +243,9 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('devtools-phpstan-$server_index.neon', $actionContents);
         self::assertStringContainsString('devtools-phpstan-cache-$server_index', $actionContents);
         self::assertStringContainsString('PHPSTAN_SCAN_ARGS', $actionContents);
+        self::assertStringContainsString('PHPSTAN_WORKDIR="$RUNNER_TEMP/devtools-phpstan-work-$server_index"', $actionContents);
+        self::assertStringContainsString('PHPSTAN_AUTOLOAD="$SERVER_PATH/vendor/autoload.php"', $actionContents);
+        self::assertStringContainsString('--autoload-file="$PHPSTAN_AUTOLOAD"', $actionContents);
         self::assertStringContainsString('bin/devtools-phpstan-config.php', $actionContents);
         self::assertStringContainsString('vendor/phpstan/phpstan/phpstan.phar', $actionContents);
         self::assertStringContainsString('php "$PHPSTAN_PHAR" analyse', $actionContents);

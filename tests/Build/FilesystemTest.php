@@ -6,6 +6,7 @@ namespace NhanAZ\DevTools\Tests\Build;
 
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\FilesystemException;
+use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Tests\TestCase;
 
 final class FilesystemTest extends TestCase
@@ -52,5 +53,16 @@ final class FilesystemTest extends TestCase
         $this->filesystem->removeTree($source);
         self::assertDirectoryDoesNotExist($source);
         self::assertFileExists($target . '/src/Main.php');
+    }
+
+    public function test_portable_paths_reject_case_conflicting_components(): void
+    {
+        $this->expectException(FilesystemException::class);
+        $this->expectExceptionMessage('case-conflicting path component');
+
+        Path::assertPortablePaths([
+            'src/Foo/A.php',
+            'src/foo/B.php',
+        ]);
     }
 }

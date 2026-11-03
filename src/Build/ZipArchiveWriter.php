@@ -68,6 +68,11 @@ final class ZipArchiveWriter
             $seen[$key] = true;
             $entries[] = [$relative, $entry->contents];
         }
+        try {
+            Path::assertPortablePaths(array_map(static fn(array $entry): string => $entry[0], $entries));
+        } catch (\RuntimeException $error) {
+            throw new BuildException($error->getMessage(), 0, $error);
+        }
 
         $nonce = bin2hex(random_bytes(8));
         $temporary = Path::join($realParent, '.' . basename($output) . '.' . $nonce . '.tmp.zip');

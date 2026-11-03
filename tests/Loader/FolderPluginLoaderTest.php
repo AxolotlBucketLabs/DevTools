@@ -101,4 +101,38 @@ final class FolderPluginLoaderTest extends TestCase
         self::assertStringContainsString('development folder', $warnings[0]);
         self::assertStringContainsString('PHAR', $warnings[0]);
     }
+
+    public function test_plugin_cannot_shadow_a_loaded_shared_virion(): void
+    {
+        $project = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'CollisionPlugin';
+        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion');
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'plugin.yml',
+            "name: CollisionPlugin\nversion: 1.0.0\nmain: Main\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php',
+            "<?php\nfinal class Main extends \\pocketmine\\plugin\\PluginBase {}\n",
+        );
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Value.php',
+            "<?php\nnamespace Shared\\Virion; final class Value {}\n",
+        );
+        [$reader, $validator] = $this->validationServices();
+        $detector = new PluginSourceConflictDetector($reader);
+        $loader = new FolderPluginLoader(
+            new ThreadSafeClassLoader(),
+            $reader,
+            $validator,
+            null,
+            static function (string $root) use ($detector): array {
+                return $detector->detectVirionConflicts($root, ['Shared\\Virion'], ['Shared\\Virion\\Value']);
+            },
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('shadows a loaded shared virion');
+
+        $loader->loadPlugin($project);
+    }
 }
