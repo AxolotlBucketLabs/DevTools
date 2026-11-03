@@ -11,6 +11,7 @@ use function file_put_contents;
 use function is_dir;
 
 use NhanAZ\DevTools\Support\Filesystem;
+use NhanAZ\DevTools\Support\FilesystemException;
 use NhanAZ\DevTools\Support\Path;
 
 use function random_bytes;
@@ -119,6 +120,8 @@ final class PharExtractor
             if ($backup !== null) {
                 $this->filesystem->removeTree($backup);
             }
+        } catch (FilesystemException $error) {
+            throw new BuildException($error->getMessage(), 0, $error);
         } finally {
             if (file_exists($stage) || Filesystem::isLink($stage)) {
                 $this->filesystem->removeTree($stage);
