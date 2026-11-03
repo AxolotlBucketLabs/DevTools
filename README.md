@@ -71,7 +71,11 @@ See [shared virions](docs/shared-virions.md) for package requirements and versio
 
 The reusable workflow supports push and pull-request builds. Use the [step-level action](docs/github-actions.md#step-level-action) for extra setup or checkouts. PHPStan is off unless you select a level and server source. A complete example lives in `examples/.github/workflows/build.yml`.
 
-## Integrations
+## Ecosystem
+
+DevTools is currently verified in 72 public repositories across several plugin
+and virion ecosystems. See the [ecosystem inventory](docs/ecosystem.md) for the
+full project list, snapshot date and detection method.
 
 - [BedrockNexus](https://bedrocknexus.com/) provides an official [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml) powered by DevTools.
 
