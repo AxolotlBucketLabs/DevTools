@@ -281,4 +281,14 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('Do not guess virion repositories', $agentTemplate);
         self::assertStringContainsString('Upload exactly one artifact', $agentTemplate);
     }
+
+    public function test_cli_documentation_matches_relative_extract_paths(): void
+    {
+        $contents = file_get_contents(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'cli.md');
+
+        self::assertIsString($contents);
+        self::assertStringContainsString('relative paths resolve from that project', $contents);
+        self::assertStringContainsString('writes files directly under the resolved `--out` directory', $contents);
+        self::assertStringNotContainsString('selects `plugins/` or `virions/` when the destination is relative to a project', $contents);
+    }
 }

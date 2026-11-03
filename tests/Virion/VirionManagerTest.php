@@ -138,6 +138,42 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('conflicts', strtolower($registry->entries()[1]->message));
     }
 
+    public function test_dependency_cycle_conflict_with_external_virion_prevents_cycle_registration(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $a = $this->copyFixture('SharedVirion', 'virions/A');
+        $b = $this->copyFixture('SharedVirion', 'virions/B');
+        $c = $this->copyFixture('SharedVirion', 'virions/C');
+        foreach ([$a, $b, $c] as $project) {
+            $this->filesystem->removeTree($project . '/src');
+        }
+        $this->filesystem->ensureDirectory($a . '/src/CycleAudit/Shared');
+        $this->filesystem->ensureDirectory($b . '/src/CycleAudit/Shared/B');
+        $this->filesystem->ensureDirectory($c . '/src/CycleAudit/Consumer');
+        file_put_contents($a . '/src/CycleAudit/Shared/Base.php', "<?php\nnamespace CycleAudit\\Shared;\nfinal class Base {}\n");
+        file_put_contents($b . '/src/CycleAudit/Shared/B/Base.php', "<?php\nnamespace CycleAudit\\Shared\\B;\nfinal class Base {}\n");
+        file_put_contents($c . '/src/CycleAudit/Consumer/Consumer.php', "<?php\nnamespace CycleAudit\\Consumer;\nfinal class Consumer extends \\CycleAudit\\Shared\\B\\Base {}\n");
+        file_put_contents($a . '/virion.yml', "name: A\nversion: 1.0.0\nantigen: CycleAudit\\Shared\napi: 5.0.0\n");
+        file_put_contents($b . '/virion.yml', "name: B\nversion: 1.0.0\nantigen: CycleAudit\\Shared\\B\napi: 5.0.0\nvirions:\n  - C\n");
+        file_put_contents($c . '/virion.yml', "name: C\nversion: 1.0.0\nantigen: CycleAudit\\Consumer\napi: 5.0.0\nvirions:\n  - B\n");
+        $registrar = new FakeClassLoaderRegistrar();
+        $registry = new VirionRegistry();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [new VirionRequirement('A', '*', 'cycle-audit')]);
+
+        self::assertCount(1, $registrar->registrations);
+        self::assertCount(1, $registry->loaded());
+        self::assertSame('A', $registry->loaded()[0]->requireManifest()->name);
+        $statuses = [];
+        foreach ($registry->entries() as $entry) {
+            if ($entry->manifest !== null) {
+                $statuses[$entry->manifest->name] = $entry->status;
+            }
+        }
+        self::assertSame(VirionStatus::FAILED, $statuses['B']);
+        self::assertSame(VirionStatus::FAILED, $statuses['C']);
+    }
+
     public function test_one_shared_virion_is_registered_once_and_used_by_two_plugins(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';

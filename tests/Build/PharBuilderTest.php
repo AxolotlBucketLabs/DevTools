@@ -67,7 +67,6 @@ final class PharBuilderTest extends TestCase
         self::assertTrue(isset($phar['plugin.yml']));
         self::assertTrue(isset($phar['LICENSE']));
         self::assertSame('resource included', trim($phar['resources/message.txt']->getContent()));
-        self::assertSame('shared virion resource', trim($phar['resources/devtools-virions/SharedVirion/default.txt']->getContent()));
         self::assertTrue(isset($phar['META-INF/virions/SharedVirion/LICENSE']));
         self::assertStringContainsString($target, $phar['src/Main.php']->getContent());
         $virionPath = 'src/' . str_replace('Fixture/Build/', '', str_replace('\\', '/', $target)) . '/Greeting.php';
@@ -88,6 +87,54 @@ final class PharBuilderTest extends TestCase
         }
         self::assertStringNotContainsString('Shared\Virion', $allPhp);
         self::assertStringNotContainsString(str_replace('\\', '/', $virions), $allPhp);
+    }
+
+    public function test_root_virion_resources_are_rejected_before_building_an_ambiguous_artifact(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $virion = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->ensureDirectory($virion . '/resources');
+        file_put_contents($virion . '/resources/default.txt', 'unsupported root resource');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('root resources');
+        $this->builder()->build($project, $virions, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+    }
+
+    public function test_staging_rejects_a_source_name_that_changes_meaning_when_normalized(): void
+    {
+        if (DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('Literal backslashes are path separators on Windows.');
+        }
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->removeTree($virions . '/SharedVirion/resources');
+        $this->filesystem->ensureDirectory($project . '/resources/directory');
+        file_put_contents($project . '/resources/directory\\file.txt', 'literal backslash');
+        file_put_contents($project . '/resources/directory/file.txt', 'normal directory');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('backslash');
+        $this->builder()->build($project, $virions, $this->temporaryDirectory . '/build');
+    }
+
+    public function test_staging_rejects_case_conflicting_archive_paths(): void
+    {
+        if (DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('Case-conflicting paths cannot coexist on the default Windows filesystem.');
+        }
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->removeTree($virions . '/SharedVirion/resources');
+        file_put_contents($project . '/resources/A.txt', 'upper');
+        file_put_contents($project . '/resources/a.txt', 'lower');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('case-conflicting');
+        $this->builder()->build($project, $virions, $this->temporaryDirectory . '/build');
     }
 
     public function test_existing_output_is_protected(): void
@@ -197,6 +244,7 @@ final class PharBuilderTest extends TestCase
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
         $virion = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->removeTree($virion . '/resources');
         $resource = $project . '/' . $relative;
         $this->filesystem->ensureDirectory(dirname($resource));
         file_put_contents($resource, 'plugin resource');
@@ -207,7 +255,7 @@ final class PharBuilderTest extends TestCase
 
         try {
             $this->builder()->build($project, dirname($virion), $output, true);
-            self::fail('Expected colliding virion resources to be rejected.');
+            self::fail('Expected colliding virion output to be rejected.');
         } catch (BuildException $error) {
             self::assertStringContainsString('collides with an existing', $error->getMessage());
         }
@@ -218,7 +266,6 @@ final class PharBuilderTest extends TestCase
     /** @return iterable<string, array{string, string}> */
     public static function virionOutputCollisionProvider(): iterable
     {
-        yield 'resources' => ['resources/devtools-virions/SharedVirion/default.txt', ''];
         yield 'metadata' => ['META-INF/virions/SharedVirion/LICENSE', "include-paths: [META-INF]\n"];
     }
 

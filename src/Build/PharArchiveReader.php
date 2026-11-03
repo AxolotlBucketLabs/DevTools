@@ -11,15 +11,25 @@ use Throwable;
 
 final class PharArchiveReader implements ArchiveReader
 {
-    private readonly Phar $phar;
+    private Phar $phar;
+    private readonly string $snapshotPath;
 
     public function __construct(string $path)
     {
+        $snapshot = PharSnapshot::create($path);
         try {
-            $this->phar = new Phar($path);
+            $this->phar = new Phar($snapshot);
+            $this->snapshotPath = $snapshot;
         } catch (Throwable $error) {
+            PharSnapshot::remove($snapshot);
             throw new BuildException("Cannot open PHAR {$path}: {$error->getMessage()}", 0, $error);
         }
+    }
+
+    public function __destruct()
+    {
+        unset($this->phar);
+        PharSnapshot::remove($this->snapshotPath);
     }
 
     public function entries(): iterable

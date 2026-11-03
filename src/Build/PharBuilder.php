@@ -151,6 +151,7 @@ final class PharBuilder
                 $this->namespaceShader->shadeDirectory($virionDirectory, $shaded);
             }
             $this->namespaceShader->assertNoNamespaceReferences($stage, $forbiddenStandaloneNamespaces, $shaded);
+            $this->filesystem->assertPortableTree($stage);
             $fileCount = $this->countFiles($stage);
             $this->writePhar($stage, $temporaryPhar);
             $this->validatePhar($temporaryPhar, $manifest, $shaded);
@@ -378,12 +379,10 @@ final class PharBuilder
     private function stageVirionResources(VirionProject $virion, string $stage): void
     {
         $resources = $virion->location . '/resources';
-        if (is_dir($resources)) {
-            $target = $stage . '/resources/devtools-virions/' . $virion->manifest->name;
-            if (file_exists($target)) {
-                throw new BuildException("Virion resource output collides with an existing plugin path: {$target}");
-            }
-            $this->filesystem->copyTree($resources, $target);
+        if (is_dir($resources) && (new FilesystemIterator($resources, FilesystemIterator::SKIP_DOTS))->valid()) {
+            throw new BuildException(
+                "Virion {$virion->manifest->name} has root resources/. Only resources colocated under its source directory retain relative paths when bundled.",
+            );
         }
         $metadata = $stage . '/META-INF/virions/' . $virion->manifest->name;
         if (file_exists($metadata)) {

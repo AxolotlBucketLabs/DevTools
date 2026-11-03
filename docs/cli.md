@@ -25,7 +25,7 @@ php bin/devtools.php extract --artifact=/path/to/SharedGreeting.phar --out=build
 
 `--out` selects an extraction directory for `--format=folder` and a `.zip` filename for `--format=zip`; build `--out` remains a directory. Options use `--name=value`. Unknown, duplicate path and command-inapplicable options fail. Commands never prompt for input. Replacement requires `--overwrite`.
 
-`build --type=plugin` is the default and requires `plugin.yml`. `build --type=virion` requires `virion.yml`. `build --type=both` requires both manifests and writes two role-specific artifacts. A plugin build injects declared virions by AST shading; it does not accept a plugin as a virion dependency. `extract --format=folder` is the default, and selects `plugins/` or `virions/` when the destination is relative to a project. `extract --format=zip` writes a safe ZIP without executing archive code.
+`build --type=plugin` is the default and requires `plugin.yml`. `build --type=virion` requires `virion.yml`. `build --type=both` requires both manifests and writes two role-specific artifacts. A plugin build injects declared virions by AST shading; it does not accept a plugin as a virion dependency. `extract --format=folder` is the default, and writes files directly under the resolved `--out` directory. It does not infer a `plugins/` or `virions/` destination for the CLI; that convention belongs to the server command. `extract --format=zip` writes a safe ZIP without executing archive code.
 
 For supported Composer libraries, install from the reviewed plugin lockfile before preparation.
 

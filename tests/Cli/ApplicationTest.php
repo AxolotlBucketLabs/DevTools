@@ -154,6 +154,20 @@ final class ApplicationTest extends TestCase
         self::assertFileExists($project . '/build/DualLibrary-virion.phar');
     }
 
+    public function test_dual_build_reports_manifest_failure_as_structure_failure(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'invalid-dual');
+        file_put_contents($project . '/plugin.yml', "name: BrokenPlugin\nversion: 1.0.0\napi: 5.0.0\n");
+        file_put_contents($project . '/virion.yml', "name: BrokenVirion\nversion: 1.0.0\nantigen: Broken\\Virion\napi: 5.0.0\n");
+
+        [$code, $result] = $this->cli(['build', '--type=both', '--project=' . $project]);
+
+        self::assertSame(1, $code);
+        self::assertSame('failed', $result['checks']['structure']);
+        self::assertSame('not_run', $result['checks']['dependencies']);
+        self::assertSame('not_run', $result['checks']['artifact']);
+    }
+
     public function test_dual_build_preserves_both_previous_artifacts_when_virion_build_fails(): void
     {
         $project = $this->copyFixture('ValidPlugin', 'dual-atomic');

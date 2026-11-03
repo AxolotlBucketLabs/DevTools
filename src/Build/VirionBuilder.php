@@ -103,7 +103,8 @@ final class VirionBuilder
         $failure = null;
         $result = null;
         try {
-            $this->stage($projectRoot, $stage, $project->manifest->antigen);
+            $this->stage($projectRoot, $stage, $project->manifest->antigen, $project->manifest->name);
+            $this->filesystem->assertPortableTree($stage);
             $fileCount = $this->countFiles($stage);
             $this->writePhar($stage, $temporaryPhar);
             $this->validatePhar($temporaryPhar, $project->manifest->name);
@@ -137,7 +138,7 @@ final class VirionBuilder
         return $result;
     }
 
-    private function stage(string $projectRoot, string $stage, string $antigen): void
+    private function stage(string $projectRoot, string $stage, string $antigen, string $name): void
     {
         $this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $stage . DIRECTORY_SEPARATOR . 'virion.yml');
         $source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
@@ -157,11 +158,11 @@ final class VirionBuilder
             );
         }
         $resources = $projectRoot . DIRECTORY_SEPARATOR . 'resources';
-        if (is_dir($resources)) {
-            $this->filesystem->copyTree(
-                $resources,
-                $stage . DIRECTORY_SEPARATOR . 'resources',
-                static fn(string $relative): bool => !Path::isHiddenOrTemporary($relative),
+        if (!is_file($projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml')
+            && is_dir($resources)
+            && (new FilesystemIterator($resources, FilesystemIterator::SKIP_DOTS))->valid()) {
+            throw new BuildException(
+                "Virion {$name} has root resources/. Only resources colocated under its source directory retain relative paths when bundled.",
             );
         }
         foreach (self::NOTICE_FILES as $notice) {

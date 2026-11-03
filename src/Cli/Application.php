@@ -116,14 +116,15 @@ final class Application
                         $data = $this->inspector->inspect($result->outputPath) + ['project' => $project];
                         $checks['artifact'] = 'passed';
                     } elseif ($command === 'build' && $type === 'both') {
+                        $checks['structure'] = 'failed';
                         $role = $this->roleDetector->detect($project);
                         if ($role !== ProjectRole::DUAL) {
                             throw new BuildException("Build type both requires a project containing both plugin.yml and virion.yml: {$project}");
                         }
-                        $checks['dependencies'] = 'failed';
                         $pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
                         $virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
                         $checks['structure'] = 'passed';
+                        $checks['dependencies'] = 'failed';
                         $config = $this->configResolver->resolve($project, $pluginManifest->description->getName());
                         $virionsResolved = $this->resolver->resolve($config->virions, $virions);
                         $checks['dependencies'] = 'passed';

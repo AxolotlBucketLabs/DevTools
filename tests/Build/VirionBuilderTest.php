@@ -20,6 +20,7 @@ final class VirionBuilderTest extends TestCase
     public function test_builds_and_inspects_a_virion_phar(): void
     {
         $project = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->removeTree($project . '/resources');
         $yaml = new YamlReader();
         $manifestReader = new VirionManifestReader($yaml);
         $result = (new VirionBuilder(
@@ -65,6 +66,22 @@ final class VirionBuilderTest extends TestCase
             new VirionProjectFactory(new VirionManifestReader(new YamlReader())),
             new VirionClassScanner(new PhpSourceInspector()),
         ))->build($project, $project . '/resources/dist');
+    }
+
+    public function test_root_resources_are_rejected_for_a_standalone_virion(): void
+    {
+        $project = $this->copyFixture('SharedVirion', 'virions/RootResources');
+        $this->filesystem->ensureDirectory($project . '/resources');
+        file_put_contents($project . '/resources/default.txt', 'unsupported root resource');
+
+        $this->expectException(\NhanAZ\DevTools\Build\BuildException::class);
+        $this->expectExceptionMessage('root resources');
+        (new VirionBuilder(
+            $this->filesystem,
+            new VirionManifestReader(new YamlReader()),
+            new VirionProjectFactory(new VirionManifestReader(new YamlReader())),
+            new VirionClassScanner(new PhpSourceInspector()),
+        ))->build($project, $this->temporaryDirectory . '/build');
     }
 
     public function test_class_equal_to_antigen_is_rejected_consistently(): void

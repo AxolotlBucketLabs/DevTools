@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Tests\Build;
 
 use NhanAZ\DevTools\Build\ArchiveEntry;
+use NhanAZ\DevTools\Build\ArtifactInspector;
 use NhanAZ\DevTools\Build\BuildException;
 use NhanAZ\DevTools\Build\PharArchiveReader;
 use NhanAZ\DevTools\Build\PharExtractor;
@@ -25,6 +26,43 @@ final class PharExtractorTest extends TestCase
         self::assertGreaterThan(2, $count);
         self::assertFileExists($destination . DIRECTORY_SEPARATOR . 'plugin.yml');
         self::assertSame('resource included', trim((string) file_get_contents($destination . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'message.txt')));
+    }
+
+    public function test_replacing_a_phar_then_reading_it_again_uses_the_new_archive(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $output = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build';
+        $builder = $this->builder();
+        $extractor = new PharExtractor($this->filesystem);
+        $first = $builder->build($project, $virions, $output);
+        $extractor->extract(new PharArchiveReader($first->outputPath), $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'first');
+
+        $mainPath = $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php';
+        $original = file_get_contents($mainPath);
+        self::assertIsString($original);
+        $updated = $original . "\n/* deliberately longer replacement */\n";
+        file_put_contents($mainPath, $updated);
+        $pluginManifestPath = $project . DIRECTORY_SEPARATOR . 'plugin.yml';
+        $pluginManifest = file_get_contents($pluginManifestPath);
+        self::assertIsString($pluginManifest);
+        file_put_contents($pluginManifestPath, str_replace('version: 1.0.0', 'version: 2.0.0', $pluginManifest));
+
+        $second = $builder->build($project, $virions, $output, true);
+        $extractor->extract(new PharArchiveReader($second->outputPath), $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'second');
+
+        $firstMain = file_get_contents($this->temporaryDirectory . DIRECTORY_SEPARATOR . 'first' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php');
+        $secondMain = file_get_contents($this->temporaryDirectory . DIRECTORY_SEPARATOR . 'second' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php');
+        self::assertIsString($firstMain);
+        self::assertIsString($secondMain);
+        self::assertStringNotContainsString('deliberately longer replacement', $firstMain);
+        self::assertStringContainsString('deliberately longer replacement', $secondMain);
+        [$reader] = $this->validationServices();
+        $inspection = (new ArtifactInspector($reader))->inspect($second->outputPath);
+        $plugin = $inspection['plugin'] ?? null;
+        self::assertIsArray($plugin);
+        self::assertSame('2.0.0', $plugin['version'] ?? null);
     }
 
     /** @dataProvider unsafePathProvider */
