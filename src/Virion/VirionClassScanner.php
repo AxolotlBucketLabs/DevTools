@@ -44,7 +44,15 @@ final class VirionClassScanner
             if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
                 continue;
             }
-            $fileClasses = $this->sourceInspector->inspect($entry->getPathname())->classes;
+            $symbols = $this->sourceInspector->inspect($entry->getPathname());
+            foreach (array_merge($symbols->functions, $symbols->constants) as $symbol) {
+                if (!$this->isNamespaceMember($symbol, $project->manifest->antigen)) {
+                    throw new VirionException(
+                        "Cannot load {$project->manifest->name}: declaration {$symbol} is outside antigen {$project->manifest->antigen}.",
+                    );
+                }
+            }
+            $fileClasses = $symbols->classes;
             $classesByFile[$entry->getPathname()] = $fileClasses;
             foreach ($fileClasses as $class) {
                 $classes[] = $class;
@@ -89,6 +97,14 @@ final class VirionClassScanner
         }
 
         return $classes;
+    }
+
+    private function isNamespaceMember(string $candidate, string $prefix): bool
+    {
+        $candidate = strtolower(ltrim($candidate, '\\'));
+        $prefix = strtolower(ltrim($prefix, '\\'));
+
+        return $candidate === $prefix || str_starts_with($candidate, $prefix . '\\');
     }
 
     private function isAutoloadShim(string $expectedPath, string $actualPath): bool

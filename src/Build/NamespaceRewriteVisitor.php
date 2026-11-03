@@ -16,7 +16,6 @@ use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\StaticPropertyFetch;
-use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\InterpolatedStringPart;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
@@ -43,12 +42,6 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
 
     public function enterNode(Node $node): ?Node
     {
-        if ($node instanceof New_ && isset($node->args[0]) && $node->args[0] instanceof Arg
-            && DynamicClassReferencePolicy::allowsCalledClassReflection($node)) {
-            $node->args[0]->value = new Variable('this');
-            return null;
-        }
-
         if ($node instanceof String_ || $node instanceof InterpolatedStringPart) {
             if (!$node instanceof String_ || !DynamicClassReferencePolicy::allowsOriginalClassIdentityString($node)) {
                 foreach ($this->replacements as $original => $replacement) {

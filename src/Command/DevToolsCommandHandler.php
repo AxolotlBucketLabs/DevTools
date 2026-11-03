@@ -10,8 +10,10 @@ use function count;
 use function is_file;
 
 use NhanAZ\DevTools\Build\ArtifactInspector;
+use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\BuildException;
+use NhanAZ\DevTools\Build\DualArtifactBuilder;
 use NhanAZ\DevTools\Build\PharArchiveReader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
@@ -23,6 +25,7 @@ use NhanAZ\DevTools\Build\VirionProjectLocator;
 use NhanAZ\DevTools\Build\VirionResolver;
 use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
+use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Validation\PluginManifestReader;
 use NhanAZ\DevTools\Validation\PluginProjectValidator;
@@ -61,6 +64,7 @@ final class DevToolsCommandHandler
         private readonly ?ProjectRoleDetector $roleDetector = null,
         private readonly ?VirionProjectLocator $virionProjectLocator = null,
         private readonly ?VirionManifestReader $virionManifestReader = null,
+        private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
     ) {}
 
     /** @param list<string> $arguments */
@@ -221,9 +225,21 @@ final class DevToolsCommandHandler
             $sender->sendMessage("Validating and staging dual-role project {$project}...");
             $pluginName = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
             $virionName = $this->virionManifestReader?->read($project . DIRECTORY_SEPARATOR . 'virion.yml')->name ?? basename($project);
-            $plugin = $this->builder->build($project, $this->virionsDirectory, $this->buildDirectory, $overwrite, $pluginName . '-plugin');
-            $virion = $this->virionBuilder->build($project, $this->buildDirectory, $overwrite, $virionName . '-virion');
-            $sender->sendMessage("Built plugin {$plugin->pluginName} and virion {$virion->manifest->name} successfully.\nPlugin output: {$plugin->outputPath}\nVirion output: {$virion->outputPath}");
+            $dualArtifactBuilder = $this->dualArtifactBuilder ?? new DualArtifactBuilder(
+                new Filesystem(),
+                $this->builder,
+                $this->virionBuilder,
+                new ArtifactSetInstaller(),
+            );
+            $artifacts = $dualArtifactBuilder->build(
+                $project,
+                $this->virionsDirectory,
+                $this->buildDirectory,
+                $overwrite,
+                $pluginName . '-plugin',
+                $virionName . '-virion',
+            );
+            $sender->sendMessage("Built dual-role project successfully.\nPlugin output: {$artifacts['plugin']}\nVirion output: {$artifacts['virion']}");
 
             return true;
         }
@@ -261,6 +277,9 @@ final class DevToolsCommandHandler
         }
         $path = $this->locatePhar($selection);
         $detectedType = $this->artifactInspector?->inspect($path)['type'] ?? 'plugin';
+        if (!is_string($detectedType)) {
+            throw new BuildException('Artifact type could not be detected.');
+        }
         if ($type === 'auto') {
             $type = $detectedType;
         }
@@ -269,6 +288,9 @@ final class DevToolsCommandHandler
         }
         if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
             throw new BuildException('Usage: /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]');
+        }
+        if ($this->artifactInspector !== null && !ArtifactInspector::roleMatches($detectedType, $type)) {
+            throw new BuildException("Artifact type {$detectedType} does not match requested type {$type}.");
         }
         $name = basename($path);
         if (str_ends_with(strtolower($name), '.phar')) {

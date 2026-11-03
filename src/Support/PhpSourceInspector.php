@@ -32,11 +32,28 @@ final class PhpSourceInspector
         $namespace = '';
         $namespaces = [];
         $classes = [];
+        $functions = [];
+        $constants = [];
+        $classBraceDepths = [];
+        $pendingClass = false;
+        $braceDepth = 0;
         $previousSignificant = null;
         $count = count($tokens);
         for ($index = 0; $index < $count; ++$index) {
             $token = $tokens[$index];
             if (!is_array($token)) {
+                if ($token === '{') {
+                    ++$braceDepth;
+                    if ($pendingClass) {
+                        $classBraceDepths[] = $braceDepth;
+                        $pendingClass = false;
+                    }
+                } elseif ($token === '}') {
+                    if ($classBraceDepths !== [] && end($classBraceDepths) === $braceDepth) {
+                        array_pop($classBraceDepths);
+                    }
+                    --$braceDepth;
+                }
                 if (trim($token) !== '') {
                     $previousSignificant = $token;
                 }
@@ -49,13 +66,22 @@ final class PhpSourceInspector
                 if (!in_array($namespace, $namespaces, true)) {
                     $namespaces[] = $namespace;
                 }
-            } elseif (
-                in_array($id, [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)
-                && !in_array($previousSignificant, [T_NEW, T_DOUBLE_COLON], true)
-            ) {
+            } elseif (in_array($id, [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)) {
+                $pendingClass = true;
+                if (!in_array($previousSignificant, [T_NEW, T_DOUBLE_COLON], true)) {
+                    $name = $this->readDeclarationName($tokens, $index);
+                    if ($name !== null) {
+                        $classes[] = ltrim($namespace . '\\' . $name, '\\');
+                    }
+                }
+            } elseif ($id === T_FUNCTION && $classBraceDepths === []) {
                 $name = $this->readDeclarationName($tokens, $index);
                 if ($name !== null) {
-                    $classes[] = ltrim($namespace . '\\' . $name, '\\');
+                    $functions[] = ltrim($namespace . '\\' . $name, '\\');
+                }
+            } elseif ($id === T_CONST && $classBraceDepths === []) {
+                foreach ($this->readConstantNames($tokens, $index, $namespace) as $constant) {
+                    $constants[] = $constant;
                 }
             }
 
@@ -64,7 +90,7 @@ final class PhpSourceInspector
             }
         }
 
-        return new PhpFileSymbols($classes, $namespaces);
+        return new PhpFileSymbols($classes, $namespaces, array_values(array_unique($functions)), array_values(array_unique($constants)));
     }
 
     /**
@@ -102,9 +128,44 @@ final class PhpSourceInspector
                 continue;
             }
 
+            if ($token === '&') {
+                continue;
+            }
+
             return is_array($token) && $token[0] === T_STRING ? $token[1] : null;
         }
 
         return null;
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     * @return list<string>
+     */
+    private function readConstantNames(array $tokens, int $index, string $namespace): array
+    {
+        $constants = [];
+        $expectName = true;
+        $count = count($tokens);
+        for (++$index; $index < $count; ++$index) {
+            $token = $tokens[$index];
+            if ($token === ';') {
+                break;
+            }
+            if ($token === ',') {
+                $expectName = true;
+                continue;
+            }
+            if ($token === '=') {
+                $expectName = false;
+                continue;
+            }
+            if ($expectName && is_array($token) && $token[0] === T_STRING) {
+                $constants[] = ltrim($namespace . '\\' . $token[1], '\\');
+                $expectName = false;
+            }
+        }
+
+        return $constants;
     }
 }

@@ -39,15 +39,28 @@ final class VirionResolver
 
         /** @var array<string, list<VirionProject>> $available */
         $available = [];
+        /** @var array<string, list<array{string, VirionProject}>> $candidatesByName */
+        $candidatesByName = [];
         $failures = [];
         $platform = new \NhanAZ\DevTools\Virion\VirionPlatformRequirements();
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
                 $project = $this->projectFactory->open($location);
-                $platform->validateManifest($project->manifest);
-                $available[strtolower($project->manifest->name)][] = $project;
+                $candidatesByName[strtolower($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
                 $failures[] = $error->getMessage();
+            }
+        }
+
+        foreach ($candidatesByName as $nameKey => $candidates) {
+            $preferred = $this->preferredCandidates($candidates);
+            foreach ($preferred as [$location, $project]) {
+                try {
+                    $platform->validateManifest($project->manifest);
+                    $available[$nameKey][] = $project;
+                } catch (Throwable $error) {
+                    $failures[] = "{$location}: {$error->getMessage()}";
+                }
             }
         }
 
@@ -81,5 +94,22 @@ final class VirionResolver
         }
 
         return $projects;
+    }
+
+    /** @param list<array{string, VirionProject}> $candidates
+     * @return list<array{string, VirionProject}>
+     */
+    private function preferredCandidates(array $candidates): array
+    {
+        foreach ($candidates as [, $candidate]) {
+            if (!$candidate->phar) {
+                return array_values(array_filter(
+                    $candidates,
+                    static fn(array $entry): bool => !$entry[1]->phar,
+                ));
+            }
+        }
+
+        return $candidates;
     }
 }

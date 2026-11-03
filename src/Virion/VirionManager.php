@@ -25,6 +25,9 @@ final class VirionManager
     /** @var array<string, 'loading'|'loaded'|'failed'> */
     private array $graphLoadStates = [];
 
+    /** @var array<string, 'checking'|'ready'|'failed'> */
+    private array $graphPreflightStates = [];
+
     public function __construct(
         private readonly VirionDiscovery $discovery,
         private readonly VirionProjectFactory $projectFactory,
@@ -187,6 +190,11 @@ final class VirionManager
     /** @param array<string, array{string, VirionProject}> $selectedProjects */
     private function loadSelectedProject(string $nameKey, array $selectedProjects): bool
     {
+        if (!$this->preflightSelectedProject($nameKey, $selectedProjects)) {
+            $this->graphLoadStates[$nameKey] = 'failed';
+
+            return false;
+        }
         $state = $this->graphLoadStates[$nameKey] ?? null;
         if ($state === 'loaded') {
             return true;
@@ -237,6 +245,77 @@ final class VirionManager
         $this->graphLoadStates[$nameKey] = $loaded ? 'loaded' : 'failed';
 
         return $loaded;
+    }
+
+    /** @param array<string, array{string, VirionProject}> $selectedProjects */
+    private function preflightSelectedProject(string $nameKey, array $selectedProjects): bool
+    {
+        $state = $this->graphPreflightStates[$nameKey] ?? null;
+        if ($state === 'ready') {
+            return true;
+        }
+        if ($state === 'failed') {
+            return false;
+        }
+        if ($state === 'checking') {
+            return true;
+        }
+        if (!isset($selectedProjects[$nameKey])) {
+            $this->graphPreflightStates[$nameKey] = 'failed';
+
+            return false;
+        }
+
+        $this->graphPreflightStates[$nameKey] = 'checking';
+        [$location, $project] = $selectedProjects[$nameKey];
+        foreach ($project->manifest->requirements as $requirement) {
+            $dependencyKey = strtolower($requirement->name);
+            if (!isset($selectedProjects[$dependencyKey])) {
+                $this->recordDependencyFailure(
+                    $location,
+                    $project,
+                    "Required virion {$requirement->name} was not selected for {$project->manifest->name}.",
+                );
+                $this->graphPreflightStates[$nameKey] = 'failed';
+
+                return false;
+            }
+            if ($this->preflightSelectedProject($dependencyKey, $selectedProjects)) {
+                continue;
+            }
+            $dependency = $this->entryForLocation($selectedProjects[$dependencyKey][0]);
+            $detail = $dependency === null ? 'The dependency failed before it could be diagnosed.' : $dependency->message;
+            $this->recordDependencyFailure(
+                $location,
+                $project,
+                "Cannot load {$project->manifest->name}: dependency {$requirement->name} failed. {$detail}",
+            );
+            $this->graphPreflightStates[$nameKey] = 'failed';
+
+            return false;
+        }
+
+        try {
+            $this->assertCompatible($project->manifest);
+            $classes = $this->classScanner->scan($project);
+            if ($classes === []) {
+                throw new VirionException("Cannot load {$project->manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
+            }
+            foreach ($classes as $class) {
+                if (!str_starts_with($class, $project->manifest->antigen . '\\')) {
+                    throw new VirionException("Cannot load {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.");
+                }
+            }
+        } catch (Throwable $error) {
+            $this->recordDependencyFailure($location, $project, $error->getMessage());
+            $this->graphPreflightStates[$nameKey] = 'failed';
+
+            return false;
+        }
+
+        $this->graphPreflightStates[$nameKey] = 'ready';
+
+        return true;
     }
 
     private function recordDependencyFailure(string $location, VirionProject $project, string $message): void

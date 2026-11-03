@@ -120,6 +120,18 @@ final class ApplicationTest extends TestCase
         self::assertFileExists($plugin . '/converted.zip');
     }
 
+    public function test_failed_virion_manifest_reports_structure_failure_in_json(): void
+    {
+        $virion = $this->copyFixture('InvalidVirion', 'invalid-virion');
+
+        [$code, $result] = $this->cli(['build', '--type=virion', '--project=' . $virion]);
+
+        self::assertSame(1, $code);
+        self::assertFalse($result['success']);
+        self::assertSame('failed', $result['checks']['structure']);
+        self::assertSame('not_run', $result['checks']['artifact']);
+    }
+
     public function test_cli_builds_dual_role_project_as_two_artifacts(): void
     {
         $project = $this->copyFixture('ValidPlugin', 'dual');

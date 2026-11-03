@@ -33,6 +33,10 @@ final class VirionVersionConstraintTest extends TestCase
         yield 'tilde next minor' => ['~1.2.3', '1.3.0', false];
         yield 'minor wildcard' => ['1.2.*', '1.2.99', true];
         yield 'major wildcard' => ['1.*', '1.99.0', true];
+        yield 'major wildcard excludes next-major prerelease' => ['1.*', '2.0.0-alpha', false];
+        yield 'caret excludes next-major prerelease' => ['^1.0.0', '2.0.0-alpha', false];
+        yield 'minor wildcard excludes next-minor prerelease' => ['1.2.*', '1.3.0-beta', false];
+        yield 'tilde excludes next-minor prerelease' => ['~1.2.0', '1.3.0-beta', false];
         yield 'comparison range' => ['>=1.2.0 <2.0.0', '1.8.4', true];
         yield 'comparison range upper bound' => ['>=1.2.0 <2.0.0', '2.0.0', false];
         yield 'different prerelease labels are distinct' => ['1.0.0-alpha.1', '1.0.0-a.1', false];

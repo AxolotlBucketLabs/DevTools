@@ -104,6 +104,50 @@ final class DevToolsCommandHandlerTest extends TestCase
         self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.zip');
     }
 
+    public function test_server_dual_build_preserves_both_previous_artifacts_when_virion_build_fails(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'plugins/Dual');
+        $this->filesystem->ensureDirectory($project . '/src/Fixture/Library');
+        file_put_contents(
+            $project . '/src/Fixture/Library/Library.php',
+            "<?php\nnamespace Fixture\\Library;\nfinal class Library {}\n",
+        );
+        file_put_contents(
+            $project . '/virion.yml',
+            "name: DualLibrary\nversion: 1.0.0\nantigen: Fixture\\Library\napi: 5.0.0\n",
+        );
+
+        $messages = $this->command(['build', 'both', 'FixturePlugin']);
+        self::assertStringContainsString('Built dual-role project successfully', $messages);
+        $pluginOutput = $this->temporaryDirectory . '/build/FixturePlugin-plugin.phar';
+        $virionOutput = $this->temporaryDirectory . '/build/DualLibrary-virion.phar';
+        $pluginHash = hash_file('sha256', $pluginOutput);
+        $virionHash = hash_file('sha256', $virionOutput);
+
+        file_put_contents(
+            $project . '/src/Fixture/Library/Library.php',
+            "<?php\nnamespace Fixture;\nfinal class Library {}\n",
+        );
+        $messages = $this->command(['build', 'both', 'FixturePlugin', '--overwrite']);
+
+        self::assertStringContainsString('could not complete', strtolower($messages));
+        self::assertSame($pluginHash, hash_file('sha256', $pluginOutput));
+        self::assertSame($virionHash, hash_file('sha256', $virionOutput));
+    }
+
+    public function test_server_extract_rejects_a_requested_role_that_does_not_match_the_artifact(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/Source');
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $messages = $this->command(['build', 'BuildFixture']);
+        self::assertStringContainsString('Built BuildFixture successfully', $messages);
+
+        $messages = $this->command(['extract', 'BuildFixture.phar', '--type=virion']);
+
+        self::assertStringContainsString('does not match requested type virion', $messages);
+        self::assertDirectoryDoesNotExist($this->temporaryDirectory . '/virions/BuildFixture');
+    }
+
     /** @param list<string> $arguments */
     private function command(array $arguments, string $label = 'devtools'): string
     {
@@ -132,6 +176,7 @@ final class DevToolsCommandHandlerTest extends TestCase
             new ArtifactInspector($reader, $virionManifestReader),
             new ProjectRoleDetector(),
             new VirionProjectLocator($virionDiscovery, $virionFactory),
+            $virionManifestReader,
         );
         $messages = [];
         $sender = $this->createMock(CommandSender::class);

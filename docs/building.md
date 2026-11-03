@@ -52,13 +52,13 @@ Run these commands as an operator.
 
 The artifact is written to server-root `build/MyPlugin.phar`. Existing output is protected. Use `/devtools build MyPlugin --overwrite` only after confirming that replacement is intended.
 
-`build virion <name-or-folder>` writes `build/<VirionName>.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically; use `--type` when a dual-role archive contains both manifests. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`; it creates `<PluginName>-plugin.phar` and `<VirionName>-virion.phar` so each artifact has one unambiguous role.
+`build virion <name-or-folder>` writes `build/<VirionName>.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically; an explicit `--type` must match the artifact role, except that a dual-role archive may be extracted as either role. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`; it creates `<PluginName>-plugin.phar` and `<VirionName>-virion.phar` so each artifact has one unambiguous role.
 
 Server `doctor` checks project structure, build declarations and that project's local dependency selection using the same resolver as the CLI. It does not prove that all installed plugins have compatible shared requirements or that a plugin enabled successfully. Use `/devtools virions` for the actual shared registry and the server log for enable failures. A doctor run does not perform shading, PHPStan or a runtime test.
 
 Unknown or repeated server build and extract options are rejected before writing output. Declared virions are the supported injection boundary: plugin builds shade selected virions into a private namespace; virion builds preserve their own source and do not merge plugins or other virions. A plugin folder supplied as a virion is rejected by virion manifest validation.
 
-Virion discovery prefers a source folder over a same-name PHAR, records the PHAR as skipped and logs the reason. For plugin duplicates, DevTools emits a warning when a folder and PHAR declare the same plugin name. Axolotl-PM 5.51.1 exposes only append-only loader registration, so its built-in PHAR loader can still win that plugin duplicate during server triage; remove the duplicate PHAR or verify the startup log before relying on the folder copy.
+Virion discovery prefers a source folder over a same-name PHAR, records the PHAR as skipped and logs the reason. This preference is applied before platform filtering: if the preferred folder is invalid or incompatible, the build or server load fails instead of silently falling back to an older PHAR. For plugin duplicates, DevTools emits a warning when a folder and PHAR declare the same plugin name. Axolotl-PM 5.51.1 exposes only append-only loader registration, so its built-in PHAR loader can still win that plugin duplicate during server triage; remove the duplicate PHAR or verify the startup log before relying on the folder copy.
 
 ## What the builder validates
 
@@ -66,7 +66,7 @@ Before installing output, DevTools validates the plugin manifest and main class 
 
 The default package includes `plugin.yml`, `src/`, `resources/`, common license and notice files, declared virions, and explicit `include-paths`. It excludes `.git`, `.github`, IDE files, tests, caches, logs, `build/`, ordinary development `vendor/`, temporary files, and undeclared project files.
 
-Builds reject unsafe dynamic class references, affected namespaces stored in strings, ambiguous grouped imports, undeclared development namespaces, and manifest dependencies on DevTools or DEVirion.
+Builds reject unsafe dynamic class references, affected namespaces stored in strings, ambiguous grouped imports, undeclared development namespaces, namespace-level functions or constants outside a virion's antigen, and manifest dependencies on DevTools or DEVirion.
 
 The shader accepts specific dynamic patterns whose behavior it can verify:
 
@@ -75,6 +75,7 @@ The shader accepts specific dynamic patterns whose behavior it can verify:
 - Annotated object-class expressions such as `match ($object::class)` or an error message containing `$object::class`. The annotation does not permit dynamic static operations.
 - Unannotated `return $object::class` immediately after `$object instanceof StaticClass || throw ...` in the same function.
 - Packaging sentinels in the exact form `__CLASS__ !== 'original\\Class'`.
+- The late-bound `get_called_class()` plus `ReflectionClass($className)` pattern remains unchanged; DevTools does not replace `$className` with `$this`, because closures may be rebound without an object.
 
 Conditional guards, reassignment after validation, mutable class maps, and unrelated class-name strings do not satisfy these rules. Successful dependency preparation alone does not prove that source can be shaded.
 

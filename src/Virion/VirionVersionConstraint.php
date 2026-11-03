@@ -162,8 +162,21 @@ final class VirionVersionConstraint
 
     private function between(string $version, string $minimum, string $maximum): bool
     {
-        return self::compareVersions($version, $minimum) >= 0
-            && self::compareVersions($version, $maximum) < 0;
+        if (self::compareVersions($version, $minimum) < 0 || self::compareVersions($version, $maximum) >= 0) {
+            return false;
+        }
+
+        return !($this->isPrerelease($version) && $this->numericCore($version) === $maximum);
+    }
+
+    private function isPrerelease(string $version): bool
+    {
+        return str_contains(explode('+', $version, 2)[0], '-');
+    }
+
+    private function numericCore(string $version): string
+    {
+        return explode('-', explode('+', $version, 2)[0], 2)[0];
     }
 
     /** @return array{string, string, string} */

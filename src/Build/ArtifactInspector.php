@@ -15,6 +15,11 @@ final class ArtifactInspector
         private readonly ?VirionManifestReader $virionManifestReader = null,
     ) {}
 
+    public static function roleMatches(string $detected, string $requested): bool
+    {
+        return $detected === $requested || $detected === ProjectRole::DUAL->value;
+    }
+
     /** @return array<string, mixed> */
     public function inspect(string $path): array
     {

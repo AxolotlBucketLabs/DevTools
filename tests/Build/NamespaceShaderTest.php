@@ -576,8 +576,8 @@ PHP);
 
         $result = file_get_contents($path);
         self::assertIsString($result);
-        self::assertStringContainsString('new ReflectionClass($this)', $result);
-        self::assertStringNotContainsString('new ReflectionClass($className)', $result);
+        self::assertStringContainsString('new ReflectionClass($className)', $result);
+        self::assertStringNotContainsString('new ReflectionClass($this)', $result);
 
         require_once $path;
         $threadClass = $this->runtimeFixtureClass('ConcreteThread');

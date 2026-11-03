@@ -84,6 +84,33 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('MissingDependency is missing', $registry->entries()[0]->message);
     }
 
+    public function test_failed_member_of_dependency_cycle_prevents_cycle_registration(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $a = $this->copyFixture('SharedVirion', 'virions/A');
+        $b = $this->copyFixture('SharedVirion', 'virions/B');
+        $this->filesystem->removeTree($a . '/src');
+        $this->filesystem->removeTree($b . '/src');
+        $this->filesystem->ensureDirectory($a . '/src/Cycle/A');
+        $this->filesystem->ensureDirectory($b . '/src/Cycle/B');
+        file_put_contents($a . '/src/Cycle/A/Wrong.php', "<?php\nnamespace Cycle\\A;\nfinal class Base {}\n");
+        file_put_contents($b . '/src/Cycle/B/Child.php', "<?php\nnamespace Cycle\\B;\nfinal class Child {}\n");
+        file_put_contents($a . '/virion.yml', "name: A\nversion: 1.0.0\nantigen: Cycle\\A\napi: 5.0.0\nvirions:\n  - B\n");
+        file_put_contents($b . '/virion.yml', "name: B\nversion: 1.0.0\nantigen: Cycle\\B\napi: 5.0.0\nvirions:\n  - A\n");
+        $registrar = new FakeClassLoaderRegistrar();
+        $registry = new VirionRegistry();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('A', '*', 'cycle-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertCount(2, $registry->entries());
+        self::assertStringContainsString('expected', strtolower($registry->entries()[0]->message));
+        self::assertStringContainsString('dependency', strtolower($registry->entries()[1]->message));
+    }
+
     public function test_one_shared_virion_is_registered_once_and_used_by_two_plugins(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';

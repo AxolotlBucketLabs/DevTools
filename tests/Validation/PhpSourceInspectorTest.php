@@ -50,4 +50,21 @@ PHP);
         self::assertSame(['Fixture\\Actual', 'Fixture\\Contract', 'Fixture\\Behavior', 'Fixture\\Choice', 'GlobalClass'], $symbols->classes);
         self::assertSame(['Fixture', ''], $symbols->namespaces);
     }
+
+    public function test_methods_inside_anonymous_classes_are_not_namespace_functions(): void
+    {
+        $path = $this->temporaryDirectory . '/AnonymousClass.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+new class {
+    public function method(): void {}
+};
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame([], $symbols->functions);
+    }
 }

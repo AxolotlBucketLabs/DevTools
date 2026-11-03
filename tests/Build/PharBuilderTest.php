@@ -373,6 +373,35 @@ final class PharBuilderTest extends TestCase
         self::assertStringContainsString('selected-1.7', $virionSource);
     }
 
+    public function test_incompatible_preferred_folder_does_not_fallback_to_a_phar(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions:\n  - SharedVirion\n");
+        $folder = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        file_put_contents(
+            $folder . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 2.0.0\nantigen: Shared\\Virion\napi: 5.0.0\ncomposer-platform:\n  php: '>=9.0'\n",
+        );
+        $pharSource = $this->copyFixture('SharedVirion', 'source/SharedVirion');
+        file_put_contents(
+            $pharSource . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        $pharPath = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions' . DIRECTORY_SEPARATOR . 'SharedVirion.phar';
+        $phar = new Phar($pharPath);
+        $phar->buildFromDirectory($pharSource);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        unset($phar);
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('no valid virion with that name exists');
+        $this->builder()->build(
+            $project,
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build',
+        );
+    }
+
     public function test_plugin_namespace_overlapping_a_virion_is_rejected_before_shading(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
@@ -389,6 +418,43 @@ final class PharBuilderTest extends TestCase
         $this->expectException(BuildException::class);
         $this->expectExceptionMessage('overlaps virion antigen');
         $this->builder()->build($project, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions', $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+    }
+
+    public function test_virion_namespace_declarations_outside_antigen_are_rejected(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions:\n  - SharedVirion\n");
+        $virion = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        file_put_contents(
+            $virion . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Greeting.php',
+            <<<'PHP'
+<?php
+namespace Shared\Virion {
+    final class Greeting
+    {
+        public static function message(): string
+        {
+            return \GlobalHelpers\value();
+        }
+    }
+}
+
+namespace GlobalHelpers {
+    function value(): string
+    {
+        return 'shared';
+    }
+}
+PHP,
+        );
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('declaration GlobalHelpers\\value is outside antigen');
+        $this->builder()->build(
+            $project,
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build',
+        );
     }
 
     public function test_standalone_build_rejects_devtools_dependency(): void

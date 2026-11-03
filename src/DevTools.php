@@ -9,7 +9,9 @@ use Closure;
 use function is_file;
 
 use NhanAZ\DevTools\Build\ArtifactInspector;
+use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
+use NhanAZ\DevTools\Build\DualArtifactBuilder;
 use NhanAZ\DevTools\Build\NamespaceShader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
@@ -122,6 +124,7 @@ final class DevTools extends PluginBase
             new NamespaceShader(),
             $sourceInspector,
         );
+        $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner);
         $this->commandHandler = new DevToolsCommandHandler(
             $this,
             $pluginDiscovery,
@@ -136,12 +139,18 @@ final class DevTools extends PluginBase
             $pluginsDirectory,
             $virionsDirectory,
             $buildDirectory,
-            new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner),
+            $virionBuilder,
             new ZipArchiveWriter($filesystem),
             new ArtifactInspector($manifestReader, $virionManifestReader),
             new ProjectRoleDetector(),
             new VirionProjectLocator($virionDiscovery, $virionFactory),
             $virionManifestReader,
+            new DualArtifactBuilder(
+                $filesystem,
+                $builder,
+                $virionBuilder,
+                new ArtifactSetInstaller(),
+            ),
         );
 
         foreach ($registry->entries() as $entry) {

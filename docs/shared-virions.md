@@ -21,7 +21,7 @@ api: 5.0.0
 # php: 8.4               optional PHP compatibility
 ```
 
-`name`, semantic `version`, `antigen`, and at least one of `api` or `php` are required. Every declared class must remain below the antigen and match its path and letter case.
+`name`, semantic `version`, `antigen`, and at least one of `api` or `php` are required. Every declared class, namespace-level function and namespace-level constant must remain below the antigen and match its path and letter case where applicable.
 
 ## Plugin declaration and selection
 
@@ -45,7 +45,7 @@ Registration is visible to existing and future async workers because Axolotl-PM 
 
 ## Namespace and class conflicts
 
-DevTools rejects overlapping antigens, duplicate classes, classes outside an antigen, non-autoloadable casing, duplicate selected versions, invalid packages, and incompatible versions before registration. PHP cannot unload a registered class, so change virion code or version and restart the process rather than attempting hot reload.
+DevTools rejects overlapping antigens, duplicate classes, declarations outside an antigen, non-autoloadable casing, duplicate selected versions, invalid packages, and incompatible versions before registration. PHP cannot unload a registered class, so change virion code or version and restart the process rather than attempting hot reload.
 
 See the tested [end-to-end example](../examples/README.md).
 

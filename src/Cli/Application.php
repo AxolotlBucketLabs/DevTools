@@ -105,6 +105,8 @@ final class Application
                     }
                 } else {
                     if ($command === 'build' && $type === 'virion') {
+                        $checks['structure'] = 'failed';
+                        $this->virionManifestReader->read($project . '/virion.yml');
                         $checks['structure'] = 'passed';
                         $checks['artifact'] = 'failed';
                         $result = $this->virionBuilder->build($project, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
@@ -284,7 +286,7 @@ final class Application
         if (!is_string($detected)) {
             throw new InvalidArgumentException('Artifact type could not be detected.');
         }
-        if ($detected !== $type && !($type === 'plugin' && $detected === 'dual') && !($type === 'virion' && $detected === 'dual')) {
+        if (!ArtifactInspector::roleMatches($detected, $type)) {
             throw new InvalidArgumentException("Artifact type {$detected} does not match requested type {$type}.");
         }
     }
