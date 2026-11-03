@@ -25,7 +25,6 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\UseUse;
 use PhpParser\NodeVisitorAbstract;
 
-use function preg_match_all;
 use function str_starts_with;
 use function strlen;
 use function strpos;
@@ -46,7 +45,7 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
         if ($node instanceof String_ || $node instanceof InterpolatedStringPart) {
             if (!$node instanceof String_ || !DynamicClassReferencePolicy::allowsOriginalClassIdentityString($node)) {
                 foreach ($this->replacements as $original => $replacement) {
-                    if ($this->containsSerializedClassReference($node->value, $original)) {
+                    if (SerializedClassReferenceDetector::contains($node->value, $original)) {
                         throw new BuildException(
                             "Cannot safely shade namespace {$original}: it appears in a serialized class reference on line {$node->getStartLine()}. "
                             . 'Serialized class names cannot be rewritten safely because their byte lengths are encoded.',
@@ -207,22 +206,6 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
                 return true;
             }
             $offset = $position + 1;
-        }
-
-        return false;
-    }
-
-    private function containsSerializedClassReference(string $value, string $namespace): bool
-    {
-        $matches = [];
-        if (preg_match_all('/(?:O|C|E):(\d+):"([^"]+)":/i', $value, $matches, PREG_SET_ORDER) === false) {
-            return false;
-        }
-        foreach ($matches as $match) {
-            $class = str_replace('\\\\', '\\', $match[2]);
-            if ((int) $match[1] === strlen($class) && $this->matchesNamespace($class, $namespace)) {
-                return true;
-            }
         }
 
         return false;

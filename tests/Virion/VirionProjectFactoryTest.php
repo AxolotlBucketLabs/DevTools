@@ -38,6 +38,14 @@ final class VirionProjectFactoryTest extends TestCase
         $this->factory()->open($project);
     }
 
+    public function test_folder_manifest_name_is_read_even_when_another_field_is_invalid(): void
+    {
+        $project = $this->copyFixture('SharedVirion');
+        file_put_contents($project . '/virion.yml', "name: StableName\nversion: INVALID\nantigen: Shared\\Virion\napi: 5.0.0\n");
+
+        self::assertSame('StableName', $this->factory()->readFolderManifestName($project));
+    }
+
     private function factory(): VirionProjectFactory
     {
         return new VirionProjectFactory(new VirionManifestReader(new YamlReader()));

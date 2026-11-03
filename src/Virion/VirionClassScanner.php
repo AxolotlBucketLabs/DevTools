@@ -35,10 +35,18 @@ final class VirionClassScanner
     /** @return list<string> */
     public function scan(VirionProject $project): array
     {
+        return $this->scanSymbols($project)->classes;
+    }
+
+    public function scanSymbols(VirionProject $project): VirionSourceSymbols
+    {
         if (Filesystem::isLink($project->sourceRoot)) {
             throw new VirionException("Cannot load {$project->manifest->name}: symbolic link found at {$project->sourceRoot}.");
         }
         $classes = [];
+        $functions = [];
+        $unconditionalFunctions = [];
+        $constants = [];
         /** @var array<string, list<string>> $classesByFile */
         $classesByFile = [];
         $iterator = new RecursiveIteratorIterator(
@@ -63,6 +71,9 @@ final class VirionClassScanner
                     );
                 }
             }
+            $functions = array_merge($functions, $symbols->functions);
+            $unconditionalFunctions = array_merge($unconditionalFunctions, $symbols->unconditionalFunctions);
+            $constants = array_merge($constants, $symbols->constants);
             $fileClasses = $symbols->classes;
             $classesByFile[$entry->getPathname()] = $fileClasses;
             foreach ($fileClasses as $class) {
@@ -122,7 +133,12 @@ final class VirionClassScanner
             }
         }
 
-        return $classes;
+        return new VirionSourceSymbols(
+            $classes,
+            array_values(array_unique($functions)),
+            array_values(array_unique($constants)),
+            array_values(array_unique($unconditionalFunctions)),
+        );
     }
 
     private function isNamespaceChild(string $candidate, string $prefix): bool

@@ -11,6 +11,7 @@ use function ltrim;
 
 use ParseError;
 
+use function strtolower;
 use function token_get_all;
 use function trim;
 
@@ -33,10 +34,15 @@ final class PhpSourceInspector
         $namespaces = [];
         $classes = [];
         $functions = [];
+        $unconditionalFunctions = [];
         $constants = [];
         $classBraceDepths = [];
+        $conditionalBraceDepths = [];
         $interpolationBraceDepth = 0;
         $pendingClass = false;
+        $pendingClassParenthesisDepth = null;
+        $pendingConditional = false;
+        $parenthesisDepth = 0;
         $braceDepth = 0;
         $previousSignificant = null;
         $count = count($tokens);
@@ -47,17 +53,31 @@ final class PhpSourceInspector
                     --$interpolationBraceDepth;
                     continue;
                 }
-                if ($token === '{') {
+                if ($token === '(') {
+                    ++$parenthesisDepth;
+                } elseif ($token === ')') {
+                    --$parenthesisDepth;
+                } elseif ($token === '{') {
                     ++$braceDepth;
-                    if ($pendingClass) {
+                    if ($pendingClass && $pendingClassParenthesisDepth === $parenthesisDepth) {
                         $classBraceDepths[] = $braceDepth;
                         $pendingClass = false;
+                        $pendingClassParenthesisDepth = null;
+                    }
+                    if ($pendingConditional) {
+                        $conditionalBraceDepths[] = $braceDepth;
+                        $pendingConditional = false;
                     }
                 } elseif ($token === '}') {
+                    if ($conditionalBraceDepths !== [] && end($conditionalBraceDepths) === $braceDepth) {
+                        array_pop($conditionalBraceDepths);
+                    }
                     if ($classBraceDepths !== [] && end($classBraceDepths) === $braceDepth) {
                         array_pop($classBraceDepths);
                     }
                     --$braceDepth;
+                } elseif ($token === ';') {
+                    $pendingConditional = false;
                 }
                 if (trim($token) !== '') {
                     $previousSignificant = $token;
@@ -73,8 +93,12 @@ final class PhpSourceInspector
                 if (!in_array($namespace, $namespaces, true)) {
                     $namespaces[] = $namespace;
                 }
+            } elseif ($id === T_IF) {
+                $pendingConditional = $this->conditionUsesFunctionExists($tokens, $index);
             } elseif (in_array($id, [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)) {
-                $pendingClass = true;
+                $isClassNameReference = $previousSignificant === T_DOUBLE_COLON;
+                $pendingClass = !$isClassNameReference;
+                $pendingClassParenthesisDepth = $pendingClass ? $parenthesisDepth : null;
                 if (!in_array($previousSignificant, [T_NEW, T_DOUBLE_COLON], true)) {
                     $name = $this->readDeclarationName($tokens, $index);
                     if ($name !== null) {
@@ -87,6 +111,9 @@ final class PhpSourceInspector
                     $name = $this->readDeclarationName($tokens, $index);
                     if ($name !== null) {
                         $functions[] = ltrim($namespace . '\\' . $name, '\\');
+                        if ($conditionalBraceDepths === []) {
+                            $unconditionalFunctions[] = ltrim($namespace . '\\' . $name, '\\');
+                        }
                     }
                 }
             } elseif ($id === T_CONST && $classBraceDepths === []) {
@@ -100,7 +127,45 @@ final class PhpSourceInspector
             }
         }
 
-        return new PhpFileSymbols($classes, $namespaces, array_values(array_unique($functions)), array_values(array_unique($constants)));
+        return new PhpFileSymbols(
+            $classes,
+            $namespaces,
+            array_values(array_unique($functions)),
+            array_values(array_unique($constants)),
+            array_values(array_unique($unconditionalFunctions)),
+        );
+    }
+
+    /**
+     * @param list<array{int, string, int}|string> $tokens
+     */
+    private function conditionUsesFunctionExists(array $tokens, int $index): bool
+    {
+        $parentheses = 0;
+        $count = count($tokens);
+        for (++$index; $index < $count; ++$index) {
+            $token = $tokens[$index];
+            if (is_array($token)) {
+                if (in_array($token[0], [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true)
+                    && strtolower(ltrim($token[1], '\\')) === 'function_exists') {
+                    return true;
+                }
+                continue;
+            }
+            if ($token === '(') {
+                ++$parentheses;
+                continue;
+            }
+            if ($token === ')') {
+                --$parentheses;
+                continue;
+            }
+            if ($parentheses === 0 && ($token === '{' || $token === ';' || $token === ':')) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**

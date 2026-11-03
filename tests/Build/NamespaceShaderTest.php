@@ -206,6 +206,29 @@ PHP);
         (new NamespaceShader())->assertNoNamespaceReferences($directory, ['Shared\Virion']);
     }
 
+    public function test_serialized_enum_reference_is_rejected_during_shading(): void
+    {
+        $directory = $this->temporaryDirectory . '/src';
+        $this->filesystem->ensureDirectory($directory);
+        file_put_contents($directory . '/Serialized.php', <<<'PHP'
+<?php
+namespace Fixture;
+
+final class Serialized
+{
+    public static function restore(): mixed
+    {
+        return unserialize('a:1:{i:0;E:25:"Shared\Virion\Mode:Active";}');
+    }
+}
+PHP);
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('serialized class reference');
+
+        (new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+    }
+
     /** @return iterable<string, array{string}> */
     public static function autoloading_object_or_class_provider(): iterable
     {

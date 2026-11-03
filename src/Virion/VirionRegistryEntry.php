@@ -6,7 +6,11 @@ namespace NhanAZ\DevTools\Virion;
 
 final class VirionRegistryEntry
 {
-    /** @param list<string> $classes */
+    /**
+     * @param list<string> $classes
+     * @param list<string> $functions
+     * @param list<string> $constants
+     */
     public function __construct(
         public readonly string $location,
         public readonly ?VirionManifest $manifest,
@@ -14,6 +18,8 @@ final class VirionRegistryEntry
         public readonly string $message,
         public readonly array $classes = [],
         public readonly bool $asyncSupported = false,
+        public readonly array $functions = [],
+        public readonly array $constants = [],
     ) {}
 
     public function requireManifest(): VirionManifest

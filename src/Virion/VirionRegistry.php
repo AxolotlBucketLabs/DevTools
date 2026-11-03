@@ -20,6 +20,12 @@ final class VirionRegistry
     /** @var array<string, VirionRegistryEntry> */
     private array $loadedByClass = [];
 
+    /** @var array<string, VirionRegistryEntry> */
+    private array $loadedByFunction = [];
+
+    /** @var array<string, VirionRegistryEntry> */
+    private array $loadedByConstant = [];
+
     public function record(VirionRegistryEntry $entry): void
     {
         $this->entries[] = $entry;
@@ -30,6 +36,12 @@ final class VirionRegistry
         $this->loadedByAntigen[strtolower($entry->manifest->antigen)] = $entry;
         foreach ($entry->classes as $class) {
             $this->loadedByClass[strtolower($class)] = $entry;
+        }
+        foreach ($entry->functions as $function) {
+            $this->loadedByFunction[strtolower($function)] = $entry;
+        }
+        foreach ($entry->constants as $constant) {
+            $this->loadedByConstant[$constant] = $entry;
         }
     }
 
@@ -58,5 +70,15 @@ final class VirionRegistry
     public function findByClass(string $class): ?VirionRegistryEntry
     {
         return $this->loadedByClass[strtolower($class)] ?? null;
+    }
+
+    public function findByFunction(string $function): ?VirionRegistryEntry
+    {
+        return $this->loadedByFunction[strtolower($function)] ?? null;
+    }
+
+    public function findByConstant(string $constant): ?VirionRegistryEntry
+    {
+        return $this->loadedByConstant[$constant] ?? null;
     }
 }

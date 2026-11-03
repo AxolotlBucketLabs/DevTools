@@ -32,6 +32,8 @@ These are project-relative runtime files or directories to add to a PHAR. They a
 
 Paths must exist inside the project. Absolute paths, parent traversal, symlinks, build-output overlap, hidden or temporary content, and non-portable Windows path names are rejected. Add only files required at runtime. Do not add `vendor/`, tests, local configuration, credentials, or caches.
 
+Paths that differ only by letter casing are rejected instead of silently replacing one another, because they may refer to different files on case-sensitive systems and the same path on case-insensitive systems.
+
 ## `import-poggit-libraries`
 
 Set this optional boolean to `false` when a project keeps legacy `.poggit.yml` declarations for Poggit but uses its reviewed Composer lock or explicit `devtools.yml` declarations as the DevTools dependency source. It defaults to `true`. This setting only changes DevTools dependency selection; it never downloads the declared libraries. See [dependency preparation](dependencies.md) for the migration workflow.

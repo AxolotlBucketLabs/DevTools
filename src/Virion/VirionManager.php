@@ -8,7 +8,9 @@ use function class_exists;
 
 use Closure;
 
+use function defined;
 use function enum_exists;
+use function function_exists;
 use function implode;
 use function interface_exists;
 use function ksort;
@@ -36,8 +38,8 @@ final class VirionManager
     /** @var array<string, 'checking'|'ready'|'failed'> */
     private array $graphPreflightStates = [];
 
-    /** @var array<string, list<string>> */
-    private array $graphPreflightClasses = [];
+    /** @var array<string, VirionSourceSymbols> */
+    private array $graphPreflightSymbols = [];
 
     public function __construct(
         private readonly VirionDiscovery $discovery,
@@ -339,16 +341,12 @@ final class VirionManager
 
         try {
             $this->assertCompatible($project->manifest);
-            $classes = $this->classScanner->scan($project);
-            if ($classes === []) {
+            $symbols = $this->classScanner->scanSymbols($project);
+            if ($symbols->classes === []) {
                 throw new VirionException("Cannot load {$project->manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
             }
-            foreach ($classes as $class) {
-                if (!str_starts_with($class, $project->manifest->antigen . '\\')) {
-                    throw new VirionException("Cannot load {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.");
-                }
-            }
-            $this->graphPreflightClasses[$nameKey] = $classes;
+            $this->assertPreflightSymbolsAvailable($project, $symbols);
+            $this->graphPreflightSymbols[$nameKey] = $symbols;
         } catch (Throwable $error) {
             $this->recordDependencyFailure($location, $project, $error->getMessage());
             $this->graphPreflightStates[$nameKey] = 'failed';
@@ -367,6 +365,31 @@ final class VirionManager
         foreach (array_keys($selectedProjects) as $nameKey) {
             $this->preflightSelectedProject($nameKey, $selectedProjects);
         }
+
+        do {
+            $changed = false;
+            foreach ($selectedProjects as $nameKey => [$location, $project]) {
+                if (($this->graphPreflightStates[$nameKey] ?? null) !== 'ready') {
+                    continue;
+                }
+                foreach ($project->manifest->requirements as $requirement) {
+                    $dependencyKey = strtolower($requirement->name);
+                    if (($this->graphPreflightStates[$dependencyKey] ?? null) !== 'failed') {
+                        continue;
+                    }
+                    $dependency = $this->entryForLocation($selectedProjects[$dependencyKey][0] ?? '');
+                    $detail = $dependency === null ? 'The dependency failed before it could be diagnosed.' : $dependency->message;
+                    $this->recordDependencyFailure(
+                        $location,
+                        $project,
+                        "Cannot load {$project->manifest->name}: dependency {$requirement->name} failed. {$detail}",
+                    );
+                    $this->graphPreflightStates[$nameKey] = 'failed';
+                    $changed = true;
+                    break;
+                }
+            }
+        } while ($changed);
 
         $readyKeys = [];
         foreach (array_keys($selectedProjects) as $key) {
@@ -427,9 +450,9 @@ final class VirionManager
                         $cycleProject = $selectedProjects[$cycleKey][1];
                         $conflict = $this->describeProjectConflict(
                             $cycleProject->manifest,
-                            $this->graphPreflightClasses[$cycleKey] ?? [],
+                            $this->graphPreflightSymbols[$cycleKey] ?? new VirionSourceSymbols([], [], [], []),
                             $loadedManifest,
-                            $loaded->classes,
+                            new VirionSourceSymbols($loaded->classes, $loaded->functions, $loaded->constants, $loaded->functions),
                         );
                         if ($conflict !== null) {
                             $otherName = $loadedManifest->name;
@@ -529,21 +552,17 @@ final class VirionManager
     {
         return $this->describeProjectConflict(
             $selectedProjects[$leftKey][1]->manifest,
-            $this->graphPreflightClasses[$leftKey] ?? [],
+            $this->graphPreflightSymbols[$leftKey] ?? new VirionSourceSymbols([], [], [], []),
             $selectedProjects[$rightKey][1]->manifest,
-            $this->graphPreflightClasses[$rightKey] ?? [],
+            $this->graphPreflightSymbols[$rightKey] ?? new VirionSourceSymbols([], [], [], []),
         );
     }
 
-    /**
-     * @param list<string> $leftClasses
-     * @param list<string> $rightClasses
-     */
     private function describeProjectConflict(
         VirionManifest $left,
-        array $leftClasses,
+        VirionSourceSymbols $leftSymbols,
         VirionManifest $right,
-        array $rightClasses,
+        VirionSourceSymbols $rightSymbols,
     ): ?string {
         if ($this->isNamespaceMember($left->antigen, $right->antigen)
             || $this->isNamespaceMember($right->antigen, $left->antigen)) {
@@ -551,16 +570,74 @@ final class VirionManager
         }
 
         $rightClassMap = [];
-        foreach ($rightClasses as $class) {
+        foreach ($rightSymbols->classes as $class) {
             $rightClassMap[strtolower($class)] = $class;
         }
-        foreach ($leftClasses as $class) {
+        foreach ($leftSymbols->classes as $class) {
             if (isset($rightClassMap[strtolower($class)])) {
                 return "class {$class} conflicts with {$rightClassMap[strtolower($class)]}";
             }
         }
 
+        $rightFunctionMap = [];
+        foreach ($rightSymbols->unconditionalFunctions as $function) {
+            $rightFunctionMap[strtolower($function)] = $function;
+        }
+        foreach ($leftSymbols->unconditionalFunctions as $function) {
+            if (isset($rightFunctionMap[strtolower($function)])) {
+                return "function {$function} conflicts with {$rightFunctionMap[strtolower($function)]}";
+            }
+        }
+
+        $rightConstantMap = array_fill_keys($rightSymbols->constants, true);
+        foreach ($leftSymbols->constants as $constant) {
+            if (isset($rightConstantMap[$constant])) {
+                return "constant {$constant} conflicts with {$constant}";
+            }
+        }
+
         return null;
+    }
+
+    private function assertPreflightSymbolsAvailable(VirionProject $project, VirionSourceSymbols $symbols): void
+    {
+        foreach ($symbols->classes as $class) {
+            $this->assertClassIsNotLoaded($class, $project->manifest->name);
+            $existing = $this->registry->findByClass($class);
+            if ($existing !== null) {
+                throw new VirionException("Class {$class} is already provided by {$existing->requireManifest()->name}.");
+            }
+        }
+        foreach ($symbols->unconditionalFunctions as $function) {
+            if (function_exists($function)) {
+                $origin = 'the server or another plugin';
+                try {
+                    $file = (new \ReflectionFunction($function))->getFileName();
+                    if ($file !== false) {
+                        $origin = $file;
+                    }
+                } catch (\ReflectionException) {
+                }
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: function {$function} is already loaded from {$origin}; refusing to register a second implementation.",
+                );
+            }
+            $existing = $this->registry->findByFunction($function);
+            if ($existing !== null) {
+                throw new VirionException("Function {$function} is already provided by {$existing->requireManifest()->name}.");
+            }
+        }
+        foreach ($symbols->constants as $constant) {
+            if (defined($constant)) {
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: constant {$constant} is already defined; refusing to register a second implementation.",
+                );
+            }
+            $existing = $this->registry->findByConstant($constant);
+            if ($existing !== null) {
+                throw new VirionException("Constant {$constant} is already provided by {$existing->requireManifest()->name}.");
+            }
+        }
     }
 
     private function recordDependencyFailure(string $location, VirionProject $project, string $message): void
@@ -604,7 +681,8 @@ final class VirionManager
             $project = $this->projectFactory->open($location);
             $manifest = $project->manifest;
             $this->assertCompatible($manifest);
-            $classes = $this->classScanner->scan($project);
+            $symbols = $this->classScanner->scanSymbols($project);
+            $classes = $symbols->classes;
             if ($classes === []) {
                 throw new VirionException("Cannot load {$manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
             }
@@ -624,6 +702,7 @@ final class VirionManager
                     throw new VirionException("Class {$class} is already provided by {$existingClass->requireManifest()->name}.");
                 }
             }
+            $this->assertPreflightSymbolsAvailable($project, $symbols);
 
             $existingName = $this->registry->findByName($manifest->name);
             if ($existingName !== null) {
@@ -640,7 +719,16 @@ final class VirionManager
             $this->registrar->register($manifest->antigen, $project->sourceRoot);
             $async = $this->registrar->supportsAsyncWorkers();
             $message = "Loaded {$manifest->name} {$manifest->version} ({$manifest->antigen}). " . $this->registrar->asyncSupportDescription();
-            $entry = new VirionRegistryEntry($location, $manifest, VirionStatus::LOADED, $message, $classes, $async);
+            $entry = new VirionRegistryEntry(
+                $location,
+                $manifest,
+                VirionStatus::LOADED,
+                $message,
+                $classes,
+                $async,
+                $symbols->unconditionalFunctions,
+                $symbols->constants,
+            );
         } catch (Throwable $error) {
             $manifest = isset($project) ? $project->manifest : null;
             $status = $this->looksLikeConflict($error->getMessage()) ? VirionStatus::CONFLICT : VirionStatus::FAILED;

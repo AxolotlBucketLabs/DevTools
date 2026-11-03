@@ -217,7 +217,7 @@ final class VirionManagerTest extends TestCase
         $this->filesystem->ensureDirectory($virions . DIRECTORY_SEPARATOR . 'Shared');
         file_put_contents(
             $virions . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'virion.yml',
-            "name: Shared\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+            "name: Shared\nversion: INVALID\nantigen: Shared\\Virion\napi: 5.0.0\n",
         );
         $phar = new Phar($virions . DIRECTORY_SEPARATOR . 'Shared.phar');
         $phar->startBuffering();
@@ -547,6 +547,113 @@ PHP,
         self::assertSame([], $registrar->registrations);
         self::assertSame([], $registry->loaded());
         self::assertStringContainsString('already loaded', strtolower($registry->entries()[0]->message));
+    }
+
+    public function test_preloaded_function_conflict_prevents_virion_registration(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $project = $virions . DIRECTORY_SEPARATOR . 'FunctionProbe';
+        $source = $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Audit' . DIRECTORY_SEPARATOR . 'FunctionProbe';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: FunctionProbe\nversion: 1.0.0\nantigen: Audit\\FunctionProbe\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $source . DIRECTORY_SEPARATOR . 'Thing.php',
+            "<?php\nnamespace Audit\\FunctionProbe; function helper(): string { return 'new'; } final class Thing {}\n",
+        );
+        $preloaded = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'preloaded-function.php';
+        file_put_contents(
+            $preloaded,
+            "<?php\nnamespace Audit\\FunctionProbe; function helper(): string { return 'old'; }\n",
+        );
+        require_once $preloaded;
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('FunctionProbe', '1.0.0', 'preloaded-function-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertStringContainsString('function', strtolower($registry->entries()[0]->message));
+        self::assertStringContainsString('already loaded', strtolower($registry->entries()[0]->message));
+    }
+
+    public function test_guarded_function_does_not_block_virion_registration(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $project = $virions . DIRECTORY_SEPARATOR . 'GuardedProbe';
+        $source = $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Audit' . DIRECTORY_SEPARATOR . 'GuardedProbe';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: GuardedProbe\nversion: 1.0.0\nantigen: Audit\\GuardedProbe\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $source . DIRECTORY_SEPARATOR . 'Thing.php',
+            <<<'PHP'
+<?php
+namespace Audit\GuardedProbe;
+
+if (!function_exists('Audit\\GuardedProbe\\helper')) {
+    function helper(): string
+    {
+        return 'guarded';
+    }
+}
+
+final class Thing {}
+PHP,
+        );
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('GuardedProbe', '1.0.0', 'guarded-function-test'),
+        ]);
+
+        self::assertCount(1, $registrar->registrations);
+        self::assertCount(1, $registry->loaded());
+    }
+
+    public function test_preloaded_class_failure_prevents_partial_dependency_cycle_registration(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $a = $virions . DIRECTORY_SEPARATOR . 'CycleA';
+        $b = $virions . DIRECTORY_SEPARATOR . 'CycleB';
+        $sourceA = $a . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'CycleProbe' . DIRECTORY_SEPARATOR . 'A';
+        $sourceB = $b . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'CycleProbe' . DIRECTORY_SEPARATOR . 'B';
+        $this->filesystem->ensureDirectory($sourceA);
+        $this->filesystem->ensureDirectory($sourceB);
+        file_put_contents(
+            $a . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: CycleA\nversion: 1.0.0\nantigen: CycleProbe\\A\napi: 5.0.0\nvirions: [CycleB]\n",
+        );
+        file_put_contents(
+            $b . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: CycleB\nversion: 1.0.0\nantigen: CycleProbe\\B\napi: 5.0.0\nvirions: [CycleA]\n",
+        );
+        file_put_contents($sourceA . DIRECTORY_SEPARATOR . 'Loaded.php', "<?php\nnamespace CycleProbe\\A; final class Loaded {}\n");
+        file_put_contents($sourceA . DIRECTORY_SEPARATOR . 'Base.php', "<?php\nnamespace CycleProbe\\A; final class Base {}\n");
+        file_put_contents($sourceB . DIRECTORY_SEPARATOR . 'Child.php', "<?php\nnamespace CycleProbe\\B; final class Child extends \\CycleProbe\\A\\Base {}\n");
+        $preloaded = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'preloaded-cycle.php';
+        file_put_contents($preloaded, "<?php\nnamespace CycleProbe\\A; final class Loaded {}\n");
+        require_once $preloaded;
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('CycleA', '*', 'preloaded-cycle-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertCount(2, $registry->entries());
+        self::assertSame(VirionStatus::FAILED, $registry->entries()[0]->status);
+        self::assertSame(VirionStatus::FAILED, $registry->entries()[1]->status);
     }
 
     public function test_wide_dependency_dag_cycle_check_does_not_repeat_shared_subgraphs(): void

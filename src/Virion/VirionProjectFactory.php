@@ -118,7 +118,7 @@ final class VirionProjectFactory
         }
 
         try {
-            return $this->manifestReader->read($manifestPath)->name;
+            return $this->manifestReader->readName($manifestPath);
         } catch (Throwable) {
             return null;
         }

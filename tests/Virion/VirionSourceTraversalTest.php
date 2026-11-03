@@ -100,6 +100,35 @@ PHP);
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }
 
+    public function test_function_inside_anonymous_class_constructor_closure_is_rejected_as_an_external_symbol(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/Virion';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Greeting.php', '<?php namespace Audit\\Virion; final class Greeting {}');
+        file_put_contents($source . '/External.php', <<<'PHP'
+<?php
+namespace ExternalHelpers;
+
+new class((function () {
+    function collision(): string
+    {
+        return 'collision';
+    }
+})()) {};
+PHP);
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('ConstructorClosure', '1.0.0', 'Audit\\Virion', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('outside antigen');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
     public function test_autoload_shim_must_require_the_actual_class_file(): void
     {
         $source = $this->temporaryDirectory . '/src/Audit/Shim';

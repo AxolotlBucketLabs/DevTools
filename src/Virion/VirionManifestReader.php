@@ -21,20 +21,12 @@ final class VirionManifestReader
 
     public function read(string $path): VirionManifest
     {
-        try {
-            $raw = $this->yamlReader->read($path);
-        } catch (Throwable $error) {
-            throw new VirionException("Cannot parse virion manifest {$path}: {$error->getMessage()}", 0, $error);
-        }
-
-        foreach (['name', 'version', 'antigen'] as $field) {
+        $raw = $this->readRaw($path);
+        $name = $this->readNameFromRaw($raw, $path);
+        foreach (['version', 'antigen'] as $field) {
             if (!isset($raw[$field]) || !is_scalar($raw[$field]) || trim((string) $raw[$field]) === '') {
                 throw new VirionException("Cannot load virion from {$path}: required field \"{$field}\" is missing or empty.");
             }
-        }
-        $name = trim((string) $raw['name']);
-        if (preg_match('/^[A-Za-z0-9_.-]+$/D', $name) !== 1) {
-            throw new VirionException("Cannot load virion {$name}: name may contain only letters, numbers, dot, underscore, and hyphen.");
         }
         $antigen = trim((string) $raw['antigen'], " \t\n\r\0\x0B\\");
         if (preg_match('/^(?:[A-Za-z_][A-Za-z0-9_]*\\\\)*[A-Za-z_][A-Za-z0-9_]*$/D', $antigen) !== 1) {
@@ -81,6 +73,35 @@ final class VirionManifestReader
         }
 
         return new VirionManifest($name, $version, $antigen, $api, $php, $raw, $path, $requirements);
+    }
+
+    public function readName(string $path): string
+    {
+        return $this->readNameFromRaw($this->readRaw($path), $path);
+    }
+
+    /** @return array<string, mixed> */
+    private function readRaw(string $path): array
+    {
+        try {
+            return $this->yamlReader->read($path);
+        } catch (Throwable $error) {
+            throw new VirionException("Cannot parse virion manifest {$path}: {$error->getMessage()}", 0, $error);
+        }
+    }
+
+    /** @param array<string, mixed> $raw */
+    private function readNameFromRaw(array $raw, string $path): string
+    {
+        if (!isset($raw['name']) || !is_scalar($raw['name']) || trim((string) $raw['name']) === '') {
+            throw new VirionException("Cannot load virion from {$path}: required field \"name\" is missing or empty.");
+        }
+        $name = trim((string) $raw['name']);
+        if (preg_match('/^[A-Za-z0-9_.-]+$/D', $name) !== 1) {
+            throw new VirionException("Cannot load virion {$name}: name may contain only letters, numbers, dot, underscore, and hyphen.");
+        }
+
+        return $name;
     }
 
     /** @return list<string> */

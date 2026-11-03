@@ -135,4 +135,45 @@ PHP);
 
         self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
     }
+
+    public function test_function_guard_is_recorded_as_conditional(): void
+    {
+        $path = $this->temporaryDirectory . '/GuardedFunction.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (!function_exists('Fixture\\Virion\\helper')) {
+    function helper(): string
+    {
+        return 'guarded';
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
+        self::assertSame([], $symbols->unconditionalFunctions);
+    }
+
+    public function test_closure_in_anonymous_class_argument_does_not_hide_namespace_function(): void
+    {
+        $path = $this->temporaryDirectory . '/ConstructorClosure.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace ExternalHelpers;
+
+new class((function () {
+    function collision(): string
+    {
+        return 'collision';
+    }
+})()) {};
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
+    }
 }

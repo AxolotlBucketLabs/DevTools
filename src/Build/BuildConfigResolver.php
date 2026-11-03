@@ -225,7 +225,13 @@ final class BuildConfigResolver
                     "Refusing hidden or temporary include path {$normalized} in {$path}. Remove hidden and temporary files from build inputs.",
                 );
             }
-            $target[strtolower($normalized)] = $normalized;
+            $key = strtolower($normalized);
+            if (isset($target[$key]) && $target[$key] !== $normalized) {
+                throw new BuildException(
+                    "include-paths in {$path} contains case-conflicting paths {$target[$key]} and {$normalized}.",
+                );
+            }
+            $target[$key] = $normalized;
         }
     }
 }
