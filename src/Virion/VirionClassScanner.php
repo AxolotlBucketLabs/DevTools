@@ -10,6 +10,7 @@ use FilesystemIterator;
 
 use function is_dir;
 use function is_file;
+use function ltrim;
 
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\Path;
@@ -49,6 +50,8 @@ final class VirionClassScanner
         $constants = [];
         /** @var array<string, list<string>> $classesByFile */
         $classesByFile = [];
+        /** @var array<string, list<string>> $functionsByFile */
+        $functionsByFile = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($project->sourceRoot, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST,
@@ -76,6 +79,7 @@ final class VirionClassScanner
             $constants = array_merge($constants, $symbols->constants);
             $fileClasses = $symbols->classes;
             $classesByFile[$entry->getPathname()] = $fileClasses;
+            $functionsByFile[$entry->getPathname()] = $symbols->functions;
             foreach ($fileClasses as $class) {
                 $classes[] = $class;
             }
@@ -105,6 +109,30 @@ final class VirionClassScanner
                 );
             }
         }
+        /** @var array<string, list<array{function: string, file: string}>> $functionsDeclaredIn */
+        $functionsDeclaredIn = [];
+        foreach ($functionsByFile as $file => $fileFunctions) {
+            foreach ($fileFunctions as $function) {
+                $functionsDeclaredIn[strtolower($function)][] = ['function' => $function, 'file' => $file];
+            }
+        }
+        foreach ($functionsDeclaredIn as $declarations) {
+            if (count($declarations) <= 1) {
+                continue;
+            }
+            $names = [];
+            foreach ($declarations as $declaration) {
+                if (!in_array($declaration['function'], $names, true)) {
+                    $names[] = $declaration['function'];
+                }
+            }
+            if (count($names) === 1) {
+                throw new VirionException("Cannot load {$project->manifest->name}: function {$names[0]} is declared more than once.");
+            }
+            throw new VirionException(
+                "Cannot load {$project->manifest->name}: function declarations " . implode(', ', $names) . ' differ only by case.',
+            );
+        }
         foreach ($classes as $class) {
             $declarations = $declaredIn[strtolower($class)] ?? [];
             $files = $declarations === [] ? [] : [$declarations[0]['file']];
@@ -114,7 +142,9 @@ final class VirionClassScanner
                 );
             }
             if (!str_starts_with($class, $project->manifest->antigen . '\\')) {
-                continue;
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.",
+                );
             }
             $relative = str_replace('\\', '/', substr($class, strlen($project->manifest->antigen) + 1)) . '.php';
             if (!$this->caseSensitiveFileExists($project->sourceRoot, $relative)) {
@@ -158,18 +188,26 @@ final class VirionClassScanner
         $relative = null;
         if (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])([^\'\"]+)\\1\\s*;/D', $contents, $matches) === 1) {
             $relative = $matches[2];
-        } elseif (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])\\/\\1\\s*\\.\\s*([\'\"])([^\'\"]+)\\2\\s*;/D', $contents, $matches) === 1) {
-            $relative = $matches[3];
+        } elseif (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])([^\'\"]*)\\1\\s*\\.\\s*([\'\"])([^\'\"]+)\\3\\s*;/D', $contents, $matches) === 1) {
+            $relative = $matches[2] . $matches[4];
         }
         if ($relative === null) {
             return false;
         }
+        $relative = ltrim($relative, '/\\');
         try {
             $relative = Path::normalizeRelative($relative);
         } catch (\RuntimeException) {
             return false;
         }
         $target = dirname($expectedPath) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        if ($this->isVirtualPath($target) || $this->isVirtualPath($actualPath)) {
+            if (!$this->isVirtualPath($target) || !$this->isVirtualPath($actualPath)) {
+                return false;
+            }
+
+            return $this->normalizeVirtualPath($target) === $this->normalizeVirtualPath($actualPath);
+        }
         $targetReal = realpath($target);
         $actualReal = realpath($actualPath);
         if ($targetReal === false || $actualReal === false) {
@@ -177,6 +215,16 @@ final class VirionClassScanner
         }
 
         return $this->normalizePath($targetReal) === $this->normalizePath($actualReal);
+    }
+
+    private function isVirtualPath(string $path): bool
+    {
+        return str_starts_with(strtolower($path), 'phar://');
+    }
+
+    private function normalizeVirtualPath(string $path): string
+    {
+        return rtrim(str_replace('\\', '/', $path), '/');
     }
 
     private function relativePath(string $base, string $path): string

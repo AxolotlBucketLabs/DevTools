@@ -50,4 +50,34 @@ final class VirionResolverTest extends TestCase
 
         $resolver->resolve([new VirionRequirement('FallbackProbe', '*', 'test')], $directory);
     }
+
+    public function test_phpstan_resolution_can_use_the_original_phar_without_a_temporary_snapshot(): void
+    {
+        $directory = $this->temporaryDirectory . '/virions';
+        $source = $this->copyFixture('SharedVirion', 'source');
+        $this->filesystem->ensureDirectory($directory);
+        $pharPath = $directory . '/SharedVirion.phar';
+        $phar = new Phar($pharPath);
+        $phar->startBuffering();
+        $phar->buildFromDirectory($source);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        $phar->setSignatureAlgorithm(Phar::SHA256);
+        $phar->stopBuffering();
+        unset($phar);
+
+        $yaml = new YamlReader();
+        $resolver = new VirionResolver(
+            new VirionDiscovery($this->filesystem),
+            new VirionProjectFactory(new VirionManifestReader($yaml)),
+            new VirionProjectSelector(),
+        );
+
+        $projects = $resolver->resolve([new VirionRequirement('SharedVirion', '*', 'phpstan-test')], $directory, false);
+        self::assertCount(1, $projects);
+        $sourceRoot = $projects[0]->sourceRoot;
+        unset($projects);
+
+        self::assertTrue(is_dir($sourceRoot), $sourceRoot);
+        self::assertFileExists($pharPath);
+    }
 }

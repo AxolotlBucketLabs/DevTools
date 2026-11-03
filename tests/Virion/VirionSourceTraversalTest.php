@@ -129,6 +129,25 @@ PHP);
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }
 
+    public function test_class_outside_antigen_is_rejected_during_scan(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/Virion';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Greeting.php', '<?php namespace Audit\Virion; final class Greeting {}');
+        file_put_contents($source . '/Outside.php', '<?php namespace External; final class Wrong {}');
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('OutsideClass', '1.0.0', 'Audit\Virion', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('class External\Wrong is outside antigen');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
     public function test_autoload_shim_must_require_the_actual_class_file(): void
     {
         $source = $this->temporaryDirectory . '/src/Audit/Shim';
@@ -145,6 +164,50 @@ PHP);
 
         $this->expectException(VirionException::class);
         $this->expectExceptionMessage('class Audit\\Shim\\Foo is declared');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
+    /** @dataProvider validAutoloadShimProvider */
+    public function test_autoload_shim_accepts_relative_require_syntax(string $require): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/Shim';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Bar.php', '<?php namespace Audit\Shim; final class Bar {} final class Foo {}');
+        file_put_contents($source . '/Foo.php', "<?php\n{$require}\n");
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('ValidShim', '1.0.0', 'Audit\Shim', [], ['8.4'], [], ''),
+            false,
+        );
+
+        self::assertSame(['Audit\Shim\Bar', 'Audit\Shim\Foo'], (new VirionClassScanner(new PhpSourceInspector()))->scan($project));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function validAutoloadShimProvider(): iterable
+    {
+        yield 'direct relative string' => ["require_once __DIR__ . '/Bar.php';"];
+        yield 'concatenated relative string' => ["require_once __DIR__ . '/' . 'Bar.php';"];
+    }
+
+    public function test_autoload_shim_rejects_duplicate_functions_across_files(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/Functions';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Greeting.php', '<?php namespace Audit\Functions; final class Greeting {}');
+        file_put_contents($source . '/A.php', '<?php namespace Audit\Functions; function helper(): string { return \'a\'; }');
+        file_put_contents($source . '/B.php', '<?php namespace Audit\Functions; function helper(): string { return \'b\'; }');
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('DuplicateFunctions', '1.0.0', 'Audit\Functions', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('function Audit\Functions\helper is declared more than once');
 
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }

@@ -31,7 +31,7 @@ final class VirionResolver
      *
      * @return list<VirionProject>
      */
-    public function resolve(array $requirements, string $virionsDirectory): array
+    public function resolve(array $requirements, string $virionsDirectory, bool $snapshotPhars = true): array
     {
         if ($requirements === []) {
             return [];
@@ -47,7 +47,7 @@ final class VirionResolver
         $platform = new \NhanAZ\DevTools\Virion\VirionPlatformRequirements();
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
-                $project = $this->projectFactory->open($location, true);
+                $project = $this->projectFactory->open($location, $snapshotPhars);
                 $candidatesByName[strtolower($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
                 $name = $this->projectFactory->readFolderManifestName($location);

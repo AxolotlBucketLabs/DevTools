@@ -46,6 +46,30 @@ final class VirionBuilderTest extends TestCase
         self::assertSame('1.0.0', $inspected['virion']['version']);
     }
 
+    public function test_built_phar_with_an_autoload_shim_can_be_scanned_again(): void
+    {
+        $project = $this->copyFixture('SharedVirion', 'virions/ShimVirion');
+        $source = $project . '/src/Shared/Virion';
+        $this->filesystem->removeTree($source);
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Bar.php', '<?php namespace Shared\Virion; final class Bar {} final class Foo {}');
+        file_put_contents($source . '/Foo.php', "<?php\nrequire_once __DIR__ . '/' . 'Bar.php';\n");
+
+        $yaml = new YamlReader();
+        $manifestReader = new VirionManifestReader($yaml);
+        $scanner = new VirionClassScanner(new PhpSourceInspector());
+        $result = (new VirionBuilder(
+            $this->filesystem,
+            $manifestReader,
+            new VirionProjectFactory($manifestReader),
+            $scanner,
+        ))->build($project, $this->temporaryDirectory . '/build');
+
+        $pharProject = (new VirionProjectFactory($manifestReader))->open($result->outputPath);
+
+        self::assertSame(['Shared\Virion\Bar', 'Shared\Virion\Foo'], $scanner->scan($pharProject));
+    }
+
     public function test_project_role_detector_identifies_dual_role_projects(): void
     {
         $project = $this->copyFixture('ValidPlugin', 'dual');

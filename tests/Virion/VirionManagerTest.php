@@ -112,6 +112,31 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('dependency', strtolower($registry->entries()[1]->message));
     }
 
+    public function test_outside_antigen_member_of_dependency_cycle_prevents_cycle_registration(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $a = $virions . '/CycleA';
+        $b = $virions . '/CycleB';
+        $this->filesystem->ensureDirectory($a . '/src');
+        $this->filesystem->ensureDirectory($b . '/src/CycleOutside/B');
+        file_put_contents($a . '/src/Wrong.php', "<?php\nnamespace External; final class Wrong {}\n");
+        file_put_contents($b . '/src/CycleOutside/B/Child.php', "<?php\nnamespace CycleOutside\\B; final class Child {}\n");
+        file_put_contents($a . '/virion.yml', "name: CycleA\nversion: 1.0.0\nantigen: CycleOutside\\A\napi: 5.0.0\nvirions: [CycleB]\n");
+        file_put_contents($b . '/virion.yml', "name: CycleB\nversion: 1.0.0\nantigen: CycleOutside\\B\napi: 5.0.0\nvirions: [CycleA]\n");
+        $registrar = new FakeClassLoaderRegistrar();
+        $registry = new VirionRegistry();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('CycleA', '*', 'outside-antigen-cycle-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertCount(2, $registry->entries());
+        self::assertStringContainsString('outside antigen', strtolower($registry->entries()[0]->message));
+        self::assertStringContainsString('dependency', strtolower($registry->entries()[1]->message));
+    }
+
     public function test_conflicting_member_of_dependency_cycle_prevents_partial_registration(): void
     {
         $virions = $this->temporaryDirectory . '/virions';
@@ -574,6 +599,36 @@ PHP,
         $registrar = new FakeClassLoaderRegistrar();
         $this->manager($registrar, $registry)->discoverAndLoad($virions, [
             new VirionRequirement('FunctionProbe', '1.0.0', 'preloaded-function-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertStringContainsString('function', strtolower($registry->entries()[0]->message));
+        self::assertStringContainsString('already loaded', strtolower($registry->entries()[0]->message));
+    }
+
+    public function test_wrong_function_exists_guard_does_not_hide_preloaded_function_conflict(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $project = $virions . '/WrongGuard';
+        $source = $project . '/src/Audit/WrongGuard';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents(
+            $project . '/virion.yml',
+            "name: WrongGuard\nversion: 1.0.0\nantigen: Audit\\WrongGuard\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $source . '/Thing.php',
+            "<?php\nnamespace Audit\\WrongGuard;\nif (function_exists('str_contains')) { function helper(): string { return 'new'; } }\nfinal class Thing {}\n",
+        );
+        $preloaded = $this->temporaryDirectory . '/preloaded-wrong-guard.php';
+        file_put_contents($preloaded, "<?php\nnamespace Audit\\WrongGuard; function helper(): string { return 'old'; }\n");
+        require_once $preloaded;
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('WrongGuard', '1.0.0', 'wrong-guard-test'),
         ]);
 
         self::assertSame([], $registrar->registrations);

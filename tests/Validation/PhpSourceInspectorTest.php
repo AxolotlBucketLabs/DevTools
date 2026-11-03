@@ -148,13 +148,39 @@ if (!function_exists('Fixture\\Virion\\helper')) {
     {
         return 'guarded';
     }
+
+    function other(): string
+    {
+        return 'unguarded';
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\helper', 'Fixture\Virion\other'], $symbols->functions);
+        self::assertSame(['Fixture\Virion\other'], $symbols->unconditionalFunctions);
+    }
+
+    public function test_function_exists_for_another_name_does_not_guard_the_declared_function(): void
+    {
+        $path = $this->temporaryDirectory . '/WrongGuard.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (function_exists('str_contains')) {
+    function helper(): string
+    {
+        return 'unguarded';
+    }
 }
 PHP);
 
         $symbols = (new PhpSourceInspector())->inspect($path);
 
         self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
-        self::assertSame([], $symbols->unconditionalFunctions);
+        self::assertSame(['Fixture\Virion\helper'], $symbols->unconditionalFunctions);
     }
 
     public function test_closure_in_anonymous_class_argument_does_not_hide_namespace_function(): void

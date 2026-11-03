@@ -43,6 +43,72 @@ final class PhpStanConfigGeneratorTest extends TestCase
         self::assertSame(1, substr_count($config, "    paths:\n"));
     }
 
+    public function test_cli_phpstan_configuration_keeps_phar_virion_source_for_the_analysis_process(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugin');
+        $server = $this->copyFixture('PhpStanServer', 'server');
+        $virionSource = $this->copyFixture('SharedVirion', 'source');
+        $virions = $this->temporaryDirectory . '/virions';
+        $this->filesystem->ensureDirectory($virions);
+        $pharPath = $virions . '/SharedVirion.phar';
+        $phar = new \Phar($pharPath);
+        $phar->startBuffering();
+        $phar->buildFromDirectory($virionSource);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        $phar->setSignatureAlgorithm(\Phar::SHA256);
+        $phar->stopBuffering();
+        unset($phar);
+
+        $configPath = $this->temporaryDirectory . '/phpstan-phar.neon';
+        $process = proc_open(
+            [
+                PHP_BINARY,
+                dirname(__DIR__, 2) . '/bin/devtools-phpstan-config.php',
+                '--project=' . $project,
+                '--server=' . $server,
+                '--virions=' . $virions,
+                '--level=0',
+                '--out=' . $configPath,
+                '--tmp-dir=' . $this->temporaryDirectory . '/phpstan-cache',
+            ],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            dirname(__DIR__, 2),
+        );
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        self::assertSame(0, proc_close($process), $stdout . $stderr);
+
+        $config = (string) file_get_contents($configPath);
+        self::assertStringContainsString($this->portable($pharPath), $config);
+        self::assertStringNotContainsString('devtools-virion-', $config);
+
+        $analysis = proc_open(
+            [
+                PHP_BINARY,
+                dirname(__DIR__, 2) . '/vendor/phpstan/phpstan/phpstan',
+                'analyse',
+                '--configuration=' . $configPath,
+                '--no-progress',
+            ],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            dirname(__DIR__, 2),
+        );
+        self::assertIsResource($analysis);
+        fclose($pipes[0]);
+        $analysisOutput = stream_get_contents($pipes[1]);
+        $analysisError = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        self::assertSame(0, proc_close($analysis), $analysisOutput . $analysisError);
+    }
+
     #[DataProvider('validLevelProvider')]
     public function test_supported_levels_are_accepted(string $level): void
     {

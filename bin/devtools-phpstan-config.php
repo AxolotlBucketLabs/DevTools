@@ -58,7 +58,7 @@ try {
         new VirionDiscovery($filesystem),
         new VirionProjectFactory(new VirionManifestReader($yaml)),
         new VirionProjectSelector(),
-    ))->resolve($config->virions, $options['virions']);
+    ))->resolve($config->virions, $options['virions'], false);
     $contents = (new PhpStanConfigGenerator())->generate(
         $options['project'],
         $options['server'],
