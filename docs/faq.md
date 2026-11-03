@@ -2,7 +2,7 @@
 
 ## Is DevTools required on production?
 
-No. A plugin built with declared virions is standalone. Test it on a clean server, then deploy only that PHAR.
+No. A plugin built with declared virions is standalone with respect to those virions. External plugin dependencies still need to be installed on the server. Test the result on a clean server, then deploy only that PHAR.
 
 ## Can DevTools load itself from a folder?
 

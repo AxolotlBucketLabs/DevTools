@@ -4,7 +4,7 @@
 
 - Let the composite action install its own builder and prepared Composer dependencies without requiring the optional `ext-webrtc` extension.
 
-## 2.0.0 - Unreleased
+## 2.0.0 - 2026-11-02
 
 - Remove the obsolete `devtools-ref` reusable-workflow input; builder identity now always follows the called workflow revision.
 - Let GitHub repository and organization policy control Actions artifact retention instead of imposing a DevTools-specific default.

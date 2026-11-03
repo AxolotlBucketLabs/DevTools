@@ -32,6 +32,10 @@ These are project-relative runtime files or directories to add to a PHAR. They a
 
 Paths must exist inside the project. Absolute paths, parent traversal, symlinks, build-output overlap, hidden or temporary content, and non-portable Windows path names are rejected. Add only files required at runtime. Do not add `vendor/`, tests, local configuration, credentials, or caches.
 
+## `import-poggit-libraries`
+
+Set this optional boolean to `false` when a project keeps legacy `.poggit.yml` declarations for Poggit but uses its reviewed Composer lock or explicit `devtools.yml` declarations as the DevTools dependency source. It defaults to `true`. This setting only changes DevTools dependency selection; it never downloads the declared libraries. See [dependency preparation](dependencies.md) for the migration workflow.
+
 Composer `extra.devtools.virions` and local `.poggit.yml` `libs` remain supported for migration. `devtools.yml` is the clearest format for new non-Composer projects.
 
 For the bounded Composer v3 workflow, root `require` and `composer.lock` are the source of dependency selection. Do not repeat those packages in `devtools.yml`. Run the explicit [preparation step](dependencies.md), then point build and doctor at the prepared directory. Runtime server loading uses server-root `virions/`. A virion can itself declare the same `virions` list in `virion.yml` for local transitive requirements.

@@ -55,7 +55,7 @@ Implement behavior that directly supports these workflows.
 
 1. Folder plugin loading.
 2. Shared development virion loading.
-3. Standalone plugin PHAR building and extraction with declared virions.
+3. Standalone plugin and virion PHAR building and extraction, including dual-role projects and declared virions.
 
 No hot reload, downloader, registry, marketplace, web UI, database, Composer replacement, publishing, telemetry, or universal fork framework.
 

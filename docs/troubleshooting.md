@@ -3,14 +3,14 @@
 Choose the entry that matches the reported problem.
 
 - If a folder is not loaded, check the released DevTools PHAR, folder location, and `/devtools doctor`.
-- If `plugin.yml` or the main source is missing, check the project root, `main`, and `src-namespace-prefix`.
+- If `plugin.yml` or the main source is missing, check that the project contains both `plugin.yml` and `src/`, then check `main` and `src-namespace-prefix`.
 - If a virion is skipped or conflicts, run `/devtools virions` and check the declarations and local versions.
 - If a build fails, read the reported path and suggested next step before changing source or using `--overwrite`.
 - If extraction is refused, keep the safety check enabled and obtain a clean PHAR instead of weakening it.
 
 ## The server ignores my plugin folder
 
-Confirm the released DevTools PHAR is already in `plugins/` and loaded at startup. DevTools cannot bootstrap itself from a folder. The project must be an immediate child of `plugins/` and contain `plugin.yml` or `src/`. Hidden directories, build output, caches and symlinks are skipped.
+Confirm the released DevTools PHAR is already in `plugins/` and loaded at startup. DevTools cannot bootstrap itself from a folder. The project must be an immediate child of `plugins/` and contain both `plugin.yml` and `src/`. Hidden directories, build output, caches and symlinks are skipped.
 
 Run `/devtools doctor FolderOrPluginName` and read the reported file, value and suggested next step.
 

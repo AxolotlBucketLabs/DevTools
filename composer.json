@@ -1,6 +1,6 @@
 {
     "name": "nhanaz/devtools",
-    "description": "Folder loading, shared development virions and standalone plugin PHAR tooling for Axolotl-PM",
+    "description": "Folder loading, shared development virions and standalone plugin or virion PHAR tooling for Axolotl-PM",
     "keywords": [
         "pocketmine-mp",
         "plugin-development",

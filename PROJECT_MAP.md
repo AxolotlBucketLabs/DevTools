@@ -1,6 +1,6 @@
 # Project map
 
-DevTools has three core workflows. It loads folder plugins, loads shared development virions and builds standalone plugin PHARs.
+DevTools has three core workflows. It loads folder plugins, loads shared development virions and builds standalone plugin or virion PHARs, including separate artifacts for dual-role projects.
 
 ## Modules
 
