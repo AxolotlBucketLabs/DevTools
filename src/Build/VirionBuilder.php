@@ -67,7 +67,7 @@ final class VirionBuilder
             throw new BuildException("Cannot build virion {$project->manifest->name}: no PHP classes were found.");
         }
         foreach ($classes as $class) {
-            if ($class !== $project->manifest->antigen && !str_starts_with($class, $project->manifest->antigen . '\\')) {
+            if (!str_starts_with($class, $project->manifest->antigen . '\\')) {
                 throw new BuildException(
                     "Cannot build virion {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.",
                 );
@@ -83,8 +83,10 @@ final class VirionBuilder
         if ($realProject === false || $realOutput === false) {
             throw new BuildException('Cannot resolve the virion project or build output directory.');
         }
-        if ($realOutput === $realProject || Path::isInside($realProject . DIRECTORY_SEPARATOR . 'src', $realOutput)) {
-            throw new BuildException("Refusing build output inside virion source: {$realOutput}.");
+        if ($realOutput === $realProject
+            || Path::isInside($realProject . DIRECTORY_SEPARATOR . 'src', $realOutput)
+            || Path::isInside($realProject . DIRECTORY_SEPARATOR . 'resources', $realOutput)) {
+            throw new BuildException("Refusing build output inside virion source or resources: {$realOutput}.");
         }
 
         $safeName = $outputName ?? $project->manifest->name;

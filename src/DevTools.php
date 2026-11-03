@@ -120,6 +120,7 @@ final class DevTools extends PluginBase
             new VirionResolver($virionDiscovery, $virionFactory, $selector),
             $virionScanner,
             new NamespaceShader(),
+            $sourceInspector,
         );
         $this->commandHandler = new DevToolsCommandHandler(
             $this,

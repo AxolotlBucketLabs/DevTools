@@ -86,6 +86,7 @@ abstract class TestCase extends PHPUnitTestCase
             new VirionResolver($discovery, $factory, new VirionProjectSelector()),
             new VirionClassScanner($inspector),
             new NamespaceShader(),
+            $inspector,
         );
     }
 }

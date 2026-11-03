@@ -52,4 +52,36 @@ final class VirionBuilderTest extends TestCase
 
         self::assertSame('dual', (new ProjectRoleDetector())->detect($project)->value);
     }
+
+    public function test_output_inside_resources_is_rejected(): void
+    {
+        $project = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+
+        $this->expectException(\NhanAZ\DevTools\Build\BuildException::class);
+        $this->expectExceptionMessage('source or resources');
+        (new VirionBuilder(
+            $this->filesystem,
+            new VirionManifestReader(new YamlReader()),
+            new VirionProjectFactory(new VirionManifestReader(new YamlReader())),
+            new VirionClassScanner(new PhpSourceInspector()),
+        ))->build($project, $project . '/resources/dist');
+    }
+
+    public function test_class_equal_to_antigen_is_rejected_consistently(): void
+    {
+        $project = $this->copyFixture('SharedVirion', 'virions/RootClass');
+        file_put_contents(
+            $project . '/virion.yml',
+            "name: RootClass\nversion: 1.0.0\nantigen: Shared\\Virion\\Greeting\napi: 5.0.0\n",
+        );
+
+        $this->expectException(\NhanAZ\DevTools\Virion\VirionException::class);
+        $this->expectExceptionMessage('must be below antigen');
+        (new VirionBuilder(
+            $this->filesystem,
+            new VirionManifestReader(new YamlReader()),
+            new VirionProjectFactory(new VirionManifestReader(new YamlReader())),
+            new VirionClassScanner(new PhpSourceInspector()),
+        ))->build($project, $this->temporaryDirectory . '/build');
+    }
 }

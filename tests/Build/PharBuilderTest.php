@@ -340,6 +340,57 @@ final class PharBuilderTest extends TestCase
         self::assertStringContainsString('selected-1.7', $virionSource);
     }
 
+    public function test_build_selection_skips_a_higher_php_incompatible_version(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions:\n  - SharedVirion\n");
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $versionOne = $this->copyFixture('SharedVirion', 'virions/SharedVirion-v1');
+        $versionTwo = $this->copyFixture('SharedVirion', 'virions/SharedVirion-v2');
+        file_put_contents(
+            $versionOne . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 1.7.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $versionTwo . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 2.0.0\nantigen: Shared\\Virion\napi: 5.0.0\ncomposer-platform:\n  php: '>=8.5'\n",
+        );
+        $greeting = $versionOne . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared'
+            . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Greeting.php';
+        $source = file_get_contents($greeting);
+        self::assertIsString($source);
+        file_put_contents($greeting, str_replace("return 'shared';", "return 'selected-1.7';", $source));
+
+        $result = $this->builder()->build($project, $virions, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+        $phar = new Phar($result->outputPath);
+        $virionSource = '';
+        foreach (new \RecursiveIteratorIterator($phar) as $entry) {
+            if ($entry instanceof PharFileInfo && $entry->getFilename() === 'Greeting.php') {
+                $virionSource .= $entry->getContent();
+            }
+        }
+
+        self::assertStringContainsString('selected-1.7', $virionSource);
+    }
+
+    public function test_plugin_namespace_overlapping_a_virion_is_rejected_before_shading(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'plugin.yml',
+            "name: BuildFixture\nversion: 1.0.0\nmain: Shared\\Virion\\Main\napi: 5.0.0\nsrc-namespace-prefix: Shared\\Virion\n",
+        );
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php',
+            "<?php\ndeclare(strict_types=1);\nnamespace Shared\\Virion;\nfinal class Main {}\n",
+        );
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('overlaps virion antigen');
+        $this->builder()->build($project, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions', $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+    }
+
     public function test_standalone_build_rejects_devtools_dependency(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');

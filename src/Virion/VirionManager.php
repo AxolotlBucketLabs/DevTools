@@ -17,12 +17,13 @@ use function strtolower;
 
 use Throwable;
 
-use function version_compare;
-
 final class VirionManager
 {
     /** @var array<string, true> */
     private array $processedLocations = [];
+
+    /** @var array<string, 'loading'|'loaded'|'failed'> */
+    private array $graphLoadStates = [];
 
     public function __construct(
         private readonly VirionDiscovery $discovery,
@@ -58,6 +59,10 @@ final class VirionManager
         ksort($projectsByName, SORT_STRING);
         $hasTransitive = false;
         $available = [];
+        /** @var array<string, array{string, VirionProject}> $selectedProjects */
+        $selectedProjects = [];
+        /** @var array<string, list<array{type: 'selected'|'skipped', location: string, project: VirionProject, message?: string}>> $selectionActions */
+        $selectionActions = [];
         foreach ($projectsByName as $nameKey => $candidates) {
             foreach ($this->preferredCandidates($candidates) as [, $project]) {
                 $hasTransitive = $hasTransitive || $project->manifest->requirements !== [];
@@ -130,7 +135,12 @@ final class VirionManager
 
             foreach ($compatibleCandidates as [$location, $project]) {
                 if ($project === $selected) {
-                    $this->load($location);
+                    $selectedProjects[$nameKey] = [$location, $selected];
+                    $selectionActions[$nameKey][] = [
+                        'type' => 'selected',
+                        'location' => $location,
+                        'project' => $project,
+                    ];
                     continue;
                 }
                 $reason = $project->phar && $this->hasFolderCandidate($candidates)
@@ -138,15 +148,25 @@ final class VirionManager
                     : ($this->satisfies($project, $nameRequirements)
                         ? "a higher compatible version {$selected->manifest->version} was selected"
                         : 'it does not satisfy ' . $this->selector->describeRequirements($nameRequirements));
-                $this->recordUnloaded(
-                    $location,
-                    $project,
-                    VirionStatus::SKIPPED,
-                    "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: {$reason}.",
-                );
+                $selectionActions[$nameKey][] = [
+                    'type' => 'skipped',
+                    'location' => $location,
+                    'project' => $project,
+                    'message' => "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: {$reason}.",
+                ];
             }
             $this->recordPreferredPhars($candidates);
             unset($requirementsByName[$nameKey]);
+        }
+
+        foreach ($projectsByName as $nameKey => $_candidates) {
+            foreach ($selectionActions[$nameKey] ?? [] as $action) {
+                if ($action['type'] === 'selected') {
+                    $this->loadSelectedProject($nameKey, $selectedProjects);
+                    continue;
+                }
+                $this->recordUnloaded($action['location'], $action['project'], VirionStatus::SKIPPED, $action['message'] ?? '');
+            }
         }
 
         foreach ($requirementsByName as $missingRequirements) {
@@ -162,6 +182,84 @@ final class VirionManager
         }
 
         return $this->registry;
+    }
+
+    /** @param array<string, array{string, VirionProject}> $selectedProjects */
+    private function loadSelectedProject(string $nameKey, array $selectedProjects): bool
+    {
+        $state = $this->graphLoadStates[$nameKey] ?? null;
+        if ($state === 'loaded') {
+            return true;
+        }
+        if ($state === 'failed') {
+            return false;
+        }
+        if ($state === 'loading') {
+            return true;
+        }
+        if (!isset($selectedProjects[$nameKey])) {
+            $this->graphLoadStates[$nameKey] = 'failed';
+
+            return false;
+        }
+
+        $this->graphLoadStates[$nameKey] = 'loading';
+        [$location, $project] = $selectedProjects[$nameKey];
+        foreach ($project->manifest->requirements as $requirement) {
+            $dependencyKey = strtolower($requirement->name);
+            if (!isset($selectedProjects[$dependencyKey])) {
+                $this->recordDependencyFailure(
+                    $location,
+                    $project,
+                    "Required virion {$requirement->name} was not selected for {$project->manifest->name}.",
+                );
+                $this->graphLoadStates[$nameKey] = 'failed';
+
+                return false;
+            }
+            if ($this->loadSelectedProject($dependencyKey, $selectedProjects)) {
+                continue;
+            }
+            $dependency = $this->entryForLocation($selectedProjects[$dependencyKey][0]);
+            $detail = $dependency === null ? 'The dependency failed before it could be diagnosed.' : $dependency->message;
+            $this->recordDependencyFailure(
+                $location,
+                $project,
+                "Cannot load {$project->manifest->name}: dependency {$requirement->name} failed. {$detail}",
+            );
+            $this->graphLoadStates[$nameKey] = 'failed';
+
+            return false;
+        }
+
+        $entry = $this->load($location);
+        $loaded = $entry?->status === VirionStatus::LOADED;
+        $this->graphLoadStates[$nameKey] = $loaded ? 'loaded' : 'failed';
+
+        return $loaded;
+    }
+
+    private function recordDependencyFailure(string $location, VirionProject $project, string $message): void
+    {
+        $this->processedLocations[$this->canonicalLocation($location)] = true;
+        $this->registry->record(new VirionRegistryEntry(
+            $location,
+            $project->manifest,
+            VirionStatus::FAILED,
+            $message,
+        ));
+    }
+
+    private function entryForLocation(string $location): ?VirionRegistryEntry
+    {
+        $canonical = $this->canonicalLocation($location);
+        foreach ($this->registry->entries() as $entry) {
+            if ($this->canonicalLocation($entry->location) === $canonical) {
+                return $entry;
+            }
+        }
+
+        return null;
     }
 
     public function load(string $location): ?VirionRegistryEntry
@@ -231,23 +329,10 @@ final class VirionManager
 
     private function assertCompatible(VirionManifest $manifest): void
     {
-        if (isset($manifest->raw['composer-platform'])) {
-            (new VirionPlatformRequirements())->validate($manifest->raw['composer-platform'], $manifest->name);
-        }
+        (new VirionPlatformRequirements())->validateManifest($manifest);
         if ($manifest->api !== [] && !ApiVersion::isCompatible($this->serverApiVersion, $manifest->api)) {
             throw new VirionException(
                 "Cannot load {$manifest->name}: it declares API " . implode(', ', $manifest->api) . ", but this server provides {$this->serverApiVersion}.",
-            );
-        }
-        if ($manifest->php !== []) {
-            foreach ($manifest->php as $minimum) {
-                if (version_compare(PHP_VERSION, $minimum, '>=')) {
-                    return;
-                }
-            }
-            throw new VirionException(
-                "Cannot load {$manifest->name}: it requires one of PHP " . implode(', ', $manifest->php)
-                . ' or newer. This server uses ' . PHP_VERSION . '.',
             );
         }
     }

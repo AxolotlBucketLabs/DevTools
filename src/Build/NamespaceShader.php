@@ -39,7 +39,7 @@ final class NamespaceShader
     }
 
     /** @param array<string, string> $replacements */
-    public function shadeDirectory(string $directory, array $replacements): void
+    public function shadeDirectory(string $directory, array $replacements, bool $rewriteNamespaceDeclarations = true): void
     {
         if ($replacements === []) {
             return;
@@ -54,7 +54,7 @@ final class NamespaceShader
             if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
                 continue;
             }
-            $this->shadeFile($entry->getPathname(), $replacements);
+            $this->shadeFile($entry->getPathname(), $replacements, $rewriteNamespaceDeclarations);
         }
     }
 
@@ -103,7 +103,7 @@ final class NamespaceShader
     }
 
     /** @param array<string, string> $replacements */
-    private function shadeFile(string $path, array $replacements): void
+    private function shadeFile(string $path, array $replacements, bool $rewriteNamespaceDeclarations): void
     {
         $source = file_get_contents($path);
         if ($source === false) {
@@ -117,7 +117,7 @@ final class NamespaceShader
             $traverser = new NodeTraverser();
             $traverser->addVisitor(new ParentConnectingVisitor());
             $traverser->addVisitor(new NameResolver(null, ['replaceNodes' => false, 'preserveOriginalNames' => true]));
-            $traverser->addVisitor(new NamespaceRewriteVisitor($replacements));
+            $traverser->addVisitor(new NamespaceRewriteVisitor($replacements, $rewriteNamespaceDeclarations));
             $statements = $traverser->traverse($statements);
             $result = $this->printer->prettyPrintFile($statements) . "\n";
         } catch (BuildException $error) {

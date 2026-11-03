@@ -4,8 +4,19 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Virion;
 
+use function implode;
+use function version_compare;
+
 final class VirionPlatformRequirements
 {
+    public function validateManifest(VirionManifest $manifest): void
+    {
+        if (isset($manifest->raw['composer-platform'])) {
+            $this->validate($manifest->raw['composer-platform'], $manifest->name);
+        }
+        $this->validatePhpVersions($manifest->php, $manifest->name);
+    }
+
     public function validate(mixed $requirements, string $source): void
     {
         if (!is_array($requirements)) {
@@ -34,6 +45,22 @@ final class VirionPlatformRequirements
                 throw new VirionException("Unsupported platform requirement {$name} in {$source}.");
             }
         }
+    }
+
+    /** @param list<string> $versions */
+    public function validatePhpVersions(array $versions, string $source): void
+    {
+        if ($versions === []) {
+            return;
+        }
+        foreach ($versions as $minimum) {
+            if (version_compare(PHP_VERSION, $minimum, '>=')) {
+                return;
+            }
+        }
+        throw new VirionException(
+            "{$source} requires one of PHP " . implode(', ', $versions) . '. Current PHP is ' . PHP_VERSION . '.',
+        );
     }
 
     private function matchesPhp(string $expression): bool

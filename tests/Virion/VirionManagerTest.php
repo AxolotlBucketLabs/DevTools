@@ -162,6 +162,65 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('expected source file', $registry->entries()[0]->message);
     }
 
+    public function test_class_declaration_must_match_its_file_path(): void
+    {
+        $project = $this->copyFixture('SharedVirion', 'virions/Misplaced');
+        $source = $project . '/src/Shared/Virion';
+        $original = file_get_contents($source . '/Greeting.php');
+        self::assertIsString($original);
+        file_put_contents($source . '/Foo.php', str_replace('Greeting', 'Bar', $original));
+        file_put_contents($source . '/Bar.php', str_replace('Greeting', 'Foo', $original));
+        unlink($source . '/Greeting.php');
+        $registry = new VirionRegistry();
+
+        $this->manager(new FakeClassLoaderRegistrar(), $registry)->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+        self::assertSame(VirionStatus::FAILED, $registry->entries()[0]->status);
+        self::assertStringContainsString('is declared in', $registry->entries()[0]->message);
+        self::assertStringContainsString('expected', $registry->entries()[0]->message);
+    }
+
+    public function test_failed_selected_dependency_prevents_consumer_registration(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $consumer = $virions . '/AConsumer';
+        $dependency = $virions . '/ZDependency';
+        $this->filesystem->ensureDirectory($consumer . '/src/Audit/Consumer');
+        $this->filesystem->ensureDirectory($dependency . '/src/Audit/Dependency');
+        file_put_contents(
+            $consumer . '/virion.yml',
+            "name: AConsumer\nversion: 1.0.0\nantigen: Audit\\Consumer\napi: 5.0.0\nvirions:\n  - ZDependency\n",
+        );
+        file_put_contents(
+            $consumer . '/src/Audit/Consumer/Consumer.php',
+            "<?php\nnamespace Audit\\Consumer;\nfinal class Consumer extends \\Audit\\Dependency\\Base {}\n",
+        );
+        file_put_contents(
+            $dependency . '/virion.yml',
+            "name: ZDependency\nversion: 1.0.0\nantigen: Audit\\Dependency\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $dependency . '/src/Audit/Dependency/Base.php',
+            "<?php\nnamespace Audit\\Dependency;\nfinal class Base {\n",
+        );
+        $registrar = new FakeClassLoaderRegistrar();
+        $registry = new VirionRegistry();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        $consumerEntry = null;
+        foreach ($registry->entries() as $entry) {
+            if ($entry->manifest?->name === 'AConsumer') {
+                $consumerEntry = $entry;
+            }
+        }
+        self::assertNotNull($consumerEntry);
+        self::assertSame(VirionStatus::FAILED, $consumerEntry->status);
+        self::assertStringContainsString('dependency ZDependency failed', $consumerEntry->message);
+    }
+
     public function test_file_in_class_path_is_reported_without_warnings(): void
     {
         $project = $this->copyFixture('SharedVirion', 'virions/WrongPath');

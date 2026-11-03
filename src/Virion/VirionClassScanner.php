@@ -28,6 +28,8 @@ final class VirionClassScanner
             throw new VirionException("Cannot load {$project->manifest->name}: symbolic link found at {$project->sourceRoot}.");
         }
         $classes = [];
+        /** @var array<string, list<string>> $classesByFile */
+        $classesByFile = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($project->sourceRoot, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST,
@@ -42,12 +44,30 @@ final class VirionClassScanner
             if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
                 continue;
             }
-            foreach ($this->sourceInspector->inspect($entry->getPathname())->classes as $class) {
+            $fileClasses = $this->sourceInspector->inspect($entry->getPathname())->classes;
+            $classesByFile[$entry->getPathname()] = $fileClasses;
+            foreach ($fileClasses as $class) {
                 $classes[] = $class;
             }
         }
         sort($classes, SORT_STRING);
-        foreach (array_unique($classes) as $class) {
+        $classes = array_values(array_unique($classes));
+        $declaredIn = [];
+        foreach ($classesByFile as $file => $fileClasses) {
+            foreach ($fileClasses as $class) {
+                $declaredIn[$class][] = $file;
+            }
+        }
+        foreach ($classes as $class) {
+            $files = $declaredIn[$class] ?? [];
+            if (count($files) > 1) {
+                throw new VirionException("Cannot load {$project->manifest->name}: class {$class} is declared more than once.");
+            }
+            if ($class === $project->manifest->antigen) {
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: class {$class} must be below antigen {$project->manifest->antigen}, not equal to it.",
+                );
+            }
             if (!str_starts_with($class, $project->manifest->antigen . '\\')) {
                 continue;
             }
@@ -58,9 +78,40 @@ final class VirionClassScanner
                     . 'Correct the antigen, class namespace, filename, or directory casing.',
                 );
             }
+            $actual = $this->relativePath($project->sourceRoot, $files[0] ?? '');
+            $expectedPath = $project->sourceRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+            if ($actual !== $relative && !$this->isAutoloadShim($expectedPath, $files[0] ?? '')) {
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: class {$class} is declared in {$actual}, expected {$relative}. "
+                    . 'Move the declaration to the PSR-4 path matching its namespace.',
+                );
+            }
         }
 
         return $classes;
+    }
+
+    private function isAutoloadShim(string $expectedPath, string $actualPath): bool
+    {
+        $contents = file_get_contents($expectedPath);
+        if ($contents === false || $this->sourceInspector->inspect($expectedPath)->classes !== []) {
+            return false;
+        }
+
+        return str_contains($contents, 'require_once')
+            && str_contains($contents, basename(str_replace('\\', '/', $actualPath)));
+    }
+
+    private function relativePath(string $base, string $path): string
+    {
+        $base = rtrim(str_replace('\\', '/', $base), '/');
+        $path = str_replace('\\', '/', $path);
+        $prefix = $base . '/';
+        if (strncasecmp($path, $prefix, strlen($prefix)) !== 0) {
+            return $path;
+        }
+
+        return substr($path, strlen($prefix));
     }
 
     private function caseSensitiveFileExists(string $base, string $relative): bool

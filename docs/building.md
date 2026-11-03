@@ -38,7 +38,7 @@ flowchart LR
     Extract --> FolderZip
 ```
 
-The `build both` command runs the two role-specific paths separately for a dual-role project. A plugin PHAR receives declared virions in a private namespace; a virion PHAR keeps its own source and does not merge plugins or other virions.
+The `build both` command runs the two role-specific paths separately for a dual-role project, stages both completed PHARs, and installs the pair as one transaction. If either role fails, previously installed plugin and virion artifacts are preserved. A plugin PHAR receives declared virions in a private namespace; a virion PHAR keeps its own source and does not merge plugins or other virions.
 
 Run these commands as an operator.
 
@@ -62,7 +62,7 @@ Virion discovery prefers a source folder over a same-name PHAR, records the PHAR
 
 ## What the builder validates
 
-Before installing output, DevTools validates the plugin manifest and main class, local configuration, declared virions and versions, namespace safety, PHP syntax, and standalone references. It stages source without changing it, AST-shades virions into a deterministic plugin-private namespace, creates a SHA-256 PHAR, reopens it, and checks the manifest, main source, shaded roots, and signature.
+Before installing output, DevTools validates the plugin manifest and main class declaration, local configuration, declared virions and versions, namespace safety, PHP syntax, and standalone references. It stages source without changing it, AST-shades virions into a deterministic plugin-private namespace, creates a SHA-256 PHAR, reopens it, and checks the manifest, main source declaration, shaded roots, and signature. Virion output may not be placed inside the project's `src/` or `resources/` directories.
 
 The default package includes `plugin.yml`, `src/`, `resources/`, common license and notice files, declared virions, and explicit `include-paths`. It excludes `.git`, `.github`, IDE files, tests, caches, logs, `build/`, ordinary development `vendor/`, temporary files, and undeclared project files.
 

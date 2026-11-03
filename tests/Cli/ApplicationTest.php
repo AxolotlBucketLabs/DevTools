@@ -141,6 +141,37 @@ final class ApplicationTest extends TestCase
         self::assertFileExists($project . '/build/DualLibrary-virion.phar');
     }
 
+    public function test_dual_build_preserves_both_previous_artifacts_when_virion_build_fails(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'dual-atomic');
+        $this->filesystem->ensureDirectory($project . '/src/Fixture/Library');
+        file_put_contents(
+            $project . '/src/Fixture/Library/Library.php',
+            "<?php\nnamespace Fixture\\Library;\nfinal class Library {}\n",
+        );
+        file_put_contents(
+            $project . '/virion.yml',
+            "name: DualLibrary\nversion: 1.0.0\nantigen: Fixture\\Library\napi: 5.0.0\n",
+        );
+        [$code] = $this->cli(['build', '--type=both', '--project=' . $project]);
+        self::assertSame(0, $code);
+        $pluginOutput = $project . '/build/FixturePlugin-plugin.phar';
+        $virionOutput = $project . '/build/DualLibrary-virion.phar';
+        $pluginHash = hash_file('sha256', $pluginOutput);
+        $virionHash = hash_file('sha256', $virionOutput);
+
+        file_put_contents(
+            $project . '/src/Fixture/Library/Library.php',
+            "<?php\nnamespace Fixture;\nfinal class Library {}\n",
+        );
+        [$code, $result] = $this->cli(['build', '--type=both', '--project=' . $project, '--overwrite']);
+
+        self::assertSame(1, $code);
+        self::assertFalse($result['success']);
+        self::assertSame($pluginHash, hash_file('sha256', $pluginOutput));
+        self::assertSame($virionHash, hash_file('sha256', $virionOutput));
+    }
+
     public function test_bootstrap_failure_still_emits_json(): void
     {
         [$code, $result] = $this->cli(['--version'], 'devtools.php', ['-n', '-d', 'disable_functions=yaml_parse']);

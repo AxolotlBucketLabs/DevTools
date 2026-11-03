@@ -40,9 +40,11 @@ final class VirionResolver
         /** @var array<string, list<VirionProject>> $available */
         $available = [];
         $failures = [];
+        $platform = new \NhanAZ\DevTools\Virion\VirionPlatformRequirements();
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
                 $project = $this->projectFactory->open($location);
+                $platform->validateManifest($project->manifest);
                 $available[strtolower($project->manifest->name)][] = $project;
             } catch (Throwable $error) {
                 $failures[] = $error->getMessage();

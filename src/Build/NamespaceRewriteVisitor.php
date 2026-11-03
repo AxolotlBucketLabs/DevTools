@@ -36,7 +36,10 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
     /**
      * @param array<string, string> $replacements Original namespace => shaded namespace.
      */
-    public function __construct(private readonly array $replacements) {}
+    public function __construct(
+        private readonly array $replacements,
+        private readonly bool $rewriteNamespaceDeclarations = true,
+    ) {}
 
     public function enterNode(Node $node): ?Node
     {
@@ -148,6 +151,9 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
         $isDeclarationOrImport = ($parent instanceof Namespace_ && $parent->name === $node)
             || ($parent instanceof UseUse && $parent->name === $node)
             || ($parent instanceof GroupUse && $parent->prefix === $node);
+        if (!$this->rewriteNamespaceDeclarations && $parent instanceof Namespace_ && $parent->name === $node) {
+            return null;
+        }
         $resolved = $node->getAttribute('resolvedName');
         $candidate = $resolved instanceof Name ? $resolved->toString() : $node->toString();
         $replacement = $this->replacementFor($candidate);
@@ -190,13 +196,13 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
 
     private function containsNamespace(string $value, string $namespace): bool
     {
-        $value = strtolower(str_replace('\\\\', '\\', $value));
+        $value = ltrim(strtolower(str_replace('\\\\', '\\', $value)), '\\');
         $namespace = strtolower(ltrim($namespace, '\\'));
 
         $offset = 0;
         while (($position = strpos($value, $namespace, $offset)) !== false) {
             $end = $position + strlen($namespace);
-            if ($end === strlen($value) || $value[$end] === '\\') {
+            if ($position === 0 && ($end === strlen($value) || $value[$end] === '\\')) {
                 return true;
             }
             $offset = $position + 1;

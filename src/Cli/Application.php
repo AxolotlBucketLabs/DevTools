@@ -6,9 +6,11 @@ namespace NhanAZ\DevTools\Cli;
 
 use InvalidArgumentException;
 use NhanAZ\DevTools\Build\ArtifactInspector;
+use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\BuildException;
 use NhanAZ\DevTools\Build\ComposerVirionPreparer;
+use NhanAZ\DevTools\Build\DualArtifactBuilder;
 use NhanAZ\DevTools\Build\PharArchiveReader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
@@ -17,6 +19,7 @@ use NhanAZ\DevTools\Build\ProjectRoleDetector;
 use NhanAZ\DevTools\Build\VirionBuilder;
 use NhanAZ\DevTools\Build\VirionResolver;
 use NhanAZ\DevTools\Build\ZipArchiveWriter;
+use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Validation\PluginManifestReader;
 use NhanAZ\DevTools\Validation\PluginProjectValidator;
 use NhanAZ\DevTools\Virion\VirionManifestReader;
@@ -38,6 +41,7 @@ final class Application
         private readonly ComposerVirionPreparer $preparer,
         private readonly VirionManifestReader $virionManifestReader,
         private readonly ProjectRoleDetector $roleDetector,
+        private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
     ) {}
 
     /** @param list<string> $arguments */
@@ -111,19 +115,32 @@ final class Application
                         if ($role !== ProjectRole::DUAL) {
                             throw new BuildException("Build type both requires a project containing both plugin.yml and virion.yml: {$project}");
                         }
-                        $checks['structure'] = 'passed';
                         $checks['dependencies'] = 'failed';
                         $pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
+                        $virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
+                        $checks['structure'] = 'passed';
                         $config = $this->configResolver->resolve($project, $pluginManifest->description->getName());
                         $virionsResolved = $this->resolver->resolve($config->virions, $virions);
                         $checks['dependencies'] = 'passed';
                         $output = $this->absolute($options['out'] ?? 'build', $project);
                         $checks['artifact'] = 'failed';
-                        $plugin = $this->builder->build($project, $virions, $output, $overwrite, $pluginManifest->description->getName() . '-plugin');
-                        $virion = $this->virionBuilder->build($project, $output, $overwrite, $this->virionManifestReader->read($project . '/virion.yml')->name . '-virion');
+                        $dualArtifactBuilder = $this->dualArtifactBuilder ?? new DualArtifactBuilder(
+                            new Filesystem(),
+                            $this->builder,
+                            $this->virionBuilder,
+                            new ArtifactSetInstaller(),
+                        );
+                        $artifacts = $dualArtifactBuilder->build(
+                            $project,
+                            $virions,
+                            $output,
+                            $overwrite,
+                            $pluginManifest->description->getName() . '-plugin',
+                            $virionManifest->name . '-virion',
+                        );
                         $data = [
                             'project' => $project,
-                            'artifacts' => [$this->inspector->inspect($plugin->outputPath), $this->inspector->inspect($virion->outputPath)],
+                            'artifacts' => [$this->inspector->inspect($artifacts['plugin']), $this->inspector->inspect($artifacts['virion'])],
                         ];
                         $checks['artifact'] = 'passed';
                     } else {

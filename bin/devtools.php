@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use NhanAZ\DevTools\Build\ArtifactInspector;
+use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\ComposerVirionPreparer;
+use NhanAZ\DevTools\Build\DualArtifactBuilder;
 use NhanAZ\DevTools\Build\NamespaceShader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
@@ -42,6 +44,8 @@ try {
     $virionFactory = new VirionProjectFactory($virionManifestReader);
     $virionDiscovery = new VirionDiscovery($filesystem);
     $resolver = new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector());
+    $pluginBuilder = new PharBuilder($filesystem, $validator, $reader, $config, $resolver, new VirionClassScanner($inspector), new NamespaceShader(), $inspector);
+    $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, new VirionClassScanner($inspector));
     $version = $reader->read(dirname(__DIR__) . '/plugin.yml')->description->getVersion();
     $application = new Application(
         $version,
@@ -49,14 +53,20 @@ try {
         $validator,
         $config,
         $resolver,
-        new PharBuilder($filesystem, $validator, $reader, $config, $resolver, new VirionClassScanner($inspector), new NamespaceShader()),
-        new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, new VirionClassScanner($inspector)),
+        $pluginBuilder,
+        $virionBuilder,
         new PharExtractor($filesystem),
         new ZipArchiveWriter($filesystem),
         new ArtifactInspector($reader, $virionManifestReader),
         new ComposerVirionPreparer($filesystem),
         $virionManifestReader,
         new ProjectRoleDetector(),
+        new DualArtifactBuilder(
+            $filesystem,
+            $pluginBuilder,
+            $virionBuilder,
+            new ArtifactSetInstaller(),
+        ),
     );
     exit($application->run(array_slice($argv ?? [], 1)));
 } catch (Throwable $error) {

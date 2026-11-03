@@ -17,6 +17,7 @@ use PhpParser\Node\Expr\StaticPropertyFetch;
 use PhpParser\Node\InterpolatedStringPart;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
 
 use function strlen;
@@ -36,6 +37,10 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
     public function enterNode(Node $node): ?Node
     {
         if ($node instanceof Name) {
+            $parent = $node->getAttribute('parent');
+            if ($parent instanceof Namespace_ && $parent->name === $node) {
+                return null;
+            }
             $resolved = $node->getAttribute('resolvedName');
             $candidate = $resolved instanceof Name ? $resolved->toString() : $node->toString();
             $this->assertValueIsStandalone($candidate, $node->getStartLine());
@@ -123,7 +128,7 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
         $offset = 0;
         while (($position = strpos($value, $namespace, $offset)) !== false) {
             $end = $position + strlen($namespace);
-            if ($end === strlen($value) || $value[$end] === '\\') {
+            if ($position === 0 && ($end === strlen($value) || $value[$end] === '\\')) {
                 return true;
             }
             $offset = $position + 1;

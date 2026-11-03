@@ -313,7 +313,7 @@ PHP);
         (new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
     }
 
-    public function test_class_identity_string_with_an_unrelated_namespace_prefix_remains_rejected(): void
+    public function test_class_identity_string_with_an_unrelated_namespace_prefix_is_allowed(): void
     {
         $directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
         $this->filesystem->ensureDirectory($directory);
@@ -330,10 +330,13 @@ final class Packaging
 }
 PHP);
 
-        $this->expectException(BuildException::class);
-        $this->expectExceptionMessage('string literal');
+        $shader = new NamespaceShader();
+        $shader->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+        $shader->assertNoNamespaceReferences($directory, ['Shared\Virion']);
 
-        (new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+        $result = file_get_contents($directory . DIRECTORY_SEPARATOR . 'UnsafePackaging.php');
+        self::assertIsString($result);
+        self::assertStringContainsString("'Other\\Shared\\Virion\\Packaging'", $result);
     }
 
     public function test_class_identity_string_with_a_case_mismatch_remains_rejected(): void

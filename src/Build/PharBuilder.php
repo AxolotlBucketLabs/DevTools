@@ -16,6 +16,7 @@ use function is_file;
 
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\Path;
+use NhanAZ\DevTools\Support\PhpSourceInspector;
 use NhanAZ\DevTools\Validation\PluginManifest;
 use NhanAZ\DevTools\Validation\PluginManifestReader;
 use NhanAZ\DevTools\Validation\PluginProjectValidator;
@@ -45,6 +46,8 @@ final class PharBuilder
 {
     private const NOTICE_FILES = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING', 'COPYING.md', 'NOTICE', 'NOTICE.md', 'THIRD_PARTY_NOTICES.md'];
 
+    private readonly PhpSourceInspector $sourceInspector;
+
     public function __construct(
         private readonly Filesystem $filesystem,
         private readonly PluginProjectValidator $validator,
@@ -53,7 +56,10 @@ final class PharBuilder
         private readonly VirionResolver $virionResolver,
         private readonly VirionClassScanner $virionClassScanner,
         private readonly NamespaceShader $namespaceShader,
-    ) {}
+        ?PhpSourceInspector $sourceInspector = null,
+    ) {
+        $this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
+    }
 
     public function build(
         string $projectRoot,
@@ -80,6 +86,11 @@ final class PharBuilder
         $this->assertStandaloneManifest($manifest);
         $config = $this->configResolver->resolve($projectRoot, $manifest->description->getName());
         $virions = $this->virionResolver->resolve($config->virions, $virionsDirectory);
+        $this->assertPluginNamespaceDoesNotOverlapVirions($manifest, $virions);
+        $shaded = [];
+        foreach ($virions as $virion) {
+            $shaded[$virion->manifest->antigen] = $this->shadedNamespace($manifest, $virion);
+        }
         $dependencies = [];
         foreach ($virions as $virion) {
             $dependency = ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location];
@@ -132,8 +143,11 @@ final class PharBuilder
         $failure = null;
         try {
             $this->stagePlugin($projectRoot, $stage, $config, $realOutput);
-            $shaded = $this->stageVirions($virions, $manifest, $stage);
-            $this->namespaceShader->shadeDirectory($stage, $shaded);
+            $this->namespaceShader->shadeDirectory($stage . DIRECTORY_SEPARATOR . 'src', $shaded, false);
+            $virionDirectories = $this->stageVirions($virions, $manifest, $stage, $shaded);
+            foreach ($virionDirectories as $virionDirectory) {
+                $this->namespaceShader->shadeDirectory($virionDirectory, $shaded);
+            }
             $this->namespaceShader->assertNoNamespaceReferences($stage, $forbiddenStandaloneNamespaces, $shaded);
             $fileCount = $this->countFiles($stage);
             $this->writePhar($stage, $temporaryPhar);
@@ -243,13 +257,14 @@ final class PharBuilder
 
     /**
      * @param list<VirionProject> $virions
+     * @param array<string, string> $shaded Original antigen => shaded namespace.
      *
-     * @return array<string, string> Original antigen => shaded namespace.
+     * @return list<string> Staged virion source directories.
      */
-    private function stageVirions(array $virions, PluginManifest $plugin, string $stage): array
+    private function stageVirions(array $virions, PluginManifest $plugin, string $stage, array $shaded): array
     {
-        $replacements = [];
         $usedAntigens = [];
+        $directories = [];
         foreach ($virions as $virion) {
             $antigenKey = strtolower($virion->manifest->antigen);
             foreach ($usedAntigens as $usedAntigen) {
@@ -268,12 +283,12 @@ final class PharBuilder
             }
             foreach ($classes as $class) {
                 $prefix = $virion->manifest->antigen;
-                if (strtolower($class) !== strtolower($prefix) && !str_starts_with(strtolower($class), strtolower($prefix) . '\\')) {
+                if (!str_starts_with(strtolower($class), strtolower($prefix) . '\\')) {
                     throw new BuildException("Virion {$virion->manifest->name} declares class {$class} outside antigen {$prefix}.");
                 }
             }
 
-            $targetNamespace = $this->shadedNamespace($plugin, $virion);
+            $targetNamespace = $shaded[$virion->manifest->antigen];
             $targetRelative = $targetNamespace;
             $sourcePrefix = trim($plugin->description->getSrcNamespacePrefix(), '\\');
             if ($sourcePrefix !== '') {
@@ -289,10 +304,29 @@ final class PharBuilder
                 static fn(string $relative): bool => !Path::isHiddenOrTemporary($relative),
             );
             $this->stageVirionResources($virion, $stage);
-            $replacements[$virion->manifest->antigen] = $targetNamespace;
+            $directories[] = $target;
         }
 
-        return $replacements;
+        return $directories;
+    }
+
+    /** @param list<VirionProject> $virions */
+    private function assertPluginNamespaceDoesNotOverlapVirions(PluginManifest $plugin, array $virions): void
+    {
+        $main = trim($plugin->description->getMain(), '\\');
+        $separator = strrpos($main, '\\');
+        if ($separator === false) {
+            return;
+        }
+        $pluginNamespace = substr($main, 0, $separator);
+        foreach ($virions as $virion) {
+            if ($this->isNamespaceMember($pluginNamespace, $virion->manifest->antigen)) {
+                throw new BuildException(
+                    "Plugin namespace {$pluginNamespace} overlaps virion antigen {$virion->manifest->antigen}. "
+                    . 'Choose a plugin namespace outside the virion antigen before building a shaded PHAR.',
+                );
+            }
+        }
     }
 
     private function shadedNamespace(PluginManifest $plugin, VirionProject $virion): string
@@ -378,6 +412,17 @@ final class PharBuilder
         $mainRelative = $manifest->expectedMainRelativePath();
         if ($mainRelative === null || !isset($phar['src/' . $mainRelative])) {
             throw new BuildException('Generated PHAR is invalid: the main class source file is missing.');
+        }
+        $mainPath = 'phar://' . str_replace('\\', '/', $path) . '/src/' . $mainRelative;
+        try {
+            $symbols = $this->sourceInspector->inspect($mainPath);
+        } catch (Throwable $error) {
+            throw new BuildException("Generated PHAR main source could not be inspected: {$error->getMessage()}", 0, $error);
+        }
+        $main = $manifest->description->getMain();
+        if (!in_array($main, $symbols->classes, true)) {
+            $found = $symbols->classes === [] ? 'no class declaration' : implode(', ', $symbols->classes);
+            throw new BuildException("Generated PHAR main source declares {$found}, expected {$main}.");
         }
         foreach ($shaded as $target) {
             $sourcePrefix = trim($manifest->description->getSrcNamespacePrefix(), '\\');
