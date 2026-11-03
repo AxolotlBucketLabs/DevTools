@@ -205,6 +205,48 @@ PHP);
         self::assertSame(['Audit\Shim\Bar', 'Audit\Shim\Foo'], (new VirionClassScanner(new PhpSourceInspector()))->scan($project));
     }
 
+    public function test_grouped_function_and_constant_imports_are_not_declarations(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/GroupedImports';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/A.php', <<<'PHP'
+<?php
+namespace Audit\GroupedImports;
+
+use Audit\Helpers\{function answer, const VALUE};
+
+final class A
+{
+    public static function value(): int
+    {
+        return answer() + VALUE;
+    }
+}
+PHP);
+        file_put_contents($source . '/B.php', <<<'PHP'
+<?php
+namespace Audit\GroupedImports;
+
+use Audit\Helpers\{function answer, const VALUE};
+
+final class B
+{
+    public static function value(): int
+    {
+        return answer() + VALUE;
+    }
+}
+PHP);
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('GroupedImports', '1.0.0', 'Audit\GroupedImports', [], ['8.4'], [], ''),
+            false,
+        );
+
+        self::assertSame(['Audit\GroupedImports\A', 'Audit\GroupedImports\B'], (new VirionClassScanner(new PhpSourceInspector()))->scan($project));
+    }
+
     /** @return iterable<string, array{string}> */
     public static function validAutoloadShimProvider(): iterable
     {

@@ -34,7 +34,8 @@ if (!is_string($changelog) || !str_contains($changelog, "## {$expected} -")) {
     exit(1);
 }
 $releaseNotes = file_get_contents($projectRoot . DIRECTORY_SEPARATOR . 'RELEASE_NOTES.md');
-if (!is_string($releaseNotes) || !str_contains($releaseNotes, "# DevTools {$expected}")) {
+if (!is_string($releaseNotes)
+    || preg_match('/^# DevTools ' . preg_quote($expected, '/') . '[ \t]*$/m', $releaseNotes) !== 1) {
     fwrite(STDERR, "RELEASE_NOTES.md does not describe DevTools {$expected}.\n");
     exit(1);
 }

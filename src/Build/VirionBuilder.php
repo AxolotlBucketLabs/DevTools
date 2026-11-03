@@ -125,7 +125,7 @@ final class VirionBuilder
         } catch (Throwable $error) {
             $cleanupFailures[] = $error->getMessage();
         }
-        if (file_exists($temporaryPhar) && !unlink($temporaryPhar)) {
+        if (!PharSnapshot::remove($temporaryPhar)) {
             $cleanupFailures[] = "Cannot remove temporary PHAR {$temporaryPhar}.";
         }
         if ($failure !== null) {

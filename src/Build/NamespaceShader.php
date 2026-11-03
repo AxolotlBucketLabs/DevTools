@@ -8,6 +8,9 @@ use function file_get_contents;
 use function file_put_contents;
 
 use FilesystemIterator;
+
+use function in_array;
+
 use NhanAZ\DevTools\Vendor\PhpParser\NodeTraverser;
 use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\NameResolver;
 use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\ParentConnectingVisitor;
@@ -18,7 +21,6 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-use function str_ends_with;
 use function strtolower;
 
 use Throwable;
@@ -51,7 +53,7 @@ final class NamespaceShader
             if (!$entry instanceof SplFileInfo) {
                 continue;
             }
-            if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+            if (!$entry->isFile() || !$this->isPhpSourceFile($entry->getFilename())) {
                 continue;
             }
             $this->shadeFile($entry->getPathname(), $replacements, $rewriteNamespaceDeclarations);
@@ -77,7 +79,7 @@ final class NamespaceShader
             if (!$entry instanceof SplFileInfo) {
                 continue;
             }
-            if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+            if (!$entry->isFile() || !$this->isPhpSourceFile($entry->getFilename())) {
                 continue;
             }
             $source = file_get_contents($entry->getPathname());
@@ -128,5 +130,12 @@ final class NamespaceShader
         if (file_put_contents($path, $result) === false) {
             throw new BuildException("Cannot write shaded PHP source: {$path}");
         }
+    }
+
+    private function isPhpSourceFile(string $filename): bool
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['php', 'inc', 'phtml'], true);
     }
 }

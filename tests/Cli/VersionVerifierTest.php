@@ -38,6 +38,26 @@ final class VersionVerifierTest extends TestCase
         }
     }
 
+    public function test_release_notes_require_an_exact_stable_version_heading(): void
+    {
+        $path = dirname(__DIR__, 2) . '/RELEASE_NOTES.md';
+        $original = file_get_contents($path);
+        self::assertIsString($original);
+
+        try {
+            $version = $this->releaseVersion();
+            $wrong = str_replace('# DevTools ' . $version, '# DevTools ' . $version . '0', $original);
+            file_put_contents($path, $wrong);
+
+            [$exit, $output] = $this->runScript('verify-version.php', [$version]);
+
+            self::assertSame(1, $exit, $output);
+            self::assertStringContainsString('RELEASE_NOTES.md does not describe', $output);
+        } finally {
+            file_put_contents($path, $original);
+        }
+    }
+
     private function releaseVersion(): string
     {
         [$reader] = $this->validationServices();

@@ -49,6 +49,7 @@ final class PhpSourceInspector
         $pendingFunctionGuards = null;
         $parenthesisDepth = 0;
         $braceDepth = 0;
+        $inUseStatement = false;
         $previousSignificant = null;
         $count = count($tokens);
         for ($index = 0; $index < $count; ++$index) {
@@ -85,7 +86,10 @@ final class PhpSourceInspector
                         array_pop($classBraceDepths);
                     }
                     --$braceDepth;
-                } elseif ($token === ';' || $token === ':') {
+                } elseif ($token === ';') {
+                    $pendingFunctionGuards = null;
+                    $inUseStatement = false;
+                } elseif ($token === ':') {
                     $pendingFunctionGuards = null;
                 }
                 if (trim($token) !== '') {
@@ -115,10 +119,12 @@ final class PhpSourceInspector
                         $classes[] = ltrim($namespace . '\\' . $name, '\\');
                     }
                 }
+            } elseif ($id === T_USE) {
+                $inUseStatement = true;
             } elseif ($id === T_FUNCTION) {
                 $classBodyDepth = $classBraceDepths === [] ? null : end($classBraceDepths);
                 if (($classBodyDepth === null || $classBodyDepth !== $braceDepth)
-                    && $previousSignificant !== T_USE) {
+                    && !$inUseStatement) {
                     $name = $this->readDeclarationName($tokens, $index);
                     if ($name !== null) {
                         $fullName = ltrim($namespace . '\\' . $name, '\\');
@@ -128,7 +134,7 @@ final class PhpSourceInspector
                         }
                     }
                 }
-            } elseif ($id === T_CONST && $classBraceDepths === []) {
+            } elseif ($id === T_CONST && $classBraceDepths === [] && !$inUseStatement) {
                 foreach ($this->readConstantNames($tokens, $index, $namespace) as $constant) {
                     $constants[] = $constant;
                 }

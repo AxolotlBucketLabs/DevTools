@@ -64,7 +64,7 @@ Virion discovery prefers a source folder over a same-name PHAR, records the PHAR
 
 Before installing output, DevTools validates the plugin manifest and main class declaration, local configuration, declared virions and versions, namespace safety, PHP syntax, and standalone references. It stages source without changing it, AST-shades virions into a deterministic plugin-private namespace, creates a SHA-256 PHAR, reopens it, and checks the manifest, main source declaration, shaded roots, and signature. Virion output may not be placed inside the project's `src/` or `resources/` directories.
 
-The default package includes `plugin.yml`, `src/`, `resources/`, common license and notice files, declared virions, and explicit `include-paths`. It excludes `.git`, `.github`, IDE files, tests, caches, logs, `build/`, ordinary development `vendor/`, temporary files, and undeclared project files.
+The default package includes `plugin.yml`, `src/`, `resources/`, common license and notice files, declared virions, and explicit `include-paths`. It excludes `.git`, `.github`, IDE files, tests, caches, logs, `build/`, ordinary development `vendor/`, temporary files, and undeclared project files. PHP include files with `.php`, `.inc` or `.phtml` extensions are transformed and validated wherever they are staged.
 
 Builds reject unsafe dynamic class references, affected namespaces stored in strings, ambiguous grouped imports, undeclared development namespaces, namespace-level functions or constants outside a virion's antigen, and manifest dependencies on DevTools or DEVirion.
 

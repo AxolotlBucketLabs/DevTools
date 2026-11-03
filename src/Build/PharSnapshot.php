@@ -27,15 +27,17 @@ final class PharSnapshot
         return $snapshot;
     }
 
-    public static function remove(string $snapshot): void
+    public static function remove(string $snapshot): bool
     {
         try {
             Phar::unlinkArchive($snapshot);
         } catch (\Throwable) {
             // Fall back to the regular filesystem cleanup when the archive was never opened.
         }
-        if (file_exists($snapshot) && is_file($snapshot)) {
-            unlink($snapshot);
+        if (!file_exists($snapshot)) {
+            return true;
         }
+
+        return is_file($snapshot) && unlink($snapshot);
     }
 }

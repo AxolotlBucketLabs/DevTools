@@ -95,6 +95,42 @@ final class PharBuilderTest extends TestCase
         self::assertStringNotContainsString(str_replace('\\', '/', $virions), $allPhp);
     }
 
+    public function test_php_include_files_in_include_paths_are_shaded_and_run_from_a_clean_process(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/IncludeRuntime');
+        $virion = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->ensureDirectory($project . '/runtime');
+        file_put_contents($project . '/runtime/message.inc', "<?php\nreturn \\Shared\\Virion\\Greeting::message();\n");
+        file_put_contents($project . '/devtools.yml', "virions:\n  - SharedVirion\ninclude-paths:\n  - runtime\n");
+
+        $result = $this->builder()->build($project, dirname($virion), $this->temporaryDirectory . '/build');
+        $relative = 'src/' . str_replace('\\', '/', substr($result->shadedVirions['Shared\\Virion'], strlen('Fixture\\Build') + 1)) . '/Greeting.php';
+        $script = $this->temporaryDirectory . '/run-include.php';
+        file_put_contents($script, <<<'PHP'
+<?php
+$artifact = str_replace('\\', '/', $argv[1]);
+require('phar://' . $artifact . '/' . $argv[2]);
+$value = require('phar://' . $artifact . '/runtime/message.inc');
+echo $value;
+PHP);
+
+        $process = proc_open(
+            [PHP_BINARY, $script, $result->outputPath, $relative],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            $this->temporaryDirectory,
+        );
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        self::assertSame(0, proc_close($process), 'stdout: ' . (string) $stdout . ' stderr: ' . (string) $stderr);
+        self::assertSame('shared', $stdout);
+    }
+
     public function test_root_virion_resources_are_rejected_before_building_an_ambiguous_artifact(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');

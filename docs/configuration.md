@@ -28,7 +28,7 @@ Unknown keys, invalid names, empty values, unsupported expressions, duplicate co
 
 ## `include-paths`
 
-These are project-relative runtime files or directories to add to a PHAR. They are not needed for ordinary `src/` and `resources/`, which are included automatically.
+These are project-relative runtime files or directories to add to a PHAR. They are not needed for ordinary `src/` and `resources/`, which are included automatically. PHP source files with `.php`, `.inc` or `.phtml` extensions inside these paths are shaded and checked for undeclared virion references like the plugin's `src/` files.
 
 Paths must exist inside the project. Absolute paths, parent traversal, symlinks, build-output overlap, hidden or temporary content, and non-portable Windows path names are rejected. Add only files required at runtime. Do not add `vendor/`, tests, local configuration, credentials, or caches.
 

@@ -96,6 +96,7 @@ namespace Fixture\Virion;
 
 use function strlen;
 use function count as item_count;
+use External\Helpers\{function answer, const VALUE};
 
 final class Value
 {

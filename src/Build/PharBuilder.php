@@ -145,7 +145,7 @@ final class PharBuilder
         try {
             $this->stagePlugin($projectRoot, $stage, $config, $realOutput);
             $this->assertPluginDeclarationsDoNotOverlapVirions($manifest, $virions, $stage . DIRECTORY_SEPARATOR . 'src');
-            $this->namespaceShader->shadeDirectory($stage . DIRECTORY_SEPARATOR . 'src', $shaded, false);
+            $this->namespaceShader->shadeDirectory($stage, $shaded, false);
             $virionDirectories = $this->stageVirions($virions, $manifest, $stage, $shaded);
             foreach ($virionDirectories as $virionDirectory) {
                 $this->namespaceShader->shadeDirectory($virionDirectory, $shaded);
@@ -170,7 +170,7 @@ final class PharBuilder
         } catch (Throwable $error) {
             $cleanupFailures[] = $error->getMessage();
         }
-        if (file_exists($temporaryPhar) && !unlink($temporaryPhar)) {
+        if (!PharSnapshot::remove($temporaryPhar)) {
             $cleanupFailures[] = "Cannot remove temporary PHAR {$temporaryPhar}.";
         }
         if ($failure !== null) {
