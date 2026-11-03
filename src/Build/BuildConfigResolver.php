@@ -220,6 +220,11 @@ final class BuildConfigResolver
                     "Refusing sensitive include path {$normalized} in {$path}. Remove credentials and private keys from build inputs.",
                 );
             }
+            if (Path::isHiddenOrTemporary($normalized)) {
+                throw new BuildException(
+                    "Refusing hidden or temporary include path {$normalized} in {$path}. Remove hidden and temporary files from build inputs.",
+                );
+            }
             $target[strtolower($normalized)] = $normalized;
         }
     }

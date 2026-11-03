@@ -95,8 +95,8 @@ final class PharBuilder
         $dependencies = [];
         foreach ($virions as $virion) {
             $dependency = ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location];
-            if (is_file($virion->location . '/devtools-provenance.json')) {
-                $dependency['provenance'] = (new ComposerVirionPlan())->readJson($virion->location . '/devtools-provenance.json');
+            if (is_file($virion->packageRoot . '/devtools-provenance.json')) {
+                $dependency['provenance'] = (new ComposerVirionPlan())->readJson($virion->packageRoot . '/devtools-provenance.json');
             }
             $dependencies[] = $dependency;
         }
@@ -378,7 +378,7 @@ final class PharBuilder
 
     private function stageVirionResources(VirionProject $virion, string $stage): void
     {
-        $resources = $virion->location . '/resources';
+        $resources = $virion->packageRoot . '/resources';
         if (is_dir($resources) && (new FilesystemIterator($resources, FilesystemIterator::SKIP_DOTS))->valid()) {
             throw new BuildException(
                 "Virion {$virion->manifest->name} has root resources/. Only resources colocated under its source directory retain relative paths when bundled.",
@@ -389,7 +389,7 @@ final class PharBuilder
             throw new BuildException("Virion metadata output collides with an existing plugin path: {$metadata}");
         }
         foreach ([...self::NOTICE_FILES, 'devtools-provenance.json'] as $license) {
-            $source = $virion->location . '/' . $license;
+            $source = $virion->packageRoot . '/' . $license;
             if (is_file($source)) {
                 $this->filesystem->copyFile($source, $metadata . '/' . $license);
             }

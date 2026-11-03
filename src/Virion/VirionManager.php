@@ -54,13 +54,43 @@ final class VirionManager
 
         /** @var array<string, list<array{string, VirionProject}>> $projectsByName */
         $projectsByName = [];
+        /** @var array<string, string> $invalidFolderFailures */
+        $invalidFolderFailures = [];
         foreach ($this->discovery->discover($directory) as $location) {
             try {
                 $project = $this->projectFactory->open($location);
                 $projectsByName[strtolower($project->manifest->name)][] = [$location, $project];
-            } catch (Throwable) {
+            } catch (Throwable $error) {
+                $name = $this->projectFactory->readFolderManifestName($location);
+                if ($name !== null) {
+                    $invalidFolderFailures[strtolower($name)] = $error->getMessage();
+                }
                 $this->load($location);
             }
+        }
+        foreach ($invalidFolderFailures as $nameKey => $errorMessage) {
+            if (!isset($projectsByName[$nameKey])) {
+                continue;
+            }
+            $hasFolder = false;
+            foreach ($projectsByName[$nameKey] as [, $candidate]) {
+                if (!$candidate->phar) {
+                    $hasFolder = true;
+                    break;
+                }
+            }
+            if ($hasFolder) {
+                continue;
+            }
+            foreach ($projectsByName[$nameKey] as [$location, $candidate]) {
+                $this->recordUnloaded(
+                    $location,
+                    $candidate,
+                    VirionStatus::SKIPPED,
+                    "Skipped {$candidate->manifest->name} {$candidate->manifest->version} at {$location}: a development folder with the same name could not be loaded. {$errorMessage}",
+                );
+            }
+            unset($projectsByName[$nameKey], $requirementsByName[$nameKey]);
         }
         ksort($projectsByName, SORT_STRING);
         $hasTransitive = false;

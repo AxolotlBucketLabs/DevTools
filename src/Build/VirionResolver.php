@@ -41,15 +41,41 @@ final class VirionResolver
         $available = [];
         /** @var array<string, list<array{string, VirionProject}>> $candidatesByName */
         $candidatesByName = [];
+        /** @var array<string, string> $invalidFolderFailures */
+        $invalidFolderFailures = [];
         $failures = [];
         $platform = new \NhanAZ\DevTools\Virion\VirionPlatformRequirements();
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
-                $project = $this->projectFactory->open($location);
+                $project = $this->projectFactory->open($location, true);
                 $candidatesByName[strtolower($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
+                $name = $this->projectFactory->readFolderManifestName($location);
+                if ($name !== null) {
+                    $invalidFolderFailures[strtolower($name)] = $error->getMessage();
+                }
                 $failures[] = $error->getMessage();
             }
+        }
+
+        foreach ($invalidFolderFailures as $nameKey => $errorMessage) {
+            if (!isset($candidatesByName[$nameKey])) {
+                continue;
+            }
+            $hasFolder = false;
+            foreach ($candidatesByName[$nameKey] as [, $candidate]) {
+                if (!$candidate->phar) {
+                    $hasFolder = true;
+                    break;
+                }
+            }
+            if ($hasFolder) {
+                continue;
+            }
+            foreach ($candidatesByName[$nameKey] as [$location, $candidate]) {
+                $failures[] = "Skipped {$candidate->manifest->name} PHAR {$location}: a development folder with the same name is invalid. {$errorMessage}";
+            }
+            unset($candidatesByName[$nameKey]);
         }
 
         foreach ($candidatesByName as $nameKey => $candidates) {
@@ -87,7 +113,7 @@ final class VirionResolver
         $projects = [];
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
-                $projects[] = $this->projectFactory->open($location);
+                $projects[] = $this->projectFactory->open($location, true);
             } catch (Throwable) {
                 // Invalid projects are diagnosed by runtime discovery and declared-name resolution.
             }

@@ -60,7 +60,7 @@ final class VirionDependencyResolver
                         if ($constraint->composerPackageSha256 === null) {
                             continue;
                         }
-                        $path = $project->location . '/devtools-provenance.json';
+                        $path = $project->packageRoot . '/devtools-provenance.json';
                         $contents = is_file($path) && !Filesystem::isLink($path) ? file_get_contents($path) : false;
                         $provenance = $contents === false ? null : json_decode($contents, true);
                         if (!is_array($provenance) || ($provenance['composerPackageSha256'] ?? null) !== $constraint->composerPackageSha256) {

@@ -133,6 +133,36 @@ final class PhpStanConfigGeneratorTest extends TestCase
         );
     }
 
+    public function test_generated_configuration_accepts_percent_in_the_project_path(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'plugin%prod%');
+        $server = $this->copyFixture('PhpStanServer', 'server');
+        $config = (new PhpStanConfigGenerator())->generate(
+            $project,
+            $server,
+            [],
+            '0',
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'cache',
+        );
+        $configPath = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'phpstan.neon';
+        file_put_contents($configPath, $config);
+        $process = proc_open(
+            [PHP_BINARY, dirname(__DIR__, 2) . '/vendor/phpstan/phpstan/phpstan', '--no-progress', '--configuration=' . $configPath],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            dirname(__DIR__, 2),
+        );
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exit = proc_close($process);
+
+        self::assertSame(0, $exit, $stdout . $stderr);
+    }
+
     public function test_symbolic_link_plugin_source_is_rejected(): void
     {
         $project = $this->copyFixture('ValidPlugin', 'plugin');

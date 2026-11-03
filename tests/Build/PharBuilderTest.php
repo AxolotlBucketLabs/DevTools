@@ -5,7 +5,13 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Tests\Build;
 
 use NhanAZ\DevTools\Build\BuildException;
+use NhanAZ\DevTools\Build\VirionBuilder;
+use NhanAZ\DevTools\Support\PhpSourceInspector;
+use NhanAZ\DevTools\Support\YamlReader;
 use NhanAZ\DevTools\Tests\TestCase;
+use NhanAZ\DevTools\Virion\VirionClassScanner;
+use NhanAZ\DevTools\Virion\VirionManifestReader;
+use NhanAZ\DevTools\Virion\VirionProjectFactory;
 use Phar;
 use PharFileInfo;
 
@@ -334,6 +340,62 @@ final class PharBuilderTest extends TestCase
         );
     }
 
+    public function test_broken_folder_does_not_fall_back_to_same_name_phar_for_builds(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $broken = $virions . DIRECTORY_SEPARATOR . 'SharedVirion';
+        $this->filesystem->ensureDirectory($broken);
+        file_put_contents(
+            $broken . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        $source = $this->copyFixture('SharedVirion', 'source/SharedVirion');
+        $this->buildVirionPhar($source, $virions, 'SharedVirion');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('no valid virion with that name exists');
+        $this->builder()->build($project, $virions, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+    }
+
+    public function test_replacing_a_virion_phar_allows_a_second_build_in_the_same_process(): void
+    {
+        $source = $this->copyFixture('SharedVirion', 'source/SharedVirion');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->buildVirionPhar($source, $virions, 'SharedVirion');
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $output = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build';
+        $this->builder()->build($project, $virions, $output);
+
+        file_put_contents(
+            $source . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedVirion\nversion: 2.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $source . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Greeting.php',
+            "<?php\nnamespace Shared\\Virion;\nfinal class Greeting { public static function message(): string { return 'updated'; } }\n",
+        );
+        $this->buildVirionPhar($source, $virions, 'SharedVirion', true);
+
+        $this->builder()->build($project, $virions, $output, true);
+        self::assertFileExists($output . DIRECTORY_SEPARATOR . 'BuildFixture.phar');
+    }
+
+    public function test_explicit_include_paths_reject_hidden_and_temporary_roots(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . '.git');
+        file_put_contents($project . DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR . 'config', 'private metadata');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'local.tmp', 'temporary content');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions: [SharedVirion]\ninclude-paths: [.git, local.tmp]\n");
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('hidden or temporary');
+        $this->builder()->build($project, $virions, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
+    }
+
     public function test_duplicate_virion_names_are_ambiguous(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
@@ -659,5 +721,17 @@ PHP,
             $project . DIRECTORY_SEPARATOR . 'devtools.yml',
             "include-paths:\n  - vendor/DynamicFactory.php\n",
         );
+    }
+
+    private function buildVirionPhar(string $source, string $output, string $name, bool $overwrite = false): void
+    {
+        $yaml = new YamlReader();
+        $manifestReader = new VirionManifestReader($yaml);
+        (new VirionBuilder(
+            $this->filesystem,
+            $manifestReader,
+            new VirionProjectFactory($manifestReader),
+            new VirionClassScanner(new PhpSourceInspector()),
+        ))->build($source, $output, $overwrite, $name);
     }
 }

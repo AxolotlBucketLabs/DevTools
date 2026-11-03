@@ -123,7 +123,7 @@ final class PhpStanConfigGenerator
 
     private function quote(string $path): string
     {
-        return json_encode($this->portable($path), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        return json_encode(str_replace('%', '%%', $this->portable($path)), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
     }
 
     private function portable(string $path): string

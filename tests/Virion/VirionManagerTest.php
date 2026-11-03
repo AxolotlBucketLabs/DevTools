@@ -209,6 +209,36 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('conflicts', $registry->entries()[1]->message);
     }
 
+    public function test_broken_folder_does_not_fall_back_to_same_name_phar(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->filesystem->ensureDirectory($virions . DIRECTORY_SEPARATOR . 'Shared');
+        file_put_contents(
+            $virions . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: Shared\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        $phar = new Phar($virions . DIRECTORY_SEPARATOR . 'Shared.phar');
+        $phar->startBuffering();
+        $phar->addFromString('virion.yml', "name: Shared\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n");
+        $phar->addFromString('src/Shared/Virion/Greeting.php', "<?php\nnamespace Shared\\Virion;\nfinal class Greeting {}\n");
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        $phar->setSignatureAlgorithm(Phar::SHA256);
+        $phar->stopBuffering();
+        unset($phar);
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('Shared', '*', 'broken-folder-test'),
+        ]);
+
+        self::assertSame([], $registry->loaded());
+        self::assertSame([], $registrar->registrations);
+        self::assertCount(2, $registry->entries());
+        self::assertSame(VirionStatus::FAILED, $registry->entries()[0]->status);
+        self::assertSame(VirionStatus::SKIPPED, $registry->entries()[1]->status);
+    }
+
     public function test_invalid_manifest_is_reported(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
