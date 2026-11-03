@@ -163,8 +163,13 @@ final class Filesystem
     {
         $key = strtolower($relative);
         if (isset($seen[$key])) {
+            if ($seen[$key]['path'] !== $relative) {
+                throw new FilesystemException(
+                    "Cannot stage {$relative}: it has a case-conflicting path component with {$seen[$key]['path']}.",
+                );
+            }
             throw new FilesystemException(
-                "Cannot stage {$relative}: it is duplicate or case-conflicting with {$seen[$key]['path']}.",
+                "Cannot stage {$relative}: it is duplicated.",
             );
         }
         foreach ($seen as $seenKey => $entry) {
