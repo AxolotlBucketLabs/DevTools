@@ -353,7 +353,7 @@ final class PharBuilderTest extends TestCase
         );
         file_put_contents(
             $versionTwo . DIRECTORY_SEPARATOR . 'virion.yml',
-            "name: SharedVirion\nversion: 2.0.0\nantigen: Shared\\Virion\napi: 5.0.0\ncomposer-platform:\n  php: '>=8.5'\n",
+            "name: SharedVirion\nversion: 2.0.0\nantigen: Shared\\Virion\napi: 5.0.0\ncomposer-platform:\n  php: '>=9.0'\n",
         );
         $greeting = $versionOne . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared'
             . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Greeting.php';
