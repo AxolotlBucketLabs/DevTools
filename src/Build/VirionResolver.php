@@ -55,7 +55,7 @@ final class VirionResolver
                 $details = $failures === [] ? '' : "\nOther virion errors:\n- " . implode("\n- ", $failures);
                 throw new BuildException(
                     "Plugin declares virion {$requirement->name} {$requirement->constraint->expression}, but no valid virion with that name exists in {$virionsDirectory}. "
-                    . "Add it to virions/ or correct the declaration.{$details}",
+                    . "Add it to the configured virions directory or correct the declaration. DevTools does not download external dependencies automatically; prepare Git sources in the workflow or use the explicit Composer preparation flow. See https://github.com/NhanAZ/DevTools/blob/main/docs/dependencies.md.{$details}",
                 );
             }
         }

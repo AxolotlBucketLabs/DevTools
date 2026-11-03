@@ -35,6 +35,21 @@ final class PharBuilderTest extends TestCase
         self::assertTrue(isset($phar['META-INF/virions/SharedGreeting/LICENSE']));
     }
 
+    public function test_missing_declared_virion_explains_external_preparation(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions:\n  - name: MissingVirion\n    version: 1.0.0\n");
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('DevTools does not download external dependencies automatically');
+        $this->expectExceptionMessage('https://github.com/NhanAZ/DevTools/blob/main/docs/dependencies.md');
+        $this->builder()->build(
+            $project,
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build',
+        );
+    }
+
     public function test_build_contains_resources_and_shaded_virion(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
