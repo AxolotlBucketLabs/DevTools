@@ -2,6 +2,8 @@
 
 Load [Axolotl-PM](https://github.com/axolotl-pm/PocketMine-MP) plugins from folders, share development virions, and build standalone PHARs through server commands, the CLI, or GitHub Actions.
 
+See the [architecture overview](ARCHITECTURE.md) for how folder loading, shared virions, and PHAR builds fit together.
+
 [![CI](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml/badge.svg)](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/NhanAZ/DevTools)](https://github.com/NhanAZ/DevTools/releases/latest)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

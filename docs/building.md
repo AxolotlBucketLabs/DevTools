@@ -4,6 +4,42 @@
 
 The same operations are available outside a running server through the [CLI](cli.md). [Composer preparation](dependencies.md) is explicit and occurs before the build. Neither normal build nor server startup downloads dependency code.
 
+## Build flow
+
+All three entry points call the same build services. GitHub Actions invokes the CLI, while server commands and the CLI report the same validation and build failures.
+
+```mermaid
+flowchart LR
+    Entry["Server command, CLI,<br/>or GitHub Action"]
+    Inputs["Project source and manifest<br/>+ optional devtools.yml<br/>+ prepared virions/"]
+    Validate["Validate project<br/>and declarations"]
+    Resolve["Resolve local<br/>declared virions"]
+    Stage["Stage files without<br/>changing source"]
+    Shade["AST-shade virions<br/>plugin build only"]
+    BuildPlugin["Create and verify<br/>plugin PHAR"]
+    BuildVirion["Create and verify<br/>virion PHAR"]
+    Plugin["Plugin PHAR"]
+    Virion["Virion PHAR"]
+    Extract["Extract verified PHAR"]
+    FolderZip["Folder or ZIP"]
+
+    Entry --> Inputs
+    Inputs --> Validate
+    Validate --> Resolve
+    Resolve --> Stage
+    Stage -->|plugin| Shade
+    Stage -->|plugin| BuildPlugin
+    Shade --> BuildPlugin
+    Stage -->|virion| BuildVirion
+    BuildPlugin --> Plugin
+    BuildVirion --> Virion
+    Plugin --> Extract
+    Virion --> Extract
+    Extract --> FolderZip
+```
+
+The `build both` command runs the two role-specific paths separately for a dual-role project. A plugin PHAR receives declared virions in a private namespace; a virion PHAR keeps its own source and does not merge plugins or other virions.
+
 Run these commands as an operator.
 
 ```text

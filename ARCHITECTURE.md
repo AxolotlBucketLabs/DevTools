@@ -2,6 +2,68 @@
 
 DevTools is one Axolotl-PM plugin and one Composer project. Its boundaries follow the three user workflows.
 
+## System overview
+
+The runtime loader and the artifact builder share validation and virion metadata, but they serve different purposes. Runtime loading keeps development folders available on a server; building packages the same project into a standalone PHAR.
+
+```mermaid
+flowchart TB
+    subgraph Inputs["Project inputs"]
+        Plugin["Plugin project<br/>plugin.yml + src/"]
+        Config["Optional devtools.yml"]
+        Virions["Prepared virions/<br/>folders or PHARs"]
+    end
+
+    subgraph EntryPoints["Entry points"]
+        Server["Axolotl-PM server"]
+        Commands["Server commands"]
+        CLI["CLI"]
+        Actions["GitHub Actions"]
+    end
+
+    subgraph DevTools["DevTools services"]
+        Loader["FolderPluginLoader"]
+        Validation["PluginProjectValidator"]
+        Manager["VirionManager"]
+        Resolver["BuildConfigResolver<br/>and VirionResolver"]
+        Builder["PharBuilder"]
+        Shader["NamespaceShader"]
+        Extractor["PharExtractor"]
+    end
+
+    subgraph Outputs["Outputs"]
+        ClassLoader["Shared thread-safe<br/>class loader"]
+        PluginPhar["Standalone plugin PHAR"]
+        VirionPhar["Standalone virion PHAR"]
+        Extracted["Folder or ZIP"]
+    end
+
+    Server --> Loader
+    Server --> Manager
+    Plugin --> Loader
+    Plugin --> Validation
+    Loader --> Validation
+    Validation --> Builder
+    Virions --> Manager
+    Virions --> Resolver
+    Plugin --> Resolver
+    Config --> Resolver
+    Manager --> ClassLoader
+    Commands --> Builder
+    CLI --> Builder
+    Actions --> CLI
+    Builder --> Resolver
+    Builder --> Shader
+    Resolver --> Shader
+    Shader --> PluginPhar
+    Builder --> VirionPhar
+    Commands --> Extractor
+    CLI --> Extractor
+    Extractor --> Extracted
+```
+
+The server path registers folder plugins and shared virions with Axolotl-PM. The build path uses local project inputs and prepared virions, shades declared virions into plugin-private namespaces when needed, and verifies the resulting PHAR. Dependency source preparation remains outside DevTools; normal loading and building do not download external code.
+
 ## Folder loading at startup
 
 Axolotl-PM loads `DevTools.phar` at `STARTUP`. `DevTools::onLoad()` registers `FolderPluginLoader`. Axolotl-PM's plugin manager detects the new loader and re-triages the same plugin directory, so folder plugins participate in normal duplicate, API, dependency, main-class, resource, and enable-order handling. The loader excludes the matching source directory (`plugins/DevTools`) so the development checkout is not loaded a second time beside the DevTools PHAR.
