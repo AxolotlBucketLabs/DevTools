@@ -173,6 +173,9 @@ runs:
           fi
         done <<< "$INPUT_PHPSTAN_PATHS"
 
+        PHPSTAN_PHAR="$RUNNER_TEMP/devtools-phpstan.phar"
+        cp "$DEVTOOLS_ACTION_PATH/vendor/phpstan/phpstan/phpstan.phar" "$PHPSTAN_PHAR"
+
         server_index=0
         for SERVER_PATH in "${SERVER_PATHS[@]}"; do
           server_index=$((server_index + 1))
@@ -201,7 +204,7 @@ runs:
             "--out=$PHPSTAN_CONFIG" \
             "--tmp-dir=$RUNNER_TEMP/devtools-phpstan-cache-$server_index" \
             "${PHPSTAN_SCAN_ARGS[@]}"
-          php "$DEVTOOLS_ACTION_PATH/vendor/phpstan/phpstan/phpstan" analyse \
+          php "$PHPSTAN_PHAR" analyse \
             --configuration="$PHPSTAN_CONFIG" \
             --no-progress \
             --error-format=table \

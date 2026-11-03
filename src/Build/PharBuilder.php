@@ -34,8 +34,10 @@ use function rename;
 
 use SplFileInfo;
 
+use function str_ends_with;
 use function str_replace;
 use function strrpos;
+use function strtolower;
 use function substr;
 
 use Throwable;
@@ -86,7 +88,6 @@ final class PharBuilder
         $this->assertStandaloneManifest($manifest);
         $config = $this->configResolver->resolve($projectRoot, $manifest->description->getName());
         $virions = $this->virionResolver->resolve($config->virions, $virionsDirectory);
-        $this->assertPluginNamespaceDoesNotOverlapVirions($manifest, $virions);
         $shaded = [];
         foreach ($virions as $virion) {
             $shaded[$virion->manifest->antigen] = $this->shadedNamespace($manifest, $virion);
@@ -143,6 +144,7 @@ final class PharBuilder
         $failure = null;
         try {
             $this->stagePlugin($projectRoot, $stage, $config, $realOutput);
+            $this->assertPluginDeclarationsDoNotOverlapVirions($manifest, $virions, $stage . DIRECTORY_SEPARATOR . 'src');
             $this->namespaceShader->shadeDirectory($stage . DIRECTORY_SEPARATOR . 'src', $shaded, false);
             $virionDirectories = $this->stageVirions($virions, $manifest, $stage, $shaded);
             foreach ($virionDirectories as $virionDirectory) {
@@ -311,20 +313,48 @@ final class PharBuilder
     }
 
     /** @param list<VirionProject> $virions */
-    private function assertPluginNamespaceDoesNotOverlapVirions(PluginManifest $plugin, array $virions): void
+    private function assertPluginDeclarationsDoNotOverlapVirions(PluginManifest $plugin, array $virions, string $sourceDirectory): void
     {
         $main = trim($plugin->description->getMain(), '\\');
         $separator = strrpos($main, '\\');
-        if ($separator === false) {
+        if ($separator !== false) {
+            $pluginNamespace = substr($main, 0, $separator);
+            foreach ($virions as $virion) {
+                if ($this->isNamespaceMember($pluginNamespace, $virion->manifest->antigen)) {
+                    throw new BuildException(
+                        "Plugin namespace {$pluginNamespace} overlaps virion antigen {$virion->manifest->antigen}. "
+                        . 'Choose a plugin namespace outside the virion antigen before building a shaded PHAR.',
+                    );
+                }
+            }
+        }
+        if (!is_dir($sourceDirectory)) {
             return;
         }
-        $pluginNamespace = substr($main, 0, $separator);
-        foreach ($virions as $virion) {
-            if ($this->isNamespaceMember($pluginNamespace, $virion->manifest->antigen)) {
-                throw new BuildException(
-                    "Plugin namespace {$pluginNamespace} overlaps virion antigen {$virion->manifest->antigen}. "
-                    . 'Choose a plugin namespace outside the virion antigen before building a shaded PHAR.',
-                );
+
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceDirectory, FilesystemIterator::SKIP_DOTS),
+        );
+        foreach ($files as $file) {
+            if (!$file instanceof SplFileInfo || !$file->isFile() || !str_ends_with(strtolower($file->getFilename()), '.php')) {
+                continue;
+            }
+            $symbols = $this->sourceInspector->inspect($file->getPathname());
+            foreach (array_merge($symbols->classes, $symbols->functions, $symbols->constants) as $declaration) {
+                $separator = strrpos($declaration, '\\');
+                if ($separator === false) {
+                    continue;
+                }
+                $namespace = substr($declaration, 0, $separator);
+                foreach ($virions as $virion) {
+                    if (!$this->isNamespaceMember($namespace, $virion->manifest->antigen)) {
+                        continue;
+                    }
+                    throw new BuildException(
+                        "Plugin declaration {$declaration} overlaps virion antigen {$virion->manifest->antigen}. "
+                        . 'Choose a plugin declaration namespace outside the virion antigen before building a shaded PHAR.',
+                    );
+                }
             }
         }
     }

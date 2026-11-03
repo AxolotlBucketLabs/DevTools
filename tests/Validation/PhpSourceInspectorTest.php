@@ -67,4 +67,23 @@ PHP);
 
         self::assertSame([], $symbols->functions);
     }
+
+    public function test_reference_return_functions_are_detected(): void
+    {
+        $path = $this->temporaryDirectory . '/ReferenceFunction.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+function &value(): string
+{
+    static $value = 'shared';
+    return $value;
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\value'], $symbols->functions);
+    }
 }

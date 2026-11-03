@@ -244,7 +244,9 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('devtools-phpstan-cache-$server_index', $actionContents);
         self::assertStringContainsString('PHPSTAN_SCAN_ARGS', $actionContents);
         self::assertStringContainsString('bin/devtools-phpstan-config.php', $actionContents);
-        self::assertStringContainsString('vendor/phpstan/phpstan/phpstan', $actionContents);
+        self::assertStringContainsString('vendor/phpstan/phpstan/phpstan.phar', $actionContents);
+        self::assertStringContainsString('php "$PHPSTAN_PHAR" analyse', $actionContents);
+        self::assertStringNotContainsString('vendor/phpstan/phpstan/phpstan" analyse', $actionContents);
         self::assertStringNotContainsString('vendor/bin/phpstan', $actionContents);
         self::assertStringContainsString('--no-scripts', $actionContents);
         self::assertStringContainsString('--no-plugins', $actionContents);

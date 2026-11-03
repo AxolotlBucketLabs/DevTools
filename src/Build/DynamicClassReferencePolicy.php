@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Build;
 
 use function array_search;
+use function count;
+use function in_array;
 use function is_string;
 use function ltrim;
 
@@ -61,10 +63,10 @@ final class DynamicClassReferencePolicy
     public static function allowsNonAutoloadingIsATypeArgument(FuncCall $node): bool
     {
         $name = $node->name;
-        $arguments = self::classNameArguments($node);
+        $argument = self::argument($node, 1, 'class');
         if (!$name instanceof Name || self::resolvedName($name) !== 'is_a'
-            || count($node->args) !== 2 || count($arguments) !== 1
-            || $arguments[0]->unpack || !$arguments[0]->value instanceof Variable) {
+            || count($node->args) !== 2 || $argument === null
+            || $argument->unpack || !$argument->value instanceof Variable) {
             return false;
         }
 
@@ -92,7 +94,10 @@ final class DynamicClassReferencePolicy
             'interface_exists' => [0 => 'interface'],
             'trait_exists' => [0 => 'trait'],
             'enum_exists' => [0 => 'enum'],
-            'is_a', 'is_subclass_of' => [1 => 'class'],
+            'is_a' => self::allowsStringMode($node)
+                ? [0 => 'object_or_class', 1 => 'class']
+                : [1 => 'class'],
+            'is_subclass_of' => [0 => 'object_or_class', 1 => 'class'],
             default => [],
         };
         if ($parameters === []) {
@@ -109,6 +114,66 @@ final class DynamicClassReferencePolicy
             }
         }
         return $arguments;
+    }
+
+    /**
+     * The first operand of is_subclass_of() may be an object or a class name.
+     * A variable is safe only after a throwing class_exists() guard has loaded
+     * the class name, which preserves the existing validated factory pattern.
+     */
+    public static function allowsNonAutoloadingIsSubclassOfObjectOrClassArgument(FuncCall $node): bool
+    {
+        if (!$node->name instanceof Name || self::resolvedName($node->name) !== 'is_subclass_of'
+            || !isset($node->args[0]) || !$node->args[0] instanceof Arg
+            || !$node->args[0]->value instanceof Variable
+            || !is_string($node->args[0]->value->name)) {
+            return false;
+        }
+
+        $variable = $node->args[0]->value->name;
+        $parent = $node->getAttribute('parent');
+        if (!$parent instanceof BooleanNot || $parent->expr !== $node) {
+            return false;
+        }
+        $statement = $parent->getAttribute('parent');
+        if (!$statement instanceof If_ || !self::isThrowingGuard($statement, 'is_subclass_of', $variable)) {
+            return false;
+        }
+        $function = self::enclosingFunction($node);
+        if ($function === null) {
+            return false;
+        }
+        $statements = $function->getStmts() ?? [];
+        $index = array_search($statement, $statements, true);
+
+        return is_int($index) && $index > 0
+            && self::isThrowingGuard($statements[$index - 1], 'class_exists', $variable);
+    }
+
+    private static function allowsStringMode(FuncCall $node): bool
+    {
+        $argument = self::argument($node, 2, 'allow_string');
+        if ($argument === null) {
+            return false;
+        }
+
+        return !($argument->value instanceof ConstFetch
+            && strtolower($argument->value->name->toString()) === 'false');
+    }
+
+    private static function argument(FuncCall $node, int $position, string $name): ?Arg
+    {
+        foreach ($node->args as $index => $argument) {
+            if (!$argument instanceof Arg) {
+                continue;
+            }
+            if (($argument->name === null && $index === $position)
+                || ($argument->name !== null && $argument->name->toString() === $name)) {
+                return $argument;
+            }
+        }
+
+        return null;
     }
 
     /** The variable class operand of instanceof performs a type check without autoloading. */

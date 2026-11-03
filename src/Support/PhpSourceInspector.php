@@ -128,7 +128,7 @@ final class PhpSourceInspector
                 continue;
             }
 
-            if ($token === '&') {
+            if ($token === '&' || (is_array($token) && in_array($token[0], [T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG, T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG], true))) {
                 continue;
             }
 

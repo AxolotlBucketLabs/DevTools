@@ -119,7 +119,7 @@ Check out the Axolotl-PM source, then pass its local path to the composite actio
           phpstan-server: .devtools-server
 ```
 
-The analysis helper installs that server's production dependencies with scripts and plugins disabled. It analyzes plugin `src/` and discovers symbols from Axolotl-PM, declared virions, and optional `phpstan-paths`. Level 4 is an example, not the default. Missing sources or analysis errors fail the action. This is static analysis, not a running server test. Newline-separated server paths remain accepted for existing callers, but only Axolotl-PM is officially supported.
+The analysis helper installs that server's production dependencies with scripts and plugins disabled. It runs the bundled PHPStan PHAR from a temporary path outside DevTools' Composer project, so DevTools' own development dependencies cannot satisfy missing server symbols. It analyzes plugin `src/` and discovers symbols from Axolotl-PM, declared virions, and optional `phpstan-paths`. Level 4 is an example, not the default. Missing sources or analysis errors fail the action. This is static analysis, not a running server test. Newline-separated server paths remain accepted for existing callers, but only Axolotl-PM is officially supported.
 
 For the reusable workflow, set `phpstan: max` and `axolotl-ref` to the Axolotl-PM release tag or source ref used for analysis. Use a full SHA when the repository needs an immutable source snapshot. Use `phpstan-server` only for additional sources already present in the caller workspace.
 

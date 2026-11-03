@@ -111,6 +111,33 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('dependency', strtolower($registry->entries()[1]->message));
     }
 
+    public function test_conflicting_member_of_dependency_cycle_prevents_partial_registration(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $a = $this->copyFixture('SharedVirion', 'virions/A');
+        $b = $this->copyFixture('SharedVirion', 'virions/B');
+        $this->filesystem->removeTree($a . '/src');
+        $this->filesystem->removeTree($b . '/src');
+        $this->filesystem->ensureDirectory($a . '/src/CycleConflict/A');
+        $this->filesystem->ensureDirectory($b . '/src/CycleConflict/A/Sub');
+        file_put_contents($a . '/src/CycleConflict/A/Base.php', "<?php\nnamespace CycleConflict\\A;\nfinal class Base {}\n");
+        file_put_contents($b . '/src/CycleConflict/A/Sub/Child.php', "<?php\nnamespace CycleConflict\\A\\Sub;\nfinal class Child extends \\CycleConflict\\A\\Base {}\n");
+        file_put_contents($a . '/virion.yml', "name: A\nversion: 1.0.0\nantigen: CycleConflict\\A\napi: 5.0.0\nvirions:\n  - B\n");
+        file_put_contents($b . '/virion.yml', "name: B\nversion: 1.0.0\nantigen: CycleConflict\\A\\Sub\napi: 5.0.0\nvirions:\n  - A\n");
+        $registrar = new FakeClassLoaderRegistrar();
+        $registry = new VirionRegistry();
+
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('A', '*', 'cycle-conflict-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertCount(2, $registry->entries());
+        self::assertStringContainsString('conflicts', strtolower($registry->entries()[0]->message));
+        self::assertStringContainsString('conflicts', strtolower($registry->entries()[1]->message));
+    }
+
     public function test_one_shared_virion_is_registered_once_and_used_by_two_plugins(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
@@ -172,6 +199,28 @@ final class VirionManagerTest extends TestCase
 
         self::assertSame(VirionStatus::FAILED, $registry->entries()[0]->status);
         self::assertStringContainsString('declared more than once', $registry->entries()[0]->message);
+    }
+
+    public function test_class_names_that_differ_only_by_case_are_rejected(): void
+    {
+        $virions = $this->temporaryDirectory . '/virions';
+        $project = $this->copyFixture('SharedVirion', 'virions/CaseCollision');
+        file_put_contents(
+            $project . '/src/Shared/Virion/Greeting.php',
+            <<<'PHP'
+<?php
+namespace Shared\Virion;
+
+final class Greeting {}
+final class greeting {}
+PHP,
+        );
+        $registry = new VirionRegistry();
+
+        $this->manager(new FakeClassLoaderRegistrar(), $registry)->discoverAndLoad($virions);
+
+        self::assertSame(VirionStatus::FAILED, $registry->entries()[0]->status);
+        self::assertStringContainsString('differ only by case', $registry->entries()[0]->message);
     }
 
     public function test_class_file_path_and_case_must_match_antigen(): void

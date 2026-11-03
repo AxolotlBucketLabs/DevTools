@@ -84,17 +84,20 @@ final class Application
                     $destination = $this->absolute($this->required($options, 'out'), $project);
                     $format = $options['format'] ?? 'folder';
                     $artifactType = $options['type'] ?? 'auto';
+                    $checks['artifact'] = 'failed';
+                    $inspection = $this->inspector->inspect($artifact);
+                    $checks['artifact'] = 'passed';
+                    $detected = $inspection['type'] ?? null;
+                    if (!is_string($detected)) {
+                        throw new InvalidArgumentException('Artifact type could not be detected.');
+                    }
                     if ($artifactType === 'auto') {
-                        $detected = $this->inspector->inspect($artifact)['type'] ?? null;
-                        if (!is_string($detected)) {
-                            throw new InvalidArgumentException('Artifact type could not be detected.');
-                        }
                         if ($detected === ProjectRole::DUAL->value) {
                             throw new InvalidArgumentException('A dual-role artifact requires --type=plugin or --type=virion for extraction.');
                         }
                         $artifactType = $detected;
                     } else {
-                        $this->assertArtifactType($artifact, $artifactType);
+                        $this->assertArtifactType($inspection, $artifactType);
                     }
                     if ($format === 'folder') {
                         $files = $this->extractor->extract(new PharArchiveReader($artifact), $destination, $overwrite);
@@ -277,12 +280,13 @@ final class Application
         return $options[$key] ?? throw new InvalidArgumentException("Required option: --{$key}=PATH");
     }
 
-    private function assertArtifactType(string $artifact, string $type): void
+    /** @param array<string, mixed> $inspection */
+    private function assertArtifactType(array $inspection, string $type): void
     {
         if ($type === 'auto') {
             return;
         }
-        $detected = $this->inspector->inspect($artifact)['type'] ?? null;
+        $detected = $inspection['type'] ?? null;
         if (!is_string($detected)) {
             throw new InvalidArgumentException('Artifact type could not be detected.');
         }

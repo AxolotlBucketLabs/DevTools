@@ -100,10 +100,11 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
             foreach (DynamicClassReferencePolicy::classNameArguments($node) as $argument) {
                 if ($argument->unpack || (!$this->isStaticClassExpression($argument->value)
                     && !($function === 'is_a' && DynamicClassReferencePolicy::allowsNonAutoloadingIsATypeArgument($node))
+                    && !($function === 'is_subclass_of' && DynamicClassReferencePolicy::allowsNonAutoloadingIsSubclassOfObjectOrClassArgument($node))
                     && !($function === 'class_exists'
                         && DynamicClassReferencePolicy::allowsAnnotated($node, $argument->value)))) {
                     throw new BuildException(
-                        "Cannot safely shade dynamic class-name argument to {$function}() on line {$node->getStartLine()}.",
+                        "Cannot safely shade dynamic class reference: dynamic class-name argument to {$function}() on line {$node->getStartLine()}.",
                     );
                 }
             }
@@ -207,7 +208,8 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
     private function isStaticClassExpression(Expr $expression): bool
     {
         return $this->staticString($expression) !== null
-            || ($expression instanceof ClassConstFetch && $expression->class instanceof Name);
+            || ($expression instanceof ClassConstFetch && $expression->class instanceof Name)
+            || ($expression instanceof New_ && $expression->class instanceof Name);
     }
 
     private function staticString(Expr $expression): ?string

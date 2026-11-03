@@ -440,9 +440,10 @@ namespace Shared\Virion {
 }
 
 namespace GlobalHelpers {
-    function value(): string
+    function &value(): string
     {
-        return 'shared';
+        static $value = 'shared';
+        return $value;
     }
 }
 PHP,
@@ -450,6 +451,26 @@ PHP,
 
         $this->expectException(BuildException::class);
         $this->expectExceptionMessage('declaration GlobalHelpers\\value is outside antigen');
+        $this->builder()->build(
+            $project,
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
+            $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build',
+        );
+    }
+
+    public function test_plugin_class_declarations_overlapping_a_virion_are_rejected_before_shading(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+        file_put_contents($project . DIRECTORY_SEPARATOR . 'devtools.yml', "virions:\n  - SharedVirion\n");
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion');
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Custom.php',
+            "<?php\nnamespace Shared\\Virion;\nfinal class Custom {}\n",
+        );
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('Plugin declaration Shared\\Virion\\Custom overlaps virion antigen');
         $this->builder()->build(
             $project,
             $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',

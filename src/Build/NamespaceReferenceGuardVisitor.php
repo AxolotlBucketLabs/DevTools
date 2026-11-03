@@ -85,10 +85,11 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
             foreach (DynamicClassReferencePolicy::classNameArguments($node) as $argument) {
                 if ($argument->unpack || (!$this->isStaticClassExpression($argument->value)
                     && !($function === 'is_a' && DynamicClassReferencePolicy::allowsNonAutoloadingIsATypeArgument($node))
+                    && !($function === 'is_subclass_of' && DynamicClassReferencePolicy::allowsNonAutoloadingIsSubclassOfObjectOrClassArgument($node))
                     && !($function === 'class_exists'
                         && DynamicClassReferencePolicy::allowsAnnotated($node, $argument->value)))) {
                     throw new BuildException(
-                        "Cannot prove that dynamic class-name argument to {$function}() on line {$node->getStartLine()} is independent of an undeclared virion.",
+                        "Cannot prove that dynamic class reference: dynamic class-name argument to {$function}() on line {$node->getStartLine()} is independent of an undeclared virion.",
                     );
                 }
             }
@@ -154,6 +155,7 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
     private function isStaticClassExpression(Expr $expression): bool
     {
         return $this->staticString($expression) !== null
-            || ($expression instanceof ClassConstFetch && $expression->class instanceof Name);
+            || ($expression instanceof ClassConstFetch && $expression->class instanceof Name)
+            || ($expression instanceof New_ && $expression->class instanceof Name);
     }
 }

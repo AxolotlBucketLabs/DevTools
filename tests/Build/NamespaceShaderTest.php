@@ -93,7 +93,7 @@ PHP;
 namespace Fixture;
 use function is_a as matches;
 class_exists(autoload: false, class: \Shared\Virion\Greeting::class);
-is_subclass_of(class: \Shared\Virion\Greeting::class, object_or_class: $value);
+is_subclass_of(class: \Shared\Virion\Greeting::class, object_or_class: new \stdClass());
 matches(class: $className, object_or_class: $value);
 PHP);
         $shader = new NamespaceShader();
@@ -145,6 +145,26 @@ PHP);
             spl_autoload_unregister($autoload);
         }
         self::assertSame([], $autoloaded);
+    }
+
+    /** @dataProvider autoloading_object_or_class_provider */
+    public function test_autoloading_object_or_class_arguments_are_rejected(string $source): void
+    {
+        $directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
+        $this->filesystem->ensureDirectory($directory);
+        $contents = "<?php\nnamespace Fixture;\nfinal class Matcher { public function matches(string " . '$class' . "): bool { {$source} } }\n";
+        file_put_contents($directory . DIRECTORY_SEPARATOR . 'Matcher.php', $contents);
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('dynamic class-name argument');
+        (new NamespaceShader())->shadeDirectory($directory, ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function autoloading_object_or_class_provider(): iterable
+    {
+        yield 'is_subclass_of positional object or class' => ['return is_subclass_of($class, \\stdClass::class);'];
+        yield 'is_a named allow string' => ['return is_a(object_or_class: $class, class: \\stdClass::class, allow_string: true);'];
     }
 
     public function test_dynamic_instanceof_target_variable_is_allowed_without_autoloading(): void

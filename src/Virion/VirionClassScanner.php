@@ -60,17 +60,32 @@ final class VirionClassScanner
         }
         sort($classes, SORT_STRING);
         $classes = array_values(array_unique($classes));
+        /** @var array<string, list<array{class: string, file: string}>> $declaredIn */
         $declaredIn = [];
         foreach ($classesByFile as $file => $fileClasses) {
             foreach ($fileClasses as $class) {
-                $declaredIn[$class][] = $file;
+                $declaredIn[strtolower($class)][] = ['class' => $class, 'file' => $file];
+            }
+        }
+        foreach ($declaredIn as $declarations) {
+            if (count($declarations) > 1) {
+                $names = [];
+                foreach ($declarations as $declaration) {
+                    if (!in_array($declaration['class'], $names, true)) {
+                        $names[] = $declaration['class'];
+                    }
+                }
+                if (count($names) === 1) {
+                    throw new VirionException("Cannot load {$project->manifest->name}: class {$names[0]} is declared more than once.");
+                }
+                throw new VirionException(
+                    "Cannot load {$project->manifest->name}: class declarations " . implode(', ', $names) . ' differ only by case.',
+                );
             }
         }
         foreach ($classes as $class) {
-            $files = $declaredIn[$class] ?? [];
-            if (count($files) > 1) {
-                throw new VirionException("Cannot load {$project->manifest->name}: class {$class} is declared more than once.");
-            }
+            $declarations = $declaredIn[strtolower($class)] ?? [];
+            $files = $declarations === [] ? [] : [$declarations[0]['file']];
             if ($class === $project->manifest->antigen) {
                 throw new VirionException(
                     "Cannot load {$project->manifest->name}: class {$class} must be below antigen {$project->manifest->antigen}, not equal to it.",

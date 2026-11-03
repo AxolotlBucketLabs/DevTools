@@ -55,6 +55,7 @@ final class ApplicationTest extends TestCase
         self::assertSame($built['data']['sha256'], $inspected['data']['sha256']);
         [$code, $extracted] = $this->cli(['extract', '--project=' . $project, '--artifact=build/BuildFixture.phar', '--out=unpacked']);
         self::assertSame(0, $code, json_encode($extracted, JSON_THROW_ON_ERROR));
+        self::assertSame('passed', $extracted['checks']['artifact']);
         self::assertFileExists($project . '/unpacked/src/Main.php');
         [$code, $failed] = $this->cli(['build', '--project=' . $project]);
         self::assertSame(1, $code);

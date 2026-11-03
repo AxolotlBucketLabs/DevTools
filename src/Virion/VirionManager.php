@@ -28,6 +28,9 @@ final class VirionManager
     /** @var array<string, 'checking'|'ready'|'failed'> */
     private array $graphPreflightStates = [];
 
+    /** @var array<string, list<string>> */
+    private array $graphPreflightClasses = [];
+
     public function __construct(
         private readonly VirionDiscovery $discovery,
         private readonly VirionProjectFactory $projectFactory,
@@ -162,6 +165,7 @@ final class VirionManager
             unset($requirementsByName[$nameKey]);
         }
 
+        $this->preflightSelectedDependencyCycles($selectedProjects);
         foreach ($projectsByName as $nameKey => $_candidates) {
             foreach ($selectionActions[$nameKey] ?? [] as $action) {
                 if ($action['type'] === 'selected') {
@@ -306,6 +310,7 @@ final class VirionManager
                     throw new VirionException("Cannot load {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.");
                 }
             }
+            $this->graphPreflightClasses[$nameKey] = $classes;
         } catch (Throwable $error) {
             $this->recordDependencyFailure($location, $project, $error->getMessage());
             $this->graphPreflightStates[$nameKey] = 'failed';
@@ -316,6 +321,88 @@ final class VirionManager
         $this->graphPreflightStates[$nameKey] = 'ready';
 
         return true;
+    }
+
+    /** @param array<string, array{string, VirionProject}> $selectedProjects */
+    private function preflightSelectedDependencyCycles(array $selectedProjects): void
+    {
+        foreach (array_keys($selectedProjects) as $nameKey) {
+            $this->preflightSelectedProject($nameKey, $selectedProjects);
+        }
+
+        $keys = array_keys($selectedProjects);
+        $count = count($keys);
+        for ($left = 0; $left < $count; ++$left) {
+            $leftKey = $keys[$left];
+            if (($this->graphPreflightStates[$leftKey] ?? null) !== 'ready') {
+                continue;
+            }
+            for ($right = $left + 1; $right < $count; ++$right) {
+                $rightKey = $keys[$right];
+                if (($this->graphPreflightStates[$rightKey] ?? null) !== 'ready'
+                    || !$this->dependencyReachable($leftKey, $rightKey, $selectedProjects, [])
+                    || !$this->dependencyReachable($rightKey, $leftKey, $selectedProjects, [])) {
+                    continue;
+                }
+
+                [$leftLocation, $leftProject] = $selectedProjects[$leftKey];
+                [$rightLocation, $rightProject] = $selectedProjects[$rightKey];
+                $conflict = null;
+                if ($this->isNamespaceMember($leftProject->manifest->antigen, $rightProject->manifest->antigen)
+                    || $this->isNamespaceMember($rightProject->manifest->antigen, $leftProject->manifest->antigen)) {
+                    $conflict = "antigen {$leftProject->manifest->antigen} conflicts with {$rightProject->manifest->antigen}";
+                } else {
+                    $rightClasses = [];
+                    foreach ($this->graphPreflightClasses[$rightKey] ?? [] as $class) {
+                        $rightClasses[strtolower($class)] = $class;
+                    }
+                    foreach ($this->graphPreflightClasses[$leftKey] ?? [] as $class) {
+                        if (isset($rightClasses[strtolower($class)])) {
+                            $conflict = "class {$class} conflicts with {$rightClasses[strtolower($class)]}";
+                            break;
+                        }
+                    }
+                }
+                if ($conflict === null) {
+                    continue;
+                }
+
+                foreach ($keys as $cycleKey) {
+                    if (($this->graphPreflightStates[$cycleKey] ?? null) !== 'ready'
+                        || !$this->dependencyReachable($cycleKey, $leftKey, $selectedProjects, [])
+                        || !$this->dependencyReachable($leftKey, $cycleKey, $selectedProjects, [])) {
+                        continue;
+                    }
+                    [$cycleLocation, $cycleProject] = $selectedProjects[$cycleKey];
+                    $otherProject = $cycleKey === $leftKey ? $rightProject : $leftProject;
+                    $this->recordDependencyFailure(
+                        $cycleLocation,
+                        $cycleProject,
+                        "Cannot load {$cycleProject->manifest->name}: dependency cycle with {$otherProject->manifest->name} has a {$conflict}.",
+                    );
+                    $this->graphPreflightStates[$cycleKey] = 'failed';
+                }
+            }
+        }
+    }
+
+    /** @param array<string, array{string, VirionProject}> $selectedProjects
+     * @param array<string, true> $visited
+     */
+    private function dependencyReachable(string $from, string $target, array $selectedProjects, array $visited): bool
+    {
+        if (isset($visited[$from]) || !isset($selectedProjects[$from])) {
+            return false;
+        }
+        $visited[$from] = true;
+        foreach ($selectedProjects[$from][1]->manifest->requirements as $requirement) {
+            $dependency = strtolower($requirement->name);
+            if ($dependency === $target || $this->dependencyReachable($dependency, $target, $selectedProjects, $visited)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function recordDependencyFailure(string $location, VirionProject $project, string $message): void
