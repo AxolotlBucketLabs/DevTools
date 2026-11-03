@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Virion;
 
+use function class_exists;
+
+use Closure;
+
+use function enum_exists;
 use function implode;
+use function interface_exists;
 use function ksort;
 use function ltrim;
 
@@ -16,6 +22,8 @@ use function str_starts_with;
 use function strtolower;
 
 use Throwable;
+
+use function trait_exists;
 
 final class VirionManager
 {
@@ -360,28 +368,28 @@ final class VirionManager
             $this->preflightSelectedProject($nameKey, $selectedProjects);
         }
 
-        $keys = array_keys($selectedProjects);
-        $assigned = [];
-        foreach ($keys as $seedKey) {
-            if (isset($assigned[$seedKey]) || ($this->graphPreflightStates[$seedKey] ?? null) !== 'ready') {
-                continue;
+        $readyKeys = [];
+        foreach (array_keys($selectedProjects) as $key) {
+            if (($this->graphPreflightStates[$key] ?? null) === 'ready') {
+                $readyKeys[] = $key;
             }
-            $component = [];
-            foreach ($keys as $candidateKey) {
-                if (($this->graphPreflightStates[$candidateKey] ?? null) !== 'ready'
-                    || ($candidateKey !== $seedKey
-                        && (!$this->dependencyReachable($seedKey, $candidateKey, $selectedProjects, [])
-                            || !$this->dependencyReachable($candidateKey, $seedKey, $selectedProjects, [])))) {
+        }
+        foreach ($this->stronglyConnectedComponents($selectedProjects) as $component) {
+            $isCycle = count($component) > 1;
+            if (!$isCycle) {
+                $cycleKey = $component[0] ?? null;
+                if ($cycleKey === null) {
                     continue;
                 }
-                $component[] = $candidateKey;
+                foreach ($selectedProjects[$cycleKey][1]->manifest->requirements as $requirement) {
+                    if (strtolower($requirement->name) === $cycleKey) {
+                        $isCycle = true;
+                        break;
+                    }
+                }
             }
-            if (count($component) === 1
-                && !$this->dependencyReachable($seedKey, $seedKey, $selectedProjects, [])) {
+            if (!$isCycle) {
                 continue;
-            }
-            foreach ($component as $componentKey) {
-                $assigned[$componentKey] = true;
             }
 
             $conflict = null;
@@ -399,9 +407,8 @@ final class VirionManager
                 }
             }
             if ($conflict === null) {
-                foreach ($keys as $externalKey) {
-                    if (in_array($externalKey, $component, true)
-                        || ($this->graphPreflightStates[$externalKey] ?? null) !== 'ready') {
+                foreach ($readyKeys as $externalKey) {
+                    if (in_array($externalKey, $component, true)) {
                         continue;
                     }
                     foreach ($component as $cycleKey) {
@@ -447,6 +454,76 @@ final class VirionManager
         }
     }
 
+    /**
+     * @param array<string, array{string, VirionProject}> $selectedProjects
+     * @return list<list<string>>
+     */
+    private function stronglyConnectedComponents(array $selectedProjects): array
+    {
+        $ready = [];
+        foreach (array_keys($selectedProjects) as $key) {
+            if (($this->graphPreflightStates[$key] ?? null) === 'ready') {
+                $ready[$key] = true;
+            }
+        }
+
+        $index = 0;
+        /** @var array<string, int> $indices */
+        $indices = [];
+        /** @var array<string, int> $lowLinks */
+        $lowLinks = [];
+        /** @var list<string> $stack */
+        $stack = [];
+        /** @var array<string, true> $onStack */
+        $onStack = [];
+        /** @var list<list<string>> $components */
+        $components = [];
+        /** @var Closure(string): void $visit */
+        $visit = function (string $node) use (&$visit, &$index, &$indices, &$lowLinks, &$stack, &$onStack, &$components, $ready, $selectedProjects): void {
+            $indices[$node] = $index;
+            $lowLinks[$node] = $index;
+            ++$index;
+            $stack[] = $node;
+            $onStack[$node] = true;
+
+            foreach ($selectedProjects[$node][1]->manifest->requirements as $requirement) {
+                $dependency = strtolower($requirement->name);
+                if (!isset($ready[$dependency])) {
+                    continue;
+                }
+                if (!isset($indices[$dependency])) {
+                    $visit($dependency);
+                    $lowLinks[$node] = min($lowLinks[$node], $lowLinks[$dependency]);
+                } elseif (isset($onStack[$dependency])) {
+                    $lowLinks[$node] = min($lowLinks[$node], $indices[$dependency]);
+                }
+            }
+
+            if ($lowLinks[$node] !== $indices[$node]) {
+                return;
+            }
+
+            $component = [];
+            do {
+                $member = array_pop($stack);
+                if ($member === null) {
+                    break;
+                }
+                unset($onStack[$member]);
+                $component[] = $member;
+            } while ($member !== $node);
+            $components[] = $component;
+        };
+
+        foreach (array_keys($ready) as $key) {
+            if (!isset($indices[$key])) {
+                $visit($key);
+            }
+        }
+
+        return $components;
+    }
+
     /** @param array<string, array{string, VirionProject}> $selectedProjects */
     private function selectedProjectConflict(string $leftKey, string $rightKey, array $selectedProjects): ?string
     {
@@ -484,25 +561,6 @@ final class VirionManager
         }
 
         return null;
-    }
-
-    /** @param array<string, array{string, VirionProject}> $selectedProjects
-     * @param array<string, true> $visited
-     */
-    private function dependencyReachable(string $from, string $target, array $selectedProjects, array $visited): bool
-    {
-        if (isset($visited[$from]) || !isset($selectedProjects[$from])) {
-            return false;
-        }
-        $visited[$from] = true;
-        foreach ($selectedProjects[$from][1]->manifest->requirements as $requirement) {
-            $dependency = strtolower($requirement->name);
-            if ($dependency === $target || $this->dependencyReachable($dependency, $target, $selectedProjects, $visited)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function recordDependencyFailure(string $location, VirionProject $project, string $message): void
@@ -560,6 +618,7 @@ final class VirionManager
                 if (!str_starts_with($class, $manifest->antigen . '\\')) {
                     throw new VirionException("Cannot load {$manifest->name}: class {$class} is outside antigen {$manifest->antigen}.");
                 }
+                $this->assertClassIsNotLoaded($class, $manifest->name);
                 $existingClass = $this->registry->findByClass($class);
                 if ($existingClass !== null) {
                     throw new VirionException("Class {$class} is already provided by {$existingClass->requireManifest()->name}.");
@@ -591,6 +650,29 @@ final class VirionManager
         $this->registry->record($entry);
 
         return $entry;
+    }
+
+    private function assertClassIsNotLoaded(string $class, string $virionName): void
+    {
+        if (!class_exists($class, false)
+            && !interface_exists($class, false)
+            && !trait_exists($class, false)
+            && !enum_exists($class, false)) {
+            return;
+        }
+
+        $origin = 'the server or another plugin';
+        try {
+            $file = (new \ReflectionClass($class))->getFileName();
+            if ($file !== false) {
+                $origin = $file;
+            }
+        } catch (\ReflectionException) {
+        }
+
+        throw new VirionException(
+            "Cannot load {$virionName}: class {$class} is already loaded from {$origin}; refusing to register a second implementation.",
+        );
     }
 
     private function assertCompatible(VirionManifest $manifest): void

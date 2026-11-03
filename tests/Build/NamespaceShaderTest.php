@@ -160,6 +160,52 @@ PHP);
         (new NamespaceShader())->shadeDirectory($directory, ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
     }
 
+    public function test_serialized_class_reference_is_rejected_during_shading(): void
+    {
+        $directory = $this->temporaryDirectory . '/src';
+        $this->filesystem->ensureDirectory($directory);
+        file_put_contents($directory . '/Serialized.php', <<<'PHP'
+<?php
+namespace Fixture;
+
+final class Serialized
+{
+    public static function restore(): object
+    {
+        return unserialize('O:22:"Shared\Virion\Greeting":0:{}');
+    }
+}
+PHP);
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('serialized class reference');
+
+        (new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+    }
+
+    public function test_serialized_class_reference_is_rejected_in_standalone_validation(): void
+    {
+        $directory = $this->temporaryDirectory . '/src';
+        $this->filesystem->ensureDirectory($directory);
+        file_put_contents($directory . '/Serialized.php', <<<'PHP'
+<?php
+namespace Fixture;
+
+final class Serialized
+{
+    public static function restore(): object
+    {
+        return unserialize('O:22:"Shared\Virion\Greeting":0:{}');
+    }
+}
+PHP);
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('development-only namespace');
+
+        (new NamespaceShader())->assertNoNamespaceReferences($directory, ['Shared\Virion']);
+    }
+
     /** @return iterable<string, array{string}> */
     public static function autoloading_object_or_class_provider(): iterable
     {

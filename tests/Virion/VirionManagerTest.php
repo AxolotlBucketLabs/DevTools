@@ -19,6 +19,7 @@ use NhanAZ\DevTools\Virion\VirionRegistry;
 use NhanAZ\DevTools\Virion\VirionRequirement;
 use NhanAZ\DevTools\Virion\VirionStatus;
 use Phar;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use pocketmine\thread\ThreadSafeClassLoader;
 
 final class VirionManagerTest extends TestCase
@@ -174,6 +175,7 @@ final class VirionManagerTest extends TestCase
         self::assertSame(VirionStatus::FAILED, $statuses['C']);
     }
 
+    #[RunInSeparateProcess]
     public function test_one_shared_virion_is_registered_once_and_used_by_two_plugins(): void
     {
         $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
@@ -514,6 +516,76 @@ PHP,
         self::assertSame('2.0.0', $registry->loaded()[0]->requireManifest()->version);
         self::assertSame(VirionStatus::SKIPPED, $registry->entries()[0]->status);
         self::assertStringContainsString('higher compatible version 2.0.0', $registry->entries()[0]->message);
+    }
+
+    public function test_preloaded_class_conflict_prevents_virion_registration(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $project = $virions . DIRECTORY_SEPARATOR . 'SharedV2';
+        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Audit' . DIRECTORY_SEPARATOR . 'Preloaded');
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'virion.yml',
+            "name: SharedV2\nversion: 2.0.0\nantigen: Audit\\Preloaded\napi: 5.0.0\n",
+        );
+        file_put_contents(
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Audit' . DIRECTORY_SEPARATOR . 'Preloaded' . DIRECTORY_SEPARATOR . 'Value.php',
+            "<?php\nnamespace Audit\\Preloaded; final class Value {}\n",
+        );
+        $preloaded = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'preloaded.php';
+        file_put_contents(
+            $preloaded,
+            "<?php\nnamespace Audit\\Preloaded; final class Value {}\n",
+        );
+        require_once $preloaded;
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $this->manager($registrar, $registry)->discoverAndLoad($virions, [
+            new VirionRequirement('SharedV2', '2.0.0', 'preloaded-class-test'),
+        ]);
+
+        self::assertSame([], $registrar->registrations);
+        self::assertSame([], $registry->loaded());
+        self::assertStringContainsString('already loaded', strtolower($registry->entries()[0]->message));
+    }
+
+    public function test_wide_dependency_dag_cycle_check_does_not_repeat_shared_subgraphs(): void
+    {
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $layers = 20;
+        for ($layer = 0; $layer < $layers; ++$layer) {
+            for ($branch = 0; $branch < 2; ++$branch) {
+                $suffix = $branch === 0 ? 'A' : 'B';
+                $name = "Bench{$layer}{$suffix}";
+                $antigen = "Bench\\L{$layer}{$suffix}";
+                $project = $virions . DIRECTORY_SEPARATOR . $name;
+                $source = $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $antigen);
+                $this->filesystem->ensureDirectory($source);
+                $requirements = '';
+                if ($layer < $layers - 1) {
+                    $nextLayer = $layer + 1;
+                    $requirements = "virions: [Bench{$nextLayer}A, Bench{$nextLayer}B]\n";
+                }
+                file_put_contents(
+                    $project . DIRECTORY_SEPARATOR . 'virion.yml',
+                    "name: {$name}\nversion: 1.0.0\nantigen: {$antigen}\napi: 5.0.0\n{$requirements}",
+                );
+                file_put_contents(
+                    $source . DIRECTORY_SEPARATOR . 'Value.php',
+                    "<?php\nnamespace {$antigen}; final class Value {}\n",
+                );
+            }
+        }
+
+        $registry = new VirionRegistry();
+        $registrar = new FakeClassLoaderRegistrar();
+        $started = hrtime(true);
+        $this->manager($registrar, $registry)->discoverAndLoad($virions);
+        $elapsed = (hrtime(true) - $started) / 1_000_000_000;
+
+        self::assertCount($layers * 2, $registrar->registrations);
+        self::assertCount($layers * 2, $registry->loaded());
+        self::assertLessThan(2.0, $elapsed, "Dependency graph preflight took {$elapsed} seconds.");
     }
 
     public function test_incompatible_plugin_requirements_load_no_arbitrary_version(): void

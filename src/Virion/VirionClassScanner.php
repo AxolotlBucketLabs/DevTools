@@ -4,9 +4,20 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Virion;
 
+use function file_get_contents;
+
 use FilesystemIterator;
+
+use function is_dir;
+use function is_file;
+
 use NhanAZ\DevTools\Support\Filesystem;
+use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
+
+use function preg_match;
+use function realpath;
+
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -46,7 +57,7 @@ final class VirionClassScanner
             }
             $symbols = $this->sourceInspector->inspect($entry->getPathname());
             foreach (array_merge($symbols->functions, $symbols->constants) as $symbol) {
-                if (!$this->isNamespaceMember($symbol, $project->manifest->antigen)) {
+                if (!$this->isNamespaceChild($symbol, $project->manifest->antigen)) {
                     throw new VirionException(
                         "Cannot load {$project->manifest->name}: declaration {$symbol} is outside antigen {$project->manifest->antigen}.",
                     );
@@ -114,12 +125,12 @@ final class VirionClassScanner
         return $classes;
     }
 
-    private function isNamespaceMember(string $candidate, string $prefix): bool
+    private function isNamespaceChild(string $candidate, string $prefix): bool
     {
         $candidate = strtolower(ltrim($candidate, '\\'));
         $prefix = strtolower(ltrim($prefix, '\\'));
 
-        return $candidate === $prefix || str_starts_with($candidate, $prefix . '\\');
+        return str_starts_with($candidate, $prefix . '\\');
     }
 
     private function isAutoloadShim(string $expectedPath, string $actualPath): bool
@@ -128,9 +139,28 @@ final class VirionClassScanner
         if ($contents === false || $this->sourceInspector->inspect($expectedPath)->classes !== []) {
             return false;
         }
+        $relative = null;
+        if (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])([^\'\"]+)\\1\\s*;/D', $contents, $matches) === 1) {
+            $relative = $matches[2];
+        } elseif (preg_match('/\\brequire_once\\s+__DIR__\\s*\\.\\s*([\'\"])\\/\\1\\s*\\.\\s*([\'\"])([^\'\"]+)\\2\\s*;/D', $contents, $matches) === 1) {
+            $relative = $matches[3];
+        }
+        if ($relative === null) {
+            return false;
+        }
+        try {
+            $relative = Path::normalizeRelative($relative);
+        } catch (\RuntimeException) {
+            return false;
+        }
+        $target = dirname($expectedPath) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        $targetReal = realpath($target);
+        $actualReal = realpath($actualPath);
+        if ($targetReal === false || $actualReal === false) {
+            return false;
+        }
 
-        return str_contains($contents, 'require_once')
-            && str_contains($contents, basename(str_replace('\\', '/', $actualPath)));
+        return $this->normalizePath($targetReal) === $this->normalizePath($actualReal);
     }
 
     private function relativePath(string $base, string $path): string
@@ -160,5 +190,12 @@ final class VirionClassScanner
         }
 
         return is_file($current);
+    }
+
+    private function normalizePath(string $path): string
+    {
+        $normalized = str_replace('\\', '/', $path);
+
+        return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
     }
 }

@@ -20,6 +20,7 @@ use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
 
+use function preg_match_all;
 use function strlen;
 use function strpos;
 
@@ -126,6 +127,9 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
 
     private function containsNamespaceReference(string $value, string $namespace): bool
     {
+        if ($this->containsSerializedClassReference($value, $namespace)) {
+            return true;
+        }
         $offset = 0;
         while (($position = strpos($value, $namespace, $offset)) !== false) {
             $end = $position + strlen($namespace);
@@ -133,6 +137,25 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
                 return true;
             }
             $offset = $position + 1;
+        }
+
+        return false;
+    }
+
+    private function containsSerializedClassReference(string $value, string $namespace): bool
+    {
+        $matches = [];
+        if (preg_match_all('/(?:O|C|E):(\d+):"([^"]+)":/i', $value, $matches, PREG_SET_ORDER) === false) {
+            return false;
+        }
+        $namespace = strtolower(ltrim($namespace, '\\'));
+        foreach ($matches as $match) {
+            $class = str_replace('\\\\', '\\', $match[2]);
+            $class = strtolower(ltrim($class, '\\'));
+            if ((int) $match[1] === strlen($class)
+                && ($class === $namespace || str_starts_with($class, $namespace . '\\'))) {
+                return true;
+            }
         }
 
         return false;

@@ -81,10 +81,13 @@ final class PhpSourceInspector
                         $classes[] = ltrim($namespace . '\\' . $name, '\\');
                     }
                 }
-            } elseif ($id === T_FUNCTION && $classBraceDepths === []) {
-                $name = $this->readDeclarationName($tokens, $index);
-                if ($name !== null) {
-                    $functions[] = ltrim($namespace . '\\' . $name, '\\');
+            } elseif ($id === T_FUNCTION) {
+                $classBodyDepth = $classBraceDepths === [] ? null : end($classBraceDepths);
+                if ($classBodyDepth === null || $classBodyDepth !== $braceDepth) {
+                    $name = $this->readDeclarationName($tokens, $index);
+                    if ($name !== null) {
+                        $functions[] = ltrim($namespace . '\\' . $name, '\\');
+                    }
                 }
             } elseif ($id === T_CONST && $classBraceDepths === []) {
                 foreach ($this->readConstantNames($tokens, $index, $namespace) as $constant) {

@@ -112,4 +112,27 @@ PHP);
 
         self::assertSame([], $symbols->functions);
     }
+
+    public function test_named_function_inside_method_is_reported_as_a_namespace_function(): void
+    {
+        $path = $this->temporaryDirectory . '/NestedFunction.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace ExternalHelpers;
+
+new class {
+    public function register(): void
+    {
+        function collision(): string
+        {
+            return 'collision';
+        }
+    }
+};
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
+    }
 }
