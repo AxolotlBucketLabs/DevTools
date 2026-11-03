@@ -49,8 +49,15 @@ final class VirionProjectFactory
                 }
                 new Phar($real);
             } catch (Throwable $error) {
-                if ($temporaryPath !== null && file_exists($temporaryPath)) {
-                    unlink($temporaryPath);
+                if ($temporaryPath !== null) {
+                    try {
+                        Phar::unlinkArchive($temporaryPath);
+                    } catch (Throwable) {
+                        // The snapshot may not have been opened successfully.
+                    }
+                    if (file_exists($temporaryPath)) {
+                        unlink($temporaryPath);
+                    }
                 }
                 throw new VirionException("Cannot open virion PHAR {$location}: {$error->getMessage()}", 0, $error);
             }
@@ -100,8 +107,15 @@ final class VirionProjectFactory
                 $temporaryPath,
             );
         } catch (Throwable $error) {
-            if ($temporaryPath !== null && file_exists($temporaryPath)) {
-                unlink($temporaryPath);
+            if ($temporaryPath !== null) {
+                try {
+                    Phar::unlinkArchive($temporaryPath);
+                } catch (Throwable) {
+                    // The snapshot may already have been released.
+                }
+                if (file_exists($temporaryPath)) {
+                    unlink($temporaryPath);
+                }
             }
             throw $error;
         }

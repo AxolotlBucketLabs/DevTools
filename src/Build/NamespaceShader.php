@@ -8,12 +8,12 @@ use function file_get_contents;
 use function file_put_contents;
 
 use FilesystemIterator;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
-use PhpParser\NodeVisitor\ParentConnectingVisitor;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
-use PhpParser\PrettyPrinter\Standard;
+use NhanAZ\DevTools\Vendor\PhpParser\NodeTraverser;
+use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\NameResolver;
+use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\ParentConnectingVisitor;
+use NhanAZ\DevTools\Vendor\PhpParser\Parser;
+use NhanAZ\DevTools\Vendor\PhpParser\ParserFactory;
+use NhanAZ\DevTools\Vendor\PhpParser\PrettyPrinter\Standard;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

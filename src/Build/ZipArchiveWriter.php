@@ -95,13 +95,12 @@ final class ZipArchiveWriter
                 }
                 throw new BuildException("Cannot install ZIP at {$output}.");
             }
+            PharSnapshot::remove($temporary);
             if ($backup !== null && file_exists($backup)) {
                 unlink($backup);
             }
         } finally {
-            if (file_exists($temporary)) {
-                unlink($temporary);
-            }
+            PharSnapshot::remove($temporary);
         }
 
         return count($entries);

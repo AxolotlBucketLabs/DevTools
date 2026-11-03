@@ -8,6 +8,9 @@ use function bin2hex;
 use function copy;
 use function file_exists;
 use function is_file;
+
+use Phar;
+
 use function random_bytes;
 use function sys_get_temp_dir;
 use function unlink;
@@ -26,6 +29,11 @@ final class PharSnapshot
 
     public static function remove(string $snapshot): void
     {
+        try {
+            Phar::unlinkArchive($snapshot);
+        } catch (\Throwable) {
+            // Fall back to the regular filesystem cleanup when the archive was never opened.
+        }
         if (file_exists($snapshot) && is_file($snapshot)) {
             unlink($snapshot);
         }

@@ -9,6 +9,8 @@ use function file_exists;
 
 use FilesystemIterator;
 
+use function hash;
+use function hash_file;
 use function ini_get;
 use function is_dir;
 use function is_file;
@@ -18,6 +20,7 @@ use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Virion\VirionClassScanner;
 use NhanAZ\DevTools\Virion\VirionManifestReader;
 use NhanAZ\DevTools\Virion\VirionProjectFactory;
+use NhanAZ\DevTools\Virion\VirionSourceFingerprint;
 use Phar;
 
 use function random_bytes;
@@ -103,11 +106,11 @@ final class VirionBuilder
         $failure = null;
         $result = null;
         try {
-            $this->stage($projectRoot, $stage, $project->manifest->antigen, $project->manifest->name);
+            $provenance = $this->stage($projectRoot, $stage, $project->manifest->antigen, $project->manifest->name, $project->sourceRoot);
             $this->filesystem->assertPortableTree($stage);
             $fileCount = $this->countFiles($stage);
             $this->writePhar($stage, $temporaryPhar);
-            $this->validatePhar($temporaryPhar, $project->manifest->name);
+            $this->validatePhar($temporaryPhar, $project->manifest->name, $provenance);
             $this->installOutput($temporaryPhar, $outputPath, $overwrite);
             $result = new VirionBuildResult($project->manifest, $outputPath, $fileCount);
         } catch (Throwable $error) {
@@ -138,7 +141,7 @@ final class VirionBuilder
         return $result;
     }
 
-    private function stage(string $projectRoot, string $stage, string $antigen, string $name): void
+    private function stage(string $projectRoot, string $stage, string $antigen, string $name, string $sourceRoot): ?string
     {
         $this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $stage . DIRECTORY_SEPARATOR . 'virion.yml');
         $source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
@@ -171,6 +174,14 @@ final class VirionBuilder
                 $this->filesystem->copyFile($source, $stage . DIRECTORY_SEPARATOR . $notice);
             }
         }
+        $provenance = $projectRoot . DIRECTORY_SEPARATOR . 'devtools-provenance.json';
+        if (!is_file($provenance)) {
+            return null;
+        }
+        $this->assertProvenance($provenance, $projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $sourceRoot, $name);
+        $this->filesystem->copyFile($provenance, $stage . DIRECTORY_SEPARATOR . 'devtools-provenance.json');
+
+        return $provenance;
     }
 
     private function writePhar(string $stage, string $path): void
@@ -184,7 +195,7 @@ final class VirionBuilder
         unset($phar);
     }
 
-    private function validatePhar(string $path, string $name): void
+    private function validatePhar(string $path, string $name, ?string $provenance): void
     {
         $phar = new Phar($path);
         if (!isset($phar['virion.yml']) || !isset($phar['src'])) {
@@ -194,11 +205,33 @@ final class VirionBuilder
         if ($manifest->name !== $name) {
             throw new BuildException("Generated virion manifest name {$manifest->name} does not match {$name}.");
         }
+        if ($provenance !== null) {
+            if (!isset($phar['devtools-provenance.json'])) {
+                throw new BuildException("Generated virion {$name} PHAR is missing devtools-provenance.json.");
+            }
+            $expected = hash_file('sha256', $provenance);
+            $actual = hash('sha256', $phar['devtools-provenance.json']->getContent());
+            if ($expected === false || !hash_equals($expected, $actual)) {
+                throw new BuildException("Generated virion {$name} PHAR has altered provenance metadata.");
+            }
+        }
         $signature = $phar->getSignature();
         if ($signature['hash_type'] !== 'SHA-256') {
             throw new BuildException("Generated virion {$name} PHAR has no SHA-256 signature.");
         }
         unset($phar);
+    }
+
+    private function assertProvenance(string $provenance, string $manifest, string $sourceRoot, string $name): void
+    {
+        $metadata = (new ComposerVirionPlan())->readJson($provenance);
+        $manifestHash = hash_file('sha256', $manifest);
+        if ($manifestHash === false || ($metadata['manifestSha256'] ?? null) !== $manifestHash) {
+            throw new BuildException("Prepared manifest for {$name} changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.");
+        }
+        if (($metadata['sourceSha256'] ?? null) !== (new VirionSourceFingerprint())->hash($sourceRoot)) {
+            throw new BuildException("Prepared source for {$name} changed after preparation. Run prepare into a new directory from the reviewed installed package.");
+        }
     }
 
     private function installOutput(string $temporary, string $output, bool $overwrite): void

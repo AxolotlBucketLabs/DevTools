@@ -38,6 +38,48 @@ PHP;
         self::assertGreaterThanOrEqual(8, substr_count($result, 'Fixture\Shade\Shared'));
     }
 
+    public function test_isolated_parser_does_not_mix_with_a_preloaded_global_parser_class(): void
+    {
+        $legacy = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'legacy-parser.php';
+        file_put_contents($legacy, <<<'PHP'
+<?php
+namespace PhpParser\Node;
+
+final class Name
+{
+}
+PHP);
+        $source = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'source';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . DIRECTORY_SEPARATOR . 'Example.php', "<?php\nnamespace Fixture;\nfinal class Example {}\n");
+        $script = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'parser-isolation.php';
+        file_put_contents($script, <<<'PHP'
+<?php
+declare(strict_types=1);
+
+require $argv[1] . '/vendor/autoload.php';
+require $argv[2];
+(new \NhanAZ\DevTools\Build\NamespaceShader())->shadeDirectory($argv[3], ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
+echo "ok\n";
+PHP);
+
+        $process = proc_open(
+            [PHP_BINARY, $script, dirname(__DIR__, 2), $legacy, $source],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            dirname(__DIR__, 2),
+        );
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        self::assertSame(0, proc_close($process), (string) $stderr);
+        self::assertSame("ok\n", $stdout);
+    }
+
     public function test_dynamic_class_string_is_rejected(): void
     {
         $directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';

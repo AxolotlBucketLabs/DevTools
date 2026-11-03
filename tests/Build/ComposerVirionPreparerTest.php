@@ -7,7 +7,13 @@ namespace NhanAZ\DevTools\Tests\Build;
 use NhanAZ\DevTools\Build\BuildException;
 use NhanAZ\DevTools\Build\ComposerVirionPlan;
 use NhanAZ\DevTools\Build\ComposerVirionPreparer;
+use NhanAZ\DevTools\Build\VirionBuilder;
+use NhanAZ\DevTools\Support\PhpSourceInspector;
+use NhanAZ\DevTools\Support\YamlReader;
 use NhanAZ\DevTools\Tests\TestCase;
+use NhanAZ\DevTools\Virion\VirionClassScanner;
+use NhanAZ\DevTools\Virion\VirionManifestReader;
+use NhanAZ\DevTools\Virion\VirionProjectFactory;
 use Phar;
 
 final class ComposerVirionPreparerTest extends TestCase
@@ -33,6 +39,32 @@ final class ComposerVirionPreparerTest extends TestCase
         require_once 'phar://' . str_replace('\\', '/', $result->outputPath) . '/' . $relativeB;
         require_once 'phar://' . str_replace('\\', '/', $result->outputPath) . '/' . $relativeA;
         self::assertSame('composed resource', ($a . '\\Greeting')::message());
+    }
+
+    public function test_prepared_virion_phars_preserve_composer_provenance(): void
+    {
+        $project = $this->project();
+        $destination = $this->temporaryDirectory . '/prepared';
+        (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination);
+
+        $yaml = new YamlReader();
+        $manifestReader = new VirionManifestReader($yaml);
+        $virionBuilder = new VirionBuilder(
+            $this->filesystem,
+            $manifestReader,
+            new VirionProjectFactory($manifestReader),
+            new VirionClassScanner(new PhpSourceInspector()),
+        );
+        $pharDirectory = $this->temporaryDirectory . '/virion-phars';
+        foreach (['example.a', 'example.b'] as $name) {
+            $virionBuilder->build($destination . '/' . $name, $pharDirectory);
+        }
+
+        foreach (['example.a', 'example.b'] as $name) {
+            $phar = new Phar($pharDirectory . '/' . $name . '.phar');
+            self::assertTrue(isset($phar['devtools-provenance.json']), $name);
+        }
+        self::assertCount(2, $this->builder()->build($project, $pharDirectory, $project . '/build')->dependencies);
     }
 
     public function test_axolotl_server_replacement_satisfies_transitive_pocketmine_requirement(): void

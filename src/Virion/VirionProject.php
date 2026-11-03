@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Virion;
 
+use Phar;
+use Throwable;
+
 final class VirionProject
 {
     public readonly string $packageRoot;
@@ -24,7 +27,15 @@ final class VirionProject
 
     public function __destruct()
     {
-        if ($this->temporaryPath !== null && is_file($this->temporaryPath)) {
+        if ($this->temporaryPath === null) {
+            return;
+        }
+        try {
+            Phar::unlinkArchive($this->temporaryPath);
+        } catch (Throwable) {
+            // The snapshot may not have been opened successfully.
+        }
+        if (is_file($this->temporaryPath)) {
             unlink($this->temporaryPath);
         }
     }

@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools;
 
-use Closure;
-
-use function is_file;
-
 use NhanAZ\DevTools\Build\ArtifactInspector;
 use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
@@ -15,6 +11,7 @@ use NhanAZ\DevTools\Build\DualArtifactBuilder;
 use NhanAZ\DevTools\Build\NamespaceShader;
 use NhanAZ\DevTools\Build\PharBuilder;
 use NhanAZ\DevTools\Build\PharExtractor;
+use NhanAZ\DevTools\Build\PhpParserNamespaceLoader;
 use NhanAZ\DevTools\Build\PluginProjectLocator;
 use NhanAZ\DevTools\Build\ProjectRoleDetector;
 use NhanAZ\DevTools\Build\VirionBuilder;
@@ -42,19 +39,11 @@ use NhanAZ\DevTools\Virion\VirionRegistry;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
-
-use function spl_autoload_register;
-use function spl_autoload_unregister;
-use function str_starts_with;
-
 use Throwable;
 
 final class DevTools extends PluginBase
 {
     private ?DevToolsCommandHandler $commandHandler = null;
-
-    /** @var (Closure(string): void)|null */
-    private ?Closure $dependencyAutoloader = null;
 
     protected function onLoad(): void
     {
@@ -183,10 +172,7 @@ final class DevTools extends PluginBase
 
     protected function onDisable(): void
     {
-        if ($this->dependencyAutoloader !== null) {
-            spl_autoload_unregister($this->dependencyAutoloader);
-            $this->dependencyAutoloader = null;
-        }
+        PhpParserNamespaceLoader::unregister();
     }
 
     /** @param list<string> $args */
@@ -203,17 +189,7 @@ final class DevTools extends PluginBase
 
     private function registerBuildDependencyAutoloader(): void
     {
-        $base = dirname(__DIR__) . '/vendor/nikic/php-parser/lib/PhpParser/';
-        $this->dependencyAutoloader = static function (string $class) use ($base): void {
-            $prefix = 'PhpParser\\';
-            if (!str_starts_with($class, $prefix)) {
-                return;
-            }
-            $path = $base . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
-            if (is_file($path)) {
-                require $path;
-            }
-        };
-        spl_autoload_register($this->dependencyAutoloader, true, true);
+        $base = dirname(__DIR__) . '/vendor/nikic/php-parser/lib/PhpParser';
+        PhpParserNamespaceLoader::register($base);
     }
 }

@@ -43,8 +43,8 @@ final class PhpSourceInspector
         /** @var list<array{depth: int, guards: list<string>}> $conditionalFunctionGuards */
         $conditionalFunctionGuards = [];
         $interpolationBraceDepth = 0;
-        $pendingClass = false;
-        $pendingClassParenthesisDepth = null;
+        /** @var list<int> $pendingClassParenthesisDepths */
+        $pendingClassParenthesisDepths = [];
         /** @var list<string>|null $pendingFunctionGuards */
         $pendingFunctionGuards = null;
         $parenthesisDepth = 0;
@@ -64,10 +64,10 @@ final class PhpSourceInspector
                     --$parenthesisDepth;
                 } elseif ($token === '{') {
                     ++$braceDepth;
-                    if ($pendingClass && $pendingClassParenthesisDepth === $parenthesisDepth) {
+                    if ($pendingClassParenthesisDepths !== []
+                        && end($pendingClassParenthesisDepths) === $parenthesisDepth) {
                         $classBraceDepths[] = $braceDepth;
-                        $pendingClass = false;
-                        $pendingClassParenthesisDepth = null;
+                        array_pop($pendingClassParenthesisDepths);
                     }
                     if ($pendingFunctionGuards !== null) {
                         $conditionalFunctionGuards[] = [
@@ -106,8 +106,9 @@ final class PhpSourceInspector
                 $pendingFunctionGuards = $this->conditionFunctionGuardNames($tokens, $index);
             } elseif (in_array($id, [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)) {
                 $isClassNameReference = $previousSignificant === T_DOUBLE_COLON;
-                $pendingClass = !$isClassNameReference;
-                $pendingClassParenthesisDepth = $pendingClass ? $parenthesisDepth : null;
+                if (!$isClassNameReference) {
+                    $pendingClassParenthesisDepths[] = $parenthesisDepth;
+                }
                 if (!in_array($previousSignificant, [T_NEW, T_DOUBLE_COLON], true)) {
                     $name = $this->readDeclarationName($tokens, $index);
                     if ($name !== null) {
@@ -214,7 +215,7 @@ final class PhpSourceInspector
         if (($quote !== "'" && $quote !== '"') || substr($rawName, -1) !== $quote) {
             return null;
         }
-        $name = ltrim(stripcslashes(substr($rawName, 1, -1)), '\\');
+        $name = ltrim($this->decodeStringLiteral($rawName, $quote), '\\');
         if ($name === '' || preg_match('/^(?:[A-Za-z_][A-Za-z0-9_]*\\\\)*[A-Za-z_][A-Za-z0-9_]*$/D', $name) !== 1) {
             return null;
         }
@@ -234,6 +235,16 @@ final class PhpSourceInspector
         }
 
         return [strtolower($name)];
+    }
+
+    private function decodeStringLiteral(string $raw, string $quote): string
+    {
+        $value = substr($raw, 1, -1);
+        if ($quote === "'") {
+            return str_replace(['\\\\', "\\'"], ['\\', "'"], $value);
+        }
+
+        return stripcslashes($value);
     }
 
     /**

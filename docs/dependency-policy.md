@@ -37,7 +37,7 @@ Reviewed on 2026-11-03. All ten packages below are required by [Axolotl-PM 5.51.
 
 ## Artifact boundary
 
-The self-build's `devtools.yml` includes only `vendor/nikic/php-parser/lib` and its license. `bin/validate-artifact.php` enforces that allowlist against the actual PHAR, in addition to its existing signature, manifest, secret and development-file checks. Regression tests deliberately add QA, server or Composer bootstrap files to a valid artifact and require the release gate to reject them.
+The self-build's `devtools.yml` includes the upstream `vendor/nikic/php-parser/lib` source and its license. DevTools loads that source through its private `NhanAZ\DevTools\Vendor\PhpParser` namespace, so another plugin's global PHP-Parser version cannot mix with the builder. `bin/validate-artifact.php` enforces that allowlist against the actual PHAR, in addition to its existing signature, manifest, secret and development-file checks. Regression tests deliberately add QA, server or Composer bootstrap files to a valid artifact and require the release gate to reject them.
 
 References to upstream implementations are research provenance, not copied libraries renamed under `src/`. See [third-party notices](../THIRD_PARTY_NOTICES.md). Generic shading regressions use fixtures owned by DevTools. Successfully building any particular external package is not the acceptance criterion for the shader.
 

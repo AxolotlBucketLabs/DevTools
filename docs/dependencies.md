@@ -52,7 +52,7 @@ DevTools explicitly rejects `shared-namespace-root`, Composer `autoload.files`, 
 
 Root mappings must also resolve each namespace to exactly the directory used by Axolotl-PM, including case. For example, with `src-namespace-prefix: MyPlugin`, `MyPlugin\\Extra\\` must map to `src/Extra/`. Mapping it to `src/extra/` or a namespace outside that plugin prefix is rejected, even though the directory lies under `src/`.
 
-The existing DevTools self-build explicitly packages its PHP parser source and license. That narrow self-packaging path is retained. Arbitrary `include-paths` on a user plugin do not turn off Composer validation or imply that a copied vendor directory will autoload.
+The existing DevTools self-build explicitly packages its PHP parser source and license. DevTools rewrites that bundled source into its private `NhanAZ\DevTools\Vendor\PhpParser` namespace at load time, isolating the builder from other plugins that use another PHP-Parser release. That narrow self-packaging path is retained. Arbitrary `include-paths` on a user plugin do not turn off Composer validation or imply that a copied vendor directory will autoload.
 
 ## Provenance and output safety
 

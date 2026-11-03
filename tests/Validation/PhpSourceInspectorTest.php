@@ -202,4 +202,50 @@ PHP);
 
         self::assertSame(['ExternalHelpers\collision'], $symbols->functions);
     }
+
+    public function test_nested_anonymous_class_in_constructor_argument_keeps_outer_class_scope(): void
+    {
+        $path = $this->temporaryDirectory . '/NestedAnonymousClass.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace ExternalHelpers;
+
+function factory(): object
+{
+    return new class(new class {}) {
+        public function __construct(public object $dependency) {}
+
+        public function value(): string
+        {
+            return get_debug_type($this->dependency);
+        }
+    };
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['ExternalHelpers\factory'], $symbols->functions);
+    }
+
+    public function test_single_quoted_function_guard_preserves_namespace_separators(): void
+    {
+        $path = $this->temporaryDirectory . '/SingleQuotedGuard.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (!function_exists('Fixture\Virion\helper')) {
+    function helper(): string
+    {
+        return 'guarded';
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
+        self::assertSame([], $symbols->unconditionalFunctions);
+    }
 }

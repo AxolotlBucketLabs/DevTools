@@ -32,7 +32,10 @@
     "autoload": {
         "psr-4": {
             "NhanAZ\\DevTools\\": "src/"
-        }
+        },
+        "files": [
+            "src/Build/php-parser-bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
