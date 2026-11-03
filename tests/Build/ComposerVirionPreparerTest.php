@@ -41,6 +41,50 @@ final class ComposerVirionPreparerTest extends TestCase
         self::assertSame('composed resource', ($a . '\\Greeting')::message());
     }
 
+    public function test_composer_policy_is_part_of_the_lock_content_hash(): void
+    {
+        $project = $this->project();
+        $plan = new ComposerVirionPlan();
+        $composer = $plan->readJson($project . '/composer.json');
+        $composer['config'] = ['policy' => ['update-with-minimal-changes' => true]];
+        $this->json($project . '/composer.json', $composer);
+
+        $content = array_intersect_key($composer, array_flip([
+            'name', 'version', 'require', 'require-dev', 'conflict', 'replace', 'provide',
+            'minimum-stability', 'prefer-stable', 'repositories', 'extra',
+        ]));
+        $content['config'] = ['policy' => $composer['config']['policy']];
+        ksort($content);
+        $lock = $plan->readJson($project . '/composer.lock');
+        $lock['content-hash'] = md5(json_encode($content, JSON_THROW_ON_ERROR));
+        $this->json($project . '/composer.lock', $lock);
+
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $this->temporaryDirectory . '/prepared'));
+    }
+
+    public function test_empty_and_missing_source_require_metadata_are_equivalent(): void
+    {
+        $project = $this->project();
+        $plan = new ComposerVirionPlan();
+        $lock = $plan->readJson($project . '/composer.lock');
+        $packages = $lock['packages'];
+        self::assertIsArray($packages);
+        $package = $plan->object($packages[1] ?? null, 'fixture package');
+        $package['require'] = [];
+        $packages[1] = $package;
+        $lock['packages'] = $packages;
+        $this->json($project . '/composer.lock', $lock);
+
+        $installed = $plan->readJson($project . '/vendor/composer/installed.json');
+        $installedPackages = $installed['packages'];
+        self::assertIsArray($installedPackages);
+        $installedPackages[1] = $package;
+        $installed['packages'] = $installedPackages;
+        $this->json($project . '/vendor/composer/installed.json', $installed);
+
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $this->temporaryDirectory . '/prepared'));
+    }
+
     public function test_prepared_virion_phars_preserve_composer_provenance(): void
     {
         $project = $this->project();

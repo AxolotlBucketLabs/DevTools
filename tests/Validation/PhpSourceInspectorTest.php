@@ -327,4 +327,25 @@ PHP);
         self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
         self::assertSame([], $symbols->unconditionalFunctions);
     }
+
+    public function test_double_quoted_function_guard_preserves_unknown_backslash_escapes(): void
+    {
+        $path = $this->temporaryDirectory . '/DoubleQuotedGuard.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (!function_exists("Fixture\Virion\helper")) {
+    function helper(): string
+    {
+        return 'guarded';
+    }
+}
+PHP);
+
+        $symbols = (new PhpSourceInspector())->inspect($path);
+
+        self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
+        self::assertSame([], $symbols->unconditionalFunctions);
+    }
 }

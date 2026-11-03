@@ -32,7 +32,7 @@ final class VirionRegistry
         if ($entry->status !== VirionStatus::LOADED || $entry->manifest === null) {
             return;
         }
-        $this->loadedByName[strtolower($entry->manifest->name)] = $entry;
+        $this->loadedByName[VirionName::key($entry->manifest->name)] = $entry;
         $this->loadedByAntigen[strtolower($entry->manifest->antigen)] = $entry;
         foreach ($entry->classes as $class) {
             $this->loadedByClass[strtolower($class)] = $entry;
@@ -59,7 +59,7 @@ final class VirionRegistry
 
     public function findByName(string $name): ?VirionRegistryEntry
     {
-        return $this->loadedByName[strtolower($name)] ?? null;
+        return $this->loadedByName[VirionName::key($name)] ?? null;
     }
 
     public function findByAntigen(string $antigen): ?VirionRegistryEntry

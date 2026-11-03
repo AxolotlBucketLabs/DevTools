@@ -59,6 +59,26 @@ final class FolderPluginLoaderTest extends TestCase
         $loader->getPluginDescription($project);
     }
 
+    public function test_project_with_invalid_devtools_configuration_is_not_loadable(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'plugins/InvalidConfiguration');
+        file_put_contents($project . '/devtools.yml', "include-paths: LICENSE\n");
+        [$reader, $validator] = $this->validationServices();
+        $loader = new FolderPluginLoader(
+            new ThreadSafeClassLoader(),
+            $reader,
+            $validator,
+            null,
+            null,
+            static fn(string $root): ?string => $root === '' ? null : 'include-paths must be a list',
+        );
+
+        $this->expectException(PluginDescriptionParseException::class);
+        $this->expectExceptionMessage('DevTools configuration is invalid');
+
+        $loader->getPluginDescription($project);
+    }
+
     public function test_hidden_and_build_directories_are_skipped(): void
     {
         $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';

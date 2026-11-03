@@ -8,11 +8,13 @@ use function file_get_contents;
 use function in_array;
 use function is_array;
 use function ltrim;
+use function ord;
 
 use ParseError;
 
 use function preg_match;
-use function stripcslashes;
+use function strlen;
+use function strpos;
 use function strtolower;
 use function substr;
 use function token_get_all;
@@ -266,14 +268,122 @@ final class PhpSourceInspector
         return [strtolower($name)];
     }
 
-    private function decodeStringLiteral(string $raw, string $quote): string
+    public function decodeStringLiteral(string $raw, string $quote): string
     {
         $value = substr($raw, 1, -1);
         if ($quote === "'") {
             return str_replace(['\\\\', "\\'"], ['\\', "'"], $value);
         }
 
-        return stripcslashes($value);
+        $decoded = '';
+        $length = strlen($value);
+        for ($index = 0; $index < $length; ++$index) {
+            if ($value[$index] !== '\\' || $index + 1 >= $length) {
+                $decoded .= $value[$index];
+                continue;
+            }
+
+            $escape = $value[++$index];
+            $decoded .= match ($escape) {
+                '\\' => '\\',
+                '"' => '"',
+                '$' => '$',
+                'n' => "\n",
+                'r' => "\r",
+                't' => "\t",
+                'v' => "\v",
+                'e' => "\e",
+                'f' => "\f",
+                default => $this->decodeExtendedStringEscape($value, $index, $escape),
+            };
+        }
+
+        return $decoded;
+    }
+
+    private function decodeExtendedStringEscape(string $value, int &$index, string $escape): string
+    {
+        $length = strlen($value);
+        if ($escape >= '0' && $escape <= '7') {
+            $digits = $escape;
+            for ($count = 1; $count < 3 && $index + 1 < $length; ++$count) {
+                $next = $value[$index + 1];
+                if ($next < '0' || $next > '7') {
+                    break;
+                }
+                ++$index;
+                $digits .= $next;
+            }
+
+            return chr($this->parseDigits($digits, 8));
+        }
+        if ($escape === 'x') {
+            $digits = '';
+            for ($count = 0; $count < 2 && $index + 1 < $length; ++$count) {
+                $next = $value[$index + 1];
+                if (preg_match('/^[0-9A-Fa-f]$/', $next) !== 1) {
+                    break;
+                }
+                ++$index;
+                $digits .= $next;
+            }
+            if ($digits !== '') {
+                return chr($this->parseDigits($digits, 16));
+            }
+
+            return '\\x';
+        }
+        if ($escape === 'u' && ($value[$index + 1] ?? '') === '{') {
+            $end = strpos($value, '}', $index + 2);
+            if ($end !== false) {
+                $digits = substr($value, $index + 2, $end - $index - 2);
+                if (preg_match('/^[0-9A-Fa-f]+$/', $digits) === 1) {
+                    $codePoint = $this->parseDigits($digits, 16);
+                    if ($codePoint <= 0x10FFFF && !($codePoint >= 0xD800 && $codePoint <= 0xDFFF)) {
+                        $index = $end;
+
+                        return $this->encodeCodePoint($codePoint);
+                    }
+                }
+            }
+        }
+
+        return '\\' . $escape;
+    }
+
+    private function parseDigits(string $digits, int $base): int
+    {
+        $value = 0;
+        for ($index = 0, $length = strlen($digits); $index < $length; ++$index) {
+            $character = ord($digits[$index]);
+            $digit = $character <= ord('9')
+                ? $character - ord('0')
+                : 10 + ord(strtolower($digits[$index])) - ord('a');
+            $value = ($value * $base) + $digit;
+        }
+
+        return $value;
+    }
+
+    private function encodeCodePoint(int $codePoint): string
+    {
+        if ($codePoint <= 0x7F) {
+            return chr($codePoint);
+        }
+        if ($codePoint <= 0x7FF) {
+            return chr(0xC0 | ($codePoint >> 6))
+                . chr(0x80 | ($codePoint & 0x3F));
+        }
+        if ($codePoint <= 0xFFFF) {
+            return chr(0xE0 | ($codePoint >> 12))
+                . chr(0x80 | (($codePoint >> 6) & 0x3F))
+                . chr(0x80 | ($codePoint & 0x3F));
+        }
+
+        return chr(0xF0 | ($codePoint >> 18))
+            . chr(0x80 | (($codePoint >> 12) & 0x3F))
+            . chr(0x80 | (($codePoint >> 6) & 0x3F))
+            . chr(0x80 | ($codePoint & 0x3F));
     }
 
     /**

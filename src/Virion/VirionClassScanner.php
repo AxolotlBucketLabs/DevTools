@@ -8,6 +8,7 @@ use function file_get_contents;
 
 use FilesystemIterator;
 
+use function in_array;
 use function is_dir;
 use function is_file;
 use function ltrim;
@@ -17,16 +18,15 @@ use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
 use ParseError;
 
+use function pathinfo;
 use function realpath;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-use function str_ends_with;
 use function str_replace;
 use function str_starts_with;
-use function stripcslashes;
 use function strtolower;
 use function substr;
 use function token_get_all;
@@ -65,7 +65,7 @@ final class VirionClassScanner
             if ($entry->isLink() || Filesystem::isLink($entry->getPathname())) {
                 throw new VirionException("Cannot load {$project->manifest->name}: symbolic link found at {$entry->getPathname()}.");
             }
-            if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+            if (!$entry->isFile() || !$this->isPhpSourceFile($entry->getFilename())) {
                 continue;
             }
             $symbols = $this->sourceInspector->inspect($entry->getPathname());
@@ -149,6 +149,9 @@ final class VirionClassScanner
                 );
             }
             $relative = str_replace('\\', '/', substr($class, strlen($project->manifest->antigen) + 1)) . '.php';
+            if (strtolower(pathinfo($files[0] ?? '', PATHINFO_EXTENSION)) !== 'php') {
+                continue;
+            }
             if (!$this->caseSensitiveFileExists($project->sourceRoot, $relative)) {
                 throw new VirionException(
                     "Cannot load {$project->manifest->name}: expected source file {$project->sourceRoot}/{$relative} for class {$class}. "
@@ -179,6 +182,11 @@ final class VirionClassScanner
         $prefix = strtolower(ltrim($prefix, '\\'));
 
         return str_starts_with($candidate, $prefix . '\\');
+    }
+
+    private function isPhpSourceFile(string $filename): bool
+    {
+        return in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), ['php', 'inc', 'phtml'], true);
     }
 
     private function isAutoloadShim(string $expectedPath, string $actualPath): bool
@@ -296,9 +304,8 @@ final class VirionClassScanner
     {
         $raw = $token[1];
         $quote = $raw[0] ?? '';
-        $value = substr($raw, 1, -1);
 
-        return $quote === "'" ? str_replace(['\\\\', "\\'"], ['\\', "'"], $value) : stripcslashes($value);
+        return $this->sourceInspector->decodeStringLiteral($raw, $quote);
     }
 
     private function isVirtualPath(string $path): bool

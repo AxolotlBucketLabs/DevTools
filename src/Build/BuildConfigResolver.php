@@ -20,6 +20,7 @@ use JsonException;
 use NhanAZ\DevTools\Support\Path;
 use NhanAZ\DevTools\Support\YamlReader;
 use NhanAZ\DevTools\Virion\VirionException;
+use NhanAZ\DevTools\Virion\VirionName;
 use NhanAZ\DevTools\Virion\VirionRequirement;
 
 use function preg_split;
@@ -164,7 +165,7 @@ final class BuildConfigResolver
     /** @param array<string, VirionRequirement> $target */
     private function addRequirement(VirionRequirement $requirement, array &$target): void
     {
-        $key = strtolower($requirement->name);
+        $key = VirionName::key($requirement->name);
         $existing = $target[$key] ?? null;
         if ($existing === null) {
             $target[$key] = $requirement;

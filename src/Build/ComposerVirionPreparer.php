@@ -80,7 +80,13 @@ final class ComposerVirionPreparer
                 $source = $projectRoot . '/' . $relative;
                 $sourceComposer = $plan->readJson($source . '/composer.json');
                 foreach (['name', 'autoload', 'require', 'extra'] as $field) {
-                    if (!$plan->sameMetadata($sourceComposer[$field] ?? null, $package[$field] ?? null)) {
+                    $sourceMetadata = $sourceComposer[$field] ?? null;
+                    $lockedMetadata = $package[$field] ?? null;
+                    if (in_array($field, ['autoload', 'require', 'extra'], true)) {
+                        $sourceMetadata = is_array($sourceMetadata) ? $sourceMetadata : [];
+                        $lockedMetadata = is_array($lockedMetadata) ? $lockedMetadata : [];
+                    }
+                    if (!$plan->sameMetadata($sourceMetadata, $lockedMetadata)) {
                         throw new BuildException("Installed {$name}/composer.json differs from composer.lock ({$field}). Refusing changed package metadata.");
                     }
                 }

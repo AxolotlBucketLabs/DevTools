@@ -62,8 +62,16 @@ final class ComposerVirionPlan
         $lock = $this->readJson($lockPath);
         $content = array_intersect_key($composer, array_flip(['name', 'version', 'require', 'require-dev', 'conflict', 'replace', 'provide', 'minimum-stability', 'prefer-stable', 'repositories', 'extra']));
         $config = $composer['config'] ?? null;
-        if (is_array($config) && isset($config['platform'])) {
-            $content['config'] = ['platform' => $config['platform']];
+        if (is_array($config)) {
+            $relevantConfig = [];
+            foreach (['platform', 'policy'] as $key) {
+                if (isset($config[$key])) {
+                    $relevantConfig[$key] = $config[$key];
+                }
+            }
+            if ($relevantConfig !== []) {
+                $content['config'] = $relevantConfig;
+            }
         }
         ksort($content);
         if (($lock['content-hash'] ?? null) !== md5(json_encode($content, JSON_THROW_ON_ERROR))) {

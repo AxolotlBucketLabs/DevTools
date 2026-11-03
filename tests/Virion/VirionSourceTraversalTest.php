@@ -151,6 +151,25 @@ PHP);
         (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
     }
 
+    public function test_class_outside_antigen_in_include_source_is_rejected_during_scan(): void
+    {
+        $source = $this->temporaryDirectory . '/src/Audit/Virion';
+        $this->filesystem->ensureDirectory($source);
+        file_put_contents($source . '/Greeting.php', '<?php namespace Audit\Virion; final class Greeting {}');
+        file_put_contents($source . '/External.inc', '<?php namespace External; final class Wrong {}');
+        $project = new VirionProject(
+            $this->temporaryDirectory,
+            $source,
+            new VirionManifest('OutsideIncludeClass', '1.0.0', 'Audit\Virion', [], ['8.4'], [], ''),
+            false,
+        );
+
+        $this->expectException(VirionException::class);
+        $this->expectExceptionMessage('class External\\Wrong is outside antigen');
+
+        (new VirionClassScanner(new PhpSourceInspector()))->scan($project);
+    }
+
     public function test_autoload_shim_must_require_the_actual_class_file(): void
     {
         $source = $this->temporaryDirectory . '/src/Audit/Shim';

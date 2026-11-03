@@ -9,13 +9,11 @@ use function implode;
 use NhanAZ\DevTools\Virion\VirionDependencyResolver;
 use NhanAZ\DevTools\Virion\VirionDiscovery;
 use NhanAZ\DevTools\Virion\VirionException;
+use NhanAZ\DevTools\Virion\VirionName;
 use NhanAZ\DevTools\Virion\VirionProject;
 use NhanAZ\DevTools\Virion\VirionProjectFactory;
 use NhanAZ\DevTools\Virion\VirionProjectSelector;
 use NhanAZ\DevTools\Virion\VirionRequirement;
-
-use function strtolower;
-
 use Throwable;
 
 final class VirionResolver
@@ -48,11 +46,11 @@ final class VirionResolver
         foreach ($this->discovery->discover($virionsDirectory) as $location) {
             try {
                 $project = $this->projectFactory->open($location, $snapshotPhars);
-                $candidatesByName[strtolower($project->manifest->name)][] = [$location, $project];
+                $candidatesByName[VirionName::key($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
                 $name = $this->projectFactory->readFolderManifestName($location);
                 if ($name !== null) {
-                    $invalidFolderFailures[strtolower($name)] = $error->getMessage();
+                    $invalidFolderFailures[VirionName::key($name)] = $error->getMessage();
                 }
                 $failures[] = $error->getMessage();
             }
@@ -91,7 +89,7 @@ final class VirionResolver
         }
 
         foreach ($requirements as $requirement) {
-            $matches = $available[strtolower($requirement->name)] ?? [];
+            $matches = $available[VirionName::key($requirement->name)] ?? [];
             if ($matches === []) {
                 $details = $failures === [] ? '' : "\nOther virion errors:\n- " . implode("\n- ", $failures);
                 throw new BuildException(

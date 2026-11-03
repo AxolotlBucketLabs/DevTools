@@ -58,7 +58,7 @@ final class VirionManager
         $requirementsByName = [];
         $hasComposerRequirements = false;
         foreach ($requirements as $requirement) {
-            $requirementsByName[strtolower($requirement->name)][] = $requirement;
+            $requirementsByName[VirionName::key($requirement->name)][] = $requirement;
             $hasComposerRequirements = $hasComposerRequirements || $requirement->composerPackageSha256 !== null;
         }
 
@@ -69,11 +69,11 @@ final class VirionManager
         foreach ($this->discovery->discover($directory) as $location) {
             try {
                 $project = $this->projectFactory->open($location);
-                $projectsByName[strtolower($project->manifest->name)][] = [$location, $project];
+                $projectsByName[VirionName::key($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
                 $name = $this->projectFactory->readFolderManifestName($location);
                 if ($name !== null) {
-                    $invalidFolderFailures[strtolower($name)] = $error->getMessage();
+                    $invalidFolderFailures[VirionName::key($name)] = $error->getMessage();
                 }
                 $this->load($location);
             }
@@ -128,7 +128,7 @@ final class VirionManager
             }
             try {
                 foreach ((new VirionDependencyResolver($this->selector))->resolve($available, $graphRequirements) as $selected) {
-                    $requirementsByName[strtolower($selected->manifest->name)][] = new VirionRequirement($selected->manifest->name, $selected->manifest->version, 'resolved shared dependency graph');
+                    $requirementsByName[VirionName::key($selected->manifest->name)][] = new VirionRequirement($selected->manifest->name, $selected->manifest->version, 'resolved shared dependency graph');
                 }
             } catch (VirionException $error) {
                 if ($projectsByName === []) {
@@ -258,7 +258,7 @@ final class VirionManager
         $this->graphLoadStates[$nameKey] = 'loading';
         [$location, $project] = $selectedProjects[$nameKey];
         foreach ($project->manifest->requirements as $requirement) {
-            $dependencyKey = strtolower($requirement->name);
+            $dependencyKey = VirionName::key($requirement->name);
             if (!isset($selectedProjects[$dependencyKey])) {
                 $this->recordDependencyFailure(
                     $location,
@@ -313,7 +313,7 @@ final class VirionManager
         $this->graphPreflightStates[$nameKey] = 'checking';
         [$location, $project] = $selectedProjects[$nameKey];
         foreach ($project->manifest->requirements as $requirement) {
-            $dependencyKey = strtolower($requirement->name);
+            $dependencyKey = VirionName::key($requirement->name);
             if (!isset($selectedProjects[$dependencyKey])) {
                 $this->recordDependencyFailure(
                     $location,
@@ -373,7 +373,7 @@ final class VirionManager
                     continue;
                 }
                 foreach ($project->manifest->requirements as $requirement) {
-                    $dependencyKey = strtolower($requirement->name);
+                    $dependencyKey = VirionName::key($requirement->name);
                     if (($this->graphPreflightStates[$dependencyKey] ?? null) !== 'failed') {
                         continue;
                     }
@@ -405,7 +405,7 @@ final class VirionManager
                     continue;
                 }
                 foreach ($selectedProjects[$cycleKey][1]->manifest->requirements as $requirement) {
-                    if (strtolower($requirement->name) === $cycleKey) {
+                    if (VirionName::key($requirement->name) === $cycleKey) {
                         $isCycle = true;
                         break;
                     }
@@ -510,7 +510,7 @@ final class VirionManager
             $onStack[$node] = true;
 
             foreach ($selectedProjects[$node][1]->manifest->requirements as $requirement) {
-                $dependency = strtolower($requirement->name);
+                $dependency = VirionName::key($requirement->name);
                 if (!isset($ready[$dependency])) {
                     continue;
                 }

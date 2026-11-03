@@ -76,13 +76,30 @@ final class DevTools extends PluginBase
         $selector = new VirionProjectSelector();
         $configResolver = new BuildConfigResolver($yaml);
         $requirements = [];
+        /** @var array<string, string> $configurationFailures */
+        $configurationFailures = [];
+        $normalizeProjectPath = static function (string $path): string {
+            $resolved = realpath($path) ?: $path;
+            $normalized = str_replace('\\', '/', $resolved);
+
+            return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
+        };
         foreach ($pluginDiscovery->discover($pluginsDirectory) as $project) {
             try {
                 $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+            } catch (Throwable $error) {
+                $this->getLogger()->warning(
+                    "Cannot read plugin manifest for {$project}: {$error->getMessage()}",
+                );
+
+                continue;
+            }
+            try {
                 foreach ($configResolver->resolve($project, $manifest->description->getName())->virions as $requirement) {
                     $requirements[] = $requirement;
                 }
             } catch (Throwable $error) {
+                $configurationFailures[$normalizeProjectPath($project)] = $error->getMessage();
                 $this->getLogger()->warning(
                     "Cannot read shared-virion requirements for {$project}: {$error->getMessage()}",
                 );
@@ -112,9 +129,19 @@ final class DevTools extends PluginBase
         $virionConflictChecker = static function (string $root) use ($sourceConflictDetector, $sharedVirionAntigens, $sharedVirionClasses): array {
             return $sourceConflictDetector->detectVirionConflicts($root, $sharedVirionAntigens, $sharedVirionClasses);
         };
+        $configurationFailureChecker = static function (string $root) use (&$configurationFailures, $normalizeProjectPath): ?string {
+            return $configurationFailures[$normalizeProjectPath($root)] ?? null;
+        };
 
         $server->getPluginManager()->registerInterface(
-            new FolderPluginLoader($server->getLoader(), $manifestReader, $validator, $ownSourceProject, $virionConflictChecker),
+            new FolderPluginLoader(
+                $server->getLoader(),
+                $manifestReader,
+                $validator,
+                $ownSourceProject,
+                $virionConflictChecker,
+                $configurationFailureChecker,
+            ),
         );
 
         $builder = new PharBuilder(

@@ -36,6 +36,24 @@ final class VirionManagerTest extends TestCase
         self::assertStringContainsString('MissingPackage is missing', $registry->entries()[0]->message);
     }
 
+    public function test_numeric_only_virion_names_are_loaded_without_array_key_type_errors(): void
+    {
+        $this->copyFixture('SharedVirion', 'virions/Numeric');
+        file_put_contents(
+            $this->temporaryDirectory . '/virions/Numeric/virion.yml',
+            "name: '123'\nversion: 1.0.0\nantigen: Shared\\Virion\napi: 5.0.0\n",
+        );
+        $registry = new VirionRegistry();
+
+        $this->manager(new FakeClassLoaderRegistrar(), $registry)->discoverAndLoad(
+            $this->temporaryDirectory . '/virions',
+            [new VirionRequirement('123', '*', 'numeric-name-test')],
+        );
+
+        self::assertCount(1, $registry->loaded());
+        self::assertSame('123', $registry->findByName('123')?->requireManifest()->name);
+    }
+
     public function test_single_composer_package_with_changed_source_is_never_registered(): void
     {
         $location = $this->copyFixture('SharedVirion', 'virions/Shared');

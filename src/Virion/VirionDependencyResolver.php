@@ -17,16 +17,17 @@ final class VirionDependencyResolver
      */
     public function resolve(array $available, array $roots): array
     {
+        $available = $this->normalizeAvailable($available);
         $selected = [];
         $states = [];
         for ($iteration = 0; $iteration < 100; ++$iteration) {
             $requirements = [];
             foreach ($roots as $requirement) {
-                $requirements[strtolower($requirement->name)][] = $requirement;
+                $requirements[VirionName::key($requirement->name)][] = $requirement;
             }
             foreach (array_intersect_key($selected, $this->reachable($selected, $roots)) as $project) {
                 foreach ($project->manifest->requirements as $requirement) {
-                    $requirements[strtolower($requirement->name)][] = $requirement;
+                    $requirements[VirionName::key($requirement->name)][] = $requirement;
                 }
             }
             $next = [];
@@ -92,6 +93,27 @@ final class VirionDependencyResolver
     }
 
     /**
+     * Keep this resolver tolerant of callers that provide the historical raw-name map.
+     * Internally every graph key is prefixed so numeric-only names cannot become integer array keys.
+     *
+     * @param array<string, list<VirionProject>> $available
+     * @return array<string, list<VirionProject>>
+     */
+    private function normalizeAvailable(array $available): array
+    {
+        $normalized = [];
+        foreach ($available as $key => $projects) {
+            $project = $projects[0] ?? null;
+            $normalizedKey = $project instanceof VirionProject
+                ? VirionName::key($project->manifest->name)
+                : (str_starts_with((string) $key, 'virion:') ? (string) $key : VirionName::key((string) $key));
+            $normalized[$normalizedKey] = $projects;
+        }
+
+        return $normalized;
+    }
+
+    /**
      * @param array<string, VirionProject> $left
      * @param array<string, VirionProject> $right
      */
@@ -110,7 +132,7 @@ final class VirionDependencyResolver
      */
     private function reachable(array $selected, array $roots): array
     {
-        $pending = array_map(static fn(VirionRequirement $requirement): string => strtolower($requirement->name), $roots);
+        $pending = array_map(static fn(VirionRequirement $requirement): string => VirionName::key($requirement->name), $roots);
         $reachable = [];
         while ($pending !== []) {
             $key = array_pop($pending);
@@ -119,7 +141,7 @@ final class VirionDependencyResolver
             }
             $reachable[$key] = true;
             foreach (($selected[$key]->manifest->requirements ?? []) as $requirement) {
-                $pending[] = strtolower($requirement->name);
+                $pending[] = VirionName::key($requirement->name);
             }
         }
         return $reachable;
