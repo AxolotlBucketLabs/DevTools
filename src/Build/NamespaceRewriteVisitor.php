@@ -7,7 +7,6 @@ namespace NhanAZ\DevTools\Build;
 use function ltrim;
 
 use NhanAZ\DevTools\Vendor\PhpParser\Node;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Arg;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\Concat;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
@@ -111,12 +110,13 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
             }
         }
 
-        if ($node instanceof New_ && $node->class instanceof Name && isset($node->args[0]) && $node->args[0] instanceof Arg) {
+        if ($node instanceof New_ && $node->class instanceof Name) {
+            $argument = DynamicClassReferencePolicy::reflectionClassNameArgument($node);
             $class = DynamicClassReferencePolicy::resolvedName($node->class);
-            if (in_array($class, ['reflectionclass', 'reflectionenum'], true)
+            if ($argument !== null && in_array($class, ['reflectionclass', 'reflectionenum', 'reflectionmethod', 'reflectionproperty', 'reflectionclassconstant'], true)
                 && !DynamicClassReferencePolicy::allowsCalledClassReflection($node)
                 && !DynamicClassReferencePolicy::allowsBoundObjectReflection($node)
-                && !$this->isStaticClassExpression($node->args[0]->value)) {
+                && !$this->isStaticClassExpression($argument->value)) {
                 throw new BuildException(
                     "Cannot safely shade dynamic {$node->class->toString()} construction on line {$node->getStartLine()}.",
                 );
@@ -151,7 +151,11 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
         }
         $resolved = $node->getAttribute('resolvedName');
         $candidate = $resolved instanceof Name ? $resolved->toString() : $node->toString();
-        $replacement = $this->replacementFor($candidate);
+        $replacement = $this->replacementFor(
+            $candidate,
+            ($parent instanceof Namespace_ && $parent->name === $node)
+                || ($parent instanceof GroupUse && $parent->prefix === $node),
+        );
         if ($replacement === null) {
             return null;
         }
@@ -170,10 +174,10 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
         return null;
     }
 
-    private function replacementFor(string $candidate): ?string
+    private function replacementFor(string $candidate, bool $allowExactNamespace): ?string
     {
         foreach ($this->replacements as $original => $replacement) {
-            if ($this->matchesNamespace($candidate, $original)) {
+            if ($this->matchesNamespace($candidate, $original, $allowExactNamespace)) {
                 return $replacement . substr($candidate, strlen($original));
             }
         }
@@ -181,12 +185,12 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
         return null;
     }
 
-    private function matchesNamespace(string $candidate, string $namespace): bool
+    private function matchesNamespace(string $candidate, string $namespace, bool $allowExactNamespace = true): bool
     {
         $candidate = strtolower(ltrim($candidate, '\\'));
         $namespace = strtolower(ltrim($namespace, '\\'));
 
-        return $candidate === $namespace || str_starts_with($candidate, $namespace . '\\');
+        return ($allowExactNamespace && $candidate === $namespace) || str_starts_with($candidate, $namespace . '\\');
     }
 
     private function containsNamespace(string $value, string $namespace): bool

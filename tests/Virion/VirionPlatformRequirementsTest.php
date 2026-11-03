@@ -29,4 +29,13 @@ final class VirionPlatformRequirementsTest extends TestCase
         $this->expectExceptionMessage('Unsupported Composer PHP constraint');
         (new VirionPlatformRequirements())->validate(['php' => '^8.1 || ~8.2'], 'Example');
     }
+
+    public function test_composer_normalized_zend_opcache_extension_name_is_recognized(): void
+    {
+        if (!extension_loaded('Zend OPcache')) {
+            self::markTestSkipped('Zend OPcache is not loaded in this PHP runtime.');
+        }
+        (new VirionPlatformRequirements())->validate(['ext-zend-opcache' => '*'], 'Example');
+        $this->expectNotToPerformAssertions();
+    }
 }

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Virion;
 
+use function get_loaded_extensions;
 use function implode;
+use function str_replace;
+use function strtolower;
 use function version_compare;
 
 final class VirionPlatformRequirements
@@ -38,7 +41,12 @@ final class VirionPlatformRequirements
                 if ($constraint !== '*') {
                     throw new VirionException("{$source} uses unsupported versioned extension requirement {$name} {$constraint}. Only * is supported.");
                 }
-                if (!extension_loaded(substr($name, 4))) {
+                $extension = strtolower(str_replace(' ', '-', substr($name, 4)));
+                $loaded = [];
+                foreach (get_loaded_extensions() as $loadedExtension) {
+                    $loaded[strtolower(str_replace(' ', '-', $loadedExtension))] = true;
+                }
+                if (!isset($loaded[$extension])) {
                     throw new VirionException("{$source} requires missing PHP extension {$name}.");
                 }
             } else {

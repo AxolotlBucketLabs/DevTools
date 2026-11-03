@@ -220,7 +220,9 @@ final class ComposerVirionPlan
         $kind = array_key_first($autoload);
         $mapping = $autoload[$kind];
         if ($kind === 'classmap' && is_array($mapping) && array_keys($mapping) === [0] && is_string($mapping[0])) {
-            return rtrim($mapping[0], '/\\') . '/' . str_replace('\\', '/', $antigen);
+            $root = Path::normalizeRelativeDirectory($mapping[0]);
+            $namespace = str_replace('\\', '/', $antigen);
+            return $root === '' ? $namespace : $root . '/' . $namespace;
         }
         if (!in_array($kind, ['psr-4', 'psr-0'], true)) {
             throw new BuildException("Composer virion {$antigen} requires one PSR-4, namespace-based PSR-0, or classmap mapping. files and multiple roots are unsupported.");
@@ -236,7 +238,13 @@ final class ComposerVirionPlan
         if (!is_string($root)) {
             throw new BuildException("Composer virion {$antigen} requires one source directory. Multiple autoload roots are unsupported.");
         }
-        return rtrim($root, '/\\') . ($kind === 'psr-0' ? '/' . str_replace('\\', '/', $antigen) : '');
+        $root = Path::normalizeRelativeDirectory($root);
+        if ($kind !== 'psr-0') {
+            return $root;
+        }
+        $namespace = str_replace('\\', '/', $antigen);
+
+        return $root === '' ? $namespace : $root . '/' . $namespace;
     }
 
     /** @return array<string, mixed> */

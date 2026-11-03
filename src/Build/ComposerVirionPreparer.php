@@ -91,7 +91,7 @@ final class ComposerVirionPreparer
                     }
                 }
                 $antigen = $plan->antigen($package);
-                $sourceRelative = Path::normalizeRelative($plan->sourceDirectory($package));
+                $sourceRelative = Path::normalizeRelativeDirectory($plan->sourceDirectory($package));
                 $this->filesystem->assertNoSymbolicLinkComponents($source, $sourceRelative);
                 $autoload = $package['autoload'] ?? null;
                 if (is_array($autoload) && array_key_first($autoload) === 'classmap') {
@@ -99,7 +99,7 @@ final class ComposerVirionPreparer
                     if (!is_array($classmap) || array_keys($classmap) !== [0] || !is_string($classmap[0])) {
                         throw new BuildException("Composer virion {$name} requires one classmap source directory.");
                     }
-                    $classmapRoot = Path::normalizeRelative($classmap[0]);
+                    $classmapRoot = Path::normalizeRelativeDirectory($classmap[0]);
                     $this->assertClassmapSource($source, $classmapRoot, $sourceRelative, $name);
                 }
                 if (is_dir($source . '/resources')) {
@@ -110,7 +110,8 @@ final class ComposerVirionPreparer
                 if (file_exists($target)) {
                     throw new BuildException("Composer package name collision at {$localName}.");
                 }
-                $this->filesystem->copyTree($source . '/' . $sourceRelative, $target . '/src', static function (string $relative): bool {
+                $sourceDirectory = $sourceRelative === '' ? $source : $source . '/' . $sourceRelative;
+                $this->filesystem->copyTree($sourceDirectory, $target . '/src', static function (string $relative): bool {
                     if (Path::isSensitive($relative)) {
                         throw new BuildException("Refusing sensitive package source file {$relative}.");
                     }
@@ -213,15 +214,17 @@ final class ComposerVirionPreparer
 
     private function assertClassmapSource(string $source, string $classmapRoot, string $sourceRelative, string $name): void
     {
-        if (!str_starts_with($sourceRelative, $classmapRoot . '/')) {
+        if ($classmapRoot !== '' && $sourceRelative !== $classmapRoot && !str_starts_with($sourceRelative, $classmapRoot . '/')) {
             throw new BuildException("Composer virion {$name} classmap source is outside its declared namespace tree.");
         }
         $this->filesystem->assertNoSymbolicLinkComponents($source, $classmapRoot);
-        $root = $source . '/' . $classmapRoot;
+        $root = $classmapRoot === '' ? $source : $source . '/' . $classmapRoot;
         if (!is_dir($root)) {
             throw new BuildException("Composer virion {$name} classmap root does not exist: {$classmapRoot}.");
         }
-        $namespaceDirectory = substr($sourceRelative, strlen($classmapRoot) + 1) . '/';
+        $namespaceDirectory = $classmapRoot === ''
+            ? $sourceRelative . '/'
+            : substr($sourceRelative, strlen($classmapRoot) + 1) . '/';
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST,

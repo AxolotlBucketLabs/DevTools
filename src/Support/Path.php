@@ -46,12 +46,22 @@ final class Path
 
     public static function normalizeRelative(string $path): string
     {
+        return self::normalizeRelativePath($path, true);
+    }
+
+    public static function normalizeRelativeDirectory(string $path): string
+    {
+        return self::normalizeRelativePath($path, false);
+    }
+
+    private static function normalizeRelativePath(string $path, bool $requireNonEmpty): string
+    {
         if (str_contains($path, "\0")) {
             throw new FilesystemException('A path contains a null byte.');
         }
 
         $path = str_replace('\\', '/', $path);
-        if ($path === '' || str_starts_with($path, '/') || preg_match('/^[A-Za-z]:/', $path) === 1) {
+        if (($path !== '' && str_starts_with($path, '/')) || preg_match('/^[A-Za-z]:/', $path) === 1) {
             throw new FilesystemException("The path must be relative: {$path}");
         }
 
@@ -73,7 +83,7 @@ final class Path
             $normalized[] = $component;
         }
 
-        if ($normalized === []) {
+        if ($normalized === [] && $requireNonEmpty) {
             throw new FilesystemException("The path does not name a file: {$path}");
         }
 

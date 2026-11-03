@@ -135,7 +135,7 @@ final class FolderPluginLoaderTest extends TestCase
             "<?php\nfinal class Main extends \\pocketmine\\plugin\\PluginBase {}\n",
         );
         file_put_contents(
-            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Value.php',
+            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Value.inc',
             "<?php\nnamespace Shared\\Virion; final class Value {}\n",
         );
         [$reader, $validator] = $this->validationServices();

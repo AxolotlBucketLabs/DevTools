@@ -419,6 +419,28 @@ final class ComposerVirionPreparerTest extends TestCase
         self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
     }
 
+    public function test_psr4_package_root_is_prepared_and_built(): void
+    {
+        $project = $this->project(['psr-4' => ['Example\\LibraryA\\' => '']]);
+        self::assertTrue(rename($project . '/vendor/example/a/src/Greeting.php', $project . '/vendor/example/a/Greeting.php'));
+        $destination = $this->temporaryDirectory . '/prepared';
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+        self::assertFileExists($destination . '/example.a/src/Greeting.php');
+        self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
+    }
+
+    public function test_psr0_package_root_is_prepared_and_built(): void
+    {
+        $project = $this->project(['psr-0' => ['Example\\LibraryA\\' => '']]);
+        $source = $project . '/vendor/example/a/Example/LibraryA/Greeting.php';
+        $this->filesystem->ensureDirectory(dirname($source));
+        self::assertTrue(rename($project . '/vendor/example/a/src/Greeting.php', $source));
+        $destination = $this->temporaryDirectory . '/prepared';
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+        self::assertFileExists($destination . '/example.a/src/Greeting.php');
+        self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
+    }
+
     public function test_single_classmap_root_with_namespace_tree_is_prepared_and_built(): void
     {
         $project = $this->project(['classmap' => ['src/']]);
@@ -427,6 +449,18 @@ final class ComposerVirionPreparerTest extends TestCase
         self::assertTrue(rename($project . '/vendor/example/a/src/Greeting.php', $target));
         $destination = $this->temporaryDirectory . '/prepared';
         self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+        self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
+    }
+
+    public function test_classmap_package_root_is_prepared_and_built(): void
+    {
+        $project = $this->project(['classmap' => ['./']]);
+        $source = $project . '/vendor/example/a/Example/LibraryA/Greeting.php';
+        $this->filesystem->ensureDirectory(dirname($source));
+        self::assertTrue(rename($project . '/vendor/example/a/src/Greeting.php', $source));
+        $destination = $this->temporaryDirectory . '/prepared';
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+        self::assertFileExists($destination . '/example.a/src/Greeting.php');
         self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
     }
 

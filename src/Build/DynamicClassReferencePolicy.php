@@ -218,10 +218,10 @@ final class DynamicClassReferencePolicy
      */
     public static function allowsCalledClassReflection(New_ $node): bool
     {
-        if (!$node->class instanceof Name || !self::isGlobalName($node->class, 'reflectionclass')
-            || count($node->args) !== 1 || !$node->args[0] instanceof Arg || $node->args[0]->unpack
-            || $node->args[0]->name !== null || !$node->args[0]->value instanceof Variable
-            || !is_string($node->args[0]->value->name)) {
+        $argument = self::reflectionClassNameArgument($node);
+        if ($argument === null || !$node->class instanceof Name || !self::isGlobalName($node->class, 'reflectionclass')
+            || count($node->args) !== 1 || $argument->unpack
+            || !$argument->value instanceof Variable || !is_string($argument->value->name)) {
             return false;
         }
 
@@ -243,7 +243,7 @@ final class DynamicClassReferencePolicy
             || !$statements[$index - 1] instanceof ExpressionStatement
             || !$statements[$index - 1]->expr instanceof Assign
             || !$statements[$index - 1]->expr->var instanceof Variable
-            || $statements[$index - 1]->expr->var->name !== $node->args[0]->value->name
+            || $statements[$index - 1]->expr->var->name !== $argument->value->name
             || !$statements[$index - 1]->expr->expr instanceof FuncCall) {
             return false;
         }
@@ -256,10 +256,38 @@ final class DynamicClassReferencePolicy
     /** ReflectionClass accepts an already-instantiated object without class-name autoloading. */
     public static function allowsBoundObjectReflection(New_ $node): bool
     {
-        return $node->class instanceof Name && self::isGlobalName($node->class, 'reflectionclass')
-            && count($node->args) === 1 && $node->args[0] instanceof Arg && !$node->args[0]->unpack
-            && $node->args[0]->name === null && $node->args[0]->value instanceof Variable
-            && $node->args[0]->value->name === 'this' && self::hasBoundThis($node);
+        $argument = self::reflectionClassNameArgument($node);
+        return $argument !== null && $node->class instanceof Name && self::isGlobalName($node->class, 'reflectionclass')
+            && count($node->args) === 1 && !$argument->unpack
+            && $argument->value instanceof Variable
+            && $argument->value->name === 'this' && self::hasBoundThis($node);
+    }
+
+    public static function reflectionClassNameArgument(New_ $node): ?Arg
+    {
+        if (!$node->class instanceof Name) {
+            return null;
+        }
+        $names = match (self::resolvedName($node->class)) {
+            'reflectionclass', 'reflectionenum', 'reflectionproperty' => ['objectOrClass'],
+            'reflectionmethod' => ['objectOrMethod'],
+            'reflectionclassconstant' => ['class'],
+            default => [],
+        };
+        if ($names === []) {
+            return null;
+        }
+        foreach ($node->args as $position => $argument) {
+            if (!$argument instanceof Arg) {
+                continue;
+            }
+            if (($argument->name === null && $position === 0)
+                || ($argument->name !== null && in_array($argument->name->toString(), $names, true))) {
+                return $argument;
+            }
+        }
+
+        return null;
     }
 
     private static function hasBoundThis(Node $node): bool

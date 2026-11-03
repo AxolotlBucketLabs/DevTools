@@ -15,12 +15,14 @@ use function is_file;
 use NhanAZ\DevTools\Support\Filesystem;
 use NhanAZ\DevTools\Support\PhpSourceInspector;
 use NhanAZ\DevTools\Validation\PluginManifestReader;
+
+use function pathinfo;
+
 use Phar;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-use function str_ends_with;
 use function str_starts_with;
 use function strtolower;
 
@@ -109,7 +111,7 @@ final class PluginSourceConflictDetector
             new RecursiveDirectoryIterator($sourceRoot, FilesystemIterator::SKIP_DOTS),
         );
         foreach ($iterator as $entry) {
-            if (!$entry instanceof SplFileInfo || !$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+            if (!$entry instanceof SplFileInfo || !$entry->isFile() || !$this->isPhpSourceFile($entry->getFilename())) {
                 continue;
             }
             $symbols = $this->sourceInspector->inspect($entry->getPathname());
@@ -137,5 +139,10 @@ final class PluginSourceConflictDetector
         $prefix = strtolower(trim($prefix, '\\'));
 
         return $candidate === $prefix || str_starts_with($candidate, $prefix . '\\');
+    }
+
+    private function isPhpSourceFile(string $filename): bool
+    {
+        return in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), ['php', 'inc', 'phtml'], true);
     }
 }

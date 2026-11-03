@@ -189,8 +189,14 @@ final class Filesystem
 
     public function assertNoSymbolicLinkComponents(string $base, string $relative): void
     {
-        $relative = Path::normalizeRelative($relative);
+        $relative = Path::normalizeRelativeDirectory($relative);
         $current = $base;
+        if (self::isLink($current)) {
+            throw new FilesystemException("Refusing path through symbolic link: {$current}");
+        }
+        if ($relative === '') {
+            return;
+        }
         foreach (explode('/', $relative) as $component) {
             $current = Path::join($current, $component);
             if (self::isLink($current)) {

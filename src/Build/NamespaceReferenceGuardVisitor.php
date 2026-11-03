@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Build;
 
 use NhanAZ\DevTools\Vendor\PhpParser\Node;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Arg;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\Concat;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
+use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ConstFetch;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\FuncCall;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Instanceof_;
 use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\New_;
@@ -43,6 +43,9 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
             }
             $resolved = $node->getAttribute('resolvedName');
             $candidate = $resolved instanceof Name ? $resolved->toString() : $node->toString();
+            if ($parent instanceof ConstFetch && $this->isExactNamespace($candidate)) {
+                return null;
+            }
             $this->assertValueIsStandalone($candidate, $node->getStartLine());
         } elseif ($node instanceof String_ || $node instanceof InterpolatedStringPart) {
             if (!$node instanceof String_
@@ -90,12 +93,13 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
             }
         }
 
-        if ($node instanceof New_ && $node->class instanceof Name && isset($node->args[0]) && $node->args[0] instanceof Arg) {
+        if ($node instanceof New_ && $node->class instanceof Name) {
+            $argument = DynamicClassReferencePolicy::reflectionClassNameArgument($node);
             $class = DynamicClassReferencePolicy::resolvedName($node->class);
-            if (in_array($class, ['reflectionclass', 'reflectionenum'], true)
+            if ($argument !== null && in_array($class, ['reflectionclass', 'reflectionenum', 'reflectionmethod', 'reflectionproperty', 'reflectionclassconstant'], true)
                 && !DynamicClassReferencePolicy::allowsCalledClassReflection($node)
                 && !DynamicClassReferencePolicy::allowsBoundObjectReflection($node)
-                && !$this->isStaticClassExpression($node->args[0]->value)) {
+                && !$this->isStaticClassExpression($argument->value)) {
                 throw new BuildException(
                     "Cannot prove that dynamic {$node->class->toString()} construction on line {$node->getStartLine()} is independent of an undeclared virion.",
                 );
@@ -131,6 +135,18 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
                 return true;
             }
             $offset = $position + 1;
+        }
+
+        return false;
+    }
+
+    private function isExactNamespace(string $candidate): bool
+    {
+        $candidate = strtolower(ltrim($candidate, '\\'));
+        foreach ($this->namespaces as $namespace) {
+            if ($candidate === strtolower(ltrim($namespace, '\\'))) {
+                return true;
+            }
         }
 
         return false;

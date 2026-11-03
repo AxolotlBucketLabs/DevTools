@@ -132,6 +132,53 @@ PHP);
         self::assertSame('shared', $stdout);
     }
 
+    public function test_exact_antigen_constant_reference_is_not_rewritten(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/ConstantPlugin');
+        $virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->filesystem->ensureDirectory($project . '/runtime');
+        file_put_contents($project . '/src/Constant.php', "<?php\nnamespace Shared;\nconst Virion = 42;\n");
+        file_put_contents($project . '/runtime/value.php', "<?php\nreturn \\Shared\\Virion;\n");
+        file_put_contents($project . '/devtools.yml', "virions:\n  - SharedVirion\ninclude-paths:\n  - runtime\n");
+
+        $result = $this->builder()->build($project, $virions, $this->temporaryDirectory . '/build');
+        $phar = new Phar($result->outputPath);
+        self::assertStringContainsString('const Virion = 42', $phar['src/Constant.php']->getContent());
+        self::assertStringContainsString('return \\Shared\\Virion', $phar['runtime/value.php']->getContent());
+        self::assertStringNotContainsString($result->shadedVirions['Shared\\Virion'], $phar['runtime/value.php']->getContent());
+    }
+
+    public function test_dynamic_reflection_method_class_name_is_rejected(): void
+    {
+        $project = $this->copyFixture('BuildPlugin', 'plugins/ReflectionPlugin');
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        file_put_contents(
+            $project . '/src/Main.php',
+            <<<'PHP'
+<?php
+declare(strict_types=1);
+
+namespace Fixture\Build;
+
+use pocketmine\plugin\PluginBase;
+
+final class Main extends PluginBase
+{
+    public function message(): string
+    {
+        return (new \ReflectionMethod(objectOrMethod: getenv('TARGET_CLASS'), method: 'message'))->invoke(null);
+    }
+}
+PHP,
+        );
+        file_put_contents($project . '/devtools.yml', "virions:\n  - SharedVirion\n");
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('dynamic ReflectionMethod construction');
+        $this->builder()->build($project, $this->temporaryDirectory . '/virions', $this->temporaryDirectory . '/build');
+    }
+
     public function test_root_virion_resources_are_rejected_before_building_an_ambiguous_artifact(): void
     {
         $project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
