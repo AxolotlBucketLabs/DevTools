@@ -174,6 +174,7 @@ final class RepositoryMetadataTest extends TestCase
         if (!isset($pin[1])) {
             self::fail('Compatibility monitor must declare its pinned builder version.');
         }
+        self::assertSame(self::VERSION, $pin[1]);
         self::assertStringContainsString('project: examples/HelloShared', $workflow);
         self::assertStringContainsString('virions: examples', $workflow);
         self::assertStringContainsString('SharedGreeting', $workflow);
