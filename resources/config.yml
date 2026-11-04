@@ -1,0 +1,6 @@
+# Server-side operations that can scan, transform or write project files.
+# Disable these on production servers that only need folder loading and shared virions.
+commands:
+  doctor: true
+  build: true
+  extract: true

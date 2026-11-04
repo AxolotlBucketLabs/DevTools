@@ -1,5 +1,5 @@
 name: DevTools
-version: 2.0.2
+version: 2.1.0
 main: NhanAZ\DevTools\DevTools
 api: 5.0.0
 load: STARTUP
@@ -16,4 +16,19 @@ commands:
 permissions:
   devtools.command:
     description: Allows all DevTools administrative commands
+    default: op
+  devtools.command.status:
+    description: Allows viewing DevTools status
+    default: op
+  devtools.command.doctor:
+    description: Allows running DevTools diagnostics
+    default: op
+  devtools.command.build:
+    description: Allows building plugin and virion PHARs
+    default: op
+  devtools.command.extract:
+    description: Allows extracting plugin and virion artifacts
+    default: op
+  devtools.command.virions:
+    description: Allows viewing the shared virion registry
     default: op

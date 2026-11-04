@@ -1,8 +1,15 @@
-# DevTools 2.0.2
+# DevTools 2.1.0
 
-This patch release keeps the v2 workflow contract while tightening virion autoload validation and the security posture of the maintained GitHub Actions workflows.
+This feature release keeps the v2 workflow contract while moving expensive server-side maintenance commands off the server tick thread.
 
-## Fixes
+## Added
 
-- Virion classes declared only in `.inc` or `.phtml` files are now rejected unless a matching `.php` autoload path or validated `.php` shim exists. This prevents a source folder from being reported as loaded while PocketMine's class loader cannot find the class.
-- Maintained workflows pin `actions/checkout`, `actions/cache`, and artifact actions to immutable commit SHAs. All checkouts disable credential persistence so project build steps do not inherit a writable GitHub token configuration.
+- Server-side `doctor`, `build` and `extract` operations now run as one-at-a-time background jobs on a dedicated worker thread. They no longer block the server tick thread or consume PocketMine's central async task pool.
+- Concurrent heavy operations are rejected with an actionable message instead of being run simultaneously.
+- Added command-specific permissions for `status`, `doctor`, `build`, `extract` and `virions`, while preserving the legacy `devtools.command` permission.
+- Added `config.yml` switches for disabling `doctor`, `build` and `extract` on production servers that only need folder loading and shared virions.
+
+## Compatibility
+
+- CLI and GitHub Actions builds remain synchronous.
+- PHAR creation still requires PHP to run with `phar.readonly=0`; loading an existing PHAR does not.

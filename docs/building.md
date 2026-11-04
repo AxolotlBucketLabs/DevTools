@@ -50,6 +50,10 @@ Run these commands as an operator.
 /devtools extract SharedGreeting.phar --type=virion --format=zip
 ```
 
+`doctor`, `build` and `extract` are submitted as background jobs on a dedicated worker thread, so their file scanning, AST processing, PHAR creation and extraction do not block the server tick thread or consume PocketMine's central async task pool. The command returns a queued message first and reports the result when the job completes. DevTools allows one such operation at a time and rejects another operation while one is running; it does not create an unbounded queue.
+
+Disable these commands in `config.yml` when the production server only needs folder loading and shared virions. See the [configuration reference](configuration.md).
+
 The artifact is written to server-root `build/MyPlugin.phar`. Existing output is protected. Use `/devtools build MyPlugin --overwrite` only after confirming that replacement is intended.
 
 `build virion <name-or-folder>` writes `build/<VirionName>.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically; an explicit `--type` must match the artifact role, except that a dual-role archive may be extracted as either role. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`; it creates `<PluginName>-plugin.phar` and `<VirionName>-virion.phar` so each artifact has one unambiguous role.

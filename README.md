@@ -87,7 +87,7 @@ Use the [coding agent guide](docs/ai-agent.md) for CLI automation or GitHub work
 
 ## Commands
 
-All commands require `devtools.command`, which operators receive by default.
+The command keeps the legacy `devtools.command` permission for compatibility. Its handler also recognizes the corresponding command-specific permission; the legacy permission remains an allow-all override for existing installations. Operators receive the permissions by default.
 
 ```text
 /devtools status
@@ -98,6 +98,15 @@ All commands require `devtools.command`, which operators receive by default.
 ```
 
 Migration aliases `/makeplugin` and `/extractplugin` are also available.
+
+`doctor`, `build` and `extract` run as one-at-a-time background jobs on a dedicated worker thread, so they do not block the server tick thread or consume PocketMine's central async task pool. A second heavy operation is rejected while one is running. To run DevTools only as a production folder and virion loader, disable these commands in `config.yml`:
+
+```yaml
+commands:
+  doctor: false
+  build: false
+  extract: false
+```
 
 ## Documentation
 
@@ -129,7 +138,7 @@ Migration aliases `/makeplugin` and `/extractplugin` are also available.
 
 ## Production guidance
 
-Use folder plugins and shared virions for development. Deploy tested PHARs to production; editing source in place can leave partially changed code after a restart. For a project containing both `plugin.yml` and `virion.yml`, use `build both` to create two role-specific PHARs; DevTools never merges a plugin into a virion or a virion into another virion. Plugin-to-virion injection is rejected because a plugin manifest is not a virion contract.
+Use folder plugins and shared virions for development, or disable the heavy server commands when DevTools is installed on a production server only for loading. Deploy tested PHARs to production; editing source in place can leave partially changed code after a restart. For a project containing both `plugin.yml` and `virion.yml`, use `build both` to create two role-specific PHARs; DevTools never merges a plugin into a virion or a virion into another virion. Plugin-to-virion injection is rejected because a plugin manifest is not a virion contract.
 
 ## License and provenance
 
