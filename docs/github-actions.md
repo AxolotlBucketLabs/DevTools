@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds; virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in the current `v2.1.0` release. Most repositories should use the maintained `v2` channel: `NhanAZ/DevTools@v2` for the composite action and `NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2` or `build-virion.yml@v2` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `NhanAZ/DevTools@latest` or the corresponding reusable workflow reference. Use `@v2.1.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
+These interfaces are available in the current `v2.1.1` release. Most repositories should use the maintained `v2` channel: `NhanAZ/DevTools@v2` for the composite action and `NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2` or `build-virion.yml@v2` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `NhanAZ/DevTools@latest` or the corresponding reusable workflow reference. Use `@v2.1.1` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
 
 ## Short build workflow
 
@@ -185,24 +185,24 @@ DevTools moves `latest` only to a validated stable release. It may move from v2 
 Use an exact release when a repository wants controlled upgrades:
 
 ```yaml
-uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2.1.0
+uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2.1.1
 ```
 
 Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment:
 
 ```sh
-git ls-remote https://github.com/NhanAZ/DevTools.git 'refs/tags/v2.1.0^{}'
+git ls-remote https://github.com/NhanAZ/DevTools.git 'refs/tags/v2.1.1^{}'
 ```
 
 ```yaml
-uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v2.1.0
+uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v2.1.1
 ```
 
 The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v2 workflow contract no longer accepts the removed `devtools-ref` input; remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com; these reusable workflows are not supported on GitHub Enterprise Server without that context.
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v2` and remove legacy inputs that v2 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v2.1.0` or a full SHA when the repository requires a controlled or strict pin:
+Update the reusable workflow reference to `@v2` and remove legacy inputs that v2 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v2.1.1` or a full SHA when the repository requires a controlled or strict pin:
 
 ```diff
  with:

@@ -210,6 +210,20 @@ final class ComposerVirionPlan
     }
 
     /** @param array<string, mixed> $package */
+    public function excludesRootResources(array $package): bool
+    {
+        $extra = $this->object($package['extra'] ?? null, 'Composer package extra');
+        $virion = $this->object($extra['virion'] ?? null, 'Composer package extra.virion');
+        $value = $virion['exclude-root-resources'] ?? false;
+        if (!is_bool($value)) {
+            $name = is_string($package['name'] ?? null) ? $package['name'] : 'unknown';
+            throw new BuildException("Composer virion {$name} extra.virion.exclude-root-resources must be true or false.");
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $package */
     public function sourceDirectory(array $package): string
     {
         $antigen = $this->antigen($package);

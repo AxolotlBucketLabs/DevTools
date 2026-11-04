@@ -419,6 +419,70 @@ final class ComposerVirionPreparerTest extends TestCase
         self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
     }
 
+    public function test_composer_package_can_exclude_consumer_owned_root_resources(): void
+    {
+        $project = $this->project();
+        $plan = new ComposerVirionPlan();
+        $lock = $plan->readJson($project . '/composer.lock');
+        $packages = $lock['packages'];
+        self::assertIsArray($packages);
+        $package = $plan->object($packages[0] ?? null, 'fixture package');
+        $extra = $plan->object($package['extra'] ?? null, 'fixture package extra');
+        $virion = $plan->object($extra['virion'] ?? null, 'fixture package virion metadata');
+        $virion['exclude-root-resources'] = true;
+        $extra['virion'] = $virion;
+        $package['extra'] = $extra;
+        $packages[0] = $package;
+        $lock['packages'] = $packages;
+        $this->json($project . '/composer.lock', $lock);
+
+        $installed = $plan->readJson($project . '/vendor/composer/installed.json');
+        $installedPackages = $installed['packages'];
+        self::assertIsArray($installedPackages);
+        $installedPackages[0] = $package;
+        $installed['packages'] = $installedPackages;
+        $this->json($project . '/vendor/composer/installed.json', $installed);
+        $this->json($project . '/vendor/example/a/composer.json', $package);
+        $this->filesystem->ensureDirectory($project . '/vendor/example/a/resources');
+        file_put_contents($project . '/vendor/example/a/resources/consumer-owned.sql', 'CREATE TABLE example;');
+
+        $destination = $this->temporaryDirectory . '/prepared';
+        self::assertCount(2, (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+        self::assertFileDoesNotExist($destination . '/example.a/resources/consumer-owned.sql');
+        self::assertCount(2, $this->builder()->build($project, $destination, $project . '/build')->dependencies);
+    }
+
+    public function test_composer_root_resource_exclusion_requires_a_boolean(): void
+    {
+        $project = $this->project();
+        $plan = new ComposerVirionPlan();
+        $lock = $plan->readJson($project . '/composer.lock');
+        $packages = $lock['packages'];
+        self::assertIsArray($packages);
+        $package = $plan->object($packages[0] ?? null, 'fixture package');
+        $extra = $plan->object($package['extra'] ?? null, 'fixture package extra');
+        $virion = $plan->object($extra['virion'] ?? null, 'fixture package virion metadata');
+        $virion['exclude-root-resources'] = 'true';
+        $extra['virion'] = $virion;
+        $package['extra'] = $extra;
+        $packages[0] = $package;
+        $lock['packages'] = $packages;
+        $this->json($project . '/composer.lock', $lock);
+
+        $installed = $plan->readJson($project . '/vendor/composer/installed.json');
+        $installedPackages = $installed['packages'];
+        self::assertIsArray($installedPackages);
+        $installedPackages[0] = $package;
+        $installed['packages'] = $installedPackages;
+        $this->json($project . '/vendor/composer/installed.json', $installed);
+        $this->json($project . '/vendor/example/a/composer.json', $package);
+        $this->filesystem->ensureDirectory($project . '/vendor/example/a/resources');
+
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('exclude-root-resources must be true or false');
+        (new ComposerVirionPreparer($this->filesystem))->prepare($project, $this->temporaryDirectory . '/prepared');
+    }
+
     public function test_psr4_package_root_is_prepared_and_built(): void
     {
         $project = $this->project(['psr-4' => ['Example\\LibraryA\\' => '']]);

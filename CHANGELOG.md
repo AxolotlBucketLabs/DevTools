@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1 - 2026-11-04
+
+- Allow Composer virions to explicitly exclude consumer-owned package-root resources while preserving resources colocated with their source tree.
+- Validate the new `extra.virion.exclude-root-resources` setting and cover the Composer preparation path with regression tests.
+
 ## 2.1.0 - 2026-11-04
 
 - Run server-side `doctor`, build and extraction commands on a dedicated worker thread instead of the server tick thread or PocketMine's central async task pool.

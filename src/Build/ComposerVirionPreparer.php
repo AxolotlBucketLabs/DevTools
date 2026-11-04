@@ -102,7 +102,7 @@ final class ComposerVirionPreparer
                     $classmapRoot = Path::normalizeRelativeDirectory($classmap[0]);
                     $this->assertClassmapSource($source, $classmapRoot, $sourceRelative, $name);
                 }
-                if (is_dir($source . '/resources')) {
+                if (is_dir($source . '/resources') && !$plan->excludesRootResources($package)) {
                     throw new BuildException("Composer virion {$name} has root resources/. Only resources colocated under its PSR-4 source directory retain their relative paths when bundled.");
                 }
                 $localName = ComposerVirionPlan::localName($name);
