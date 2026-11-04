@@ -7,6 +7,7 @@ Read `PROJECT_MAP.md` and `AGENTS.md` before changing code. Keep work inside fol
 ```text
 composer install
 composer syntax
+composer yamllint
 composer lint
 composer phpstan
 composer test
@@ -16,6 +17,15 @@ composer check
 ```
 
 Focused suites are `composer test:loader`, `composer test:virion`, and `composer test:build`. `composer analyse`, `composer qa`, and `composer build:self` remain compatibility aliases.
+
+Install `yamllint` 1.38.0 in the development environment before running `composer yamllint`:
+
+```text
+python -m pip install yamllint==1.38.0
+composer yamllint
+```
+
+`yamllint` checks tracked project YAML for syntax, duplicate keys, indentation and other structural problems. Test fixtures under `tests/Fixtures/` are excluded because several deliberately contain malformed YAML for failure-path tests. GitHub Actions workflows are checked separately by `actionlint` in CI.
 
 For the CLI use `php -d phar.readonly=0 vendor/bin/phpunit --testsuite cli`. Action and release handoff behavior uses `node --test .github/scripts/*.test.mjs`. The pinned real-server harness is documented under [runtime validation](runtime-validation.md). It runs separately from ordinary builds.
 

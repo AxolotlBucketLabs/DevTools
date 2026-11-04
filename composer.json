@@ -68,6 +68,7 @@
         "check": [
             "composer validate --strict",
             "@syntax",
+            "@yamllint",
             "@lint",
             "@phpstan",
             "@test",
@@ -81,6 +82,7 @@
         "test:build": "@php -d phar.readonly=0 vendor/bin/phpunit --testsuite build --colors=always",
         "analyse": "@phpstan",
         "phpstan": "@php vendor/bin/phpstan analyse --no-progress",
+        "yamllint": "@php bin/check-yaml.php",
         "lint": "@php vendor/bin/php-cs-fixer check --diff --verbose",
         "qa": "@check",
         "syntax": "@php bin/check-syntax.php"
