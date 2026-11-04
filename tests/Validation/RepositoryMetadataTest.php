@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 final class RepositoryMetadataTest extends TestCase
 {
-    private const VERSION = '2.0.2';
+    private const VERSION = '2.1.0';
+    private const COMPATIBILITY_BUILDER_VERSION = '2.0.2';
     private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 
     public function test_release_version_is_synchronized(): void
@@ -174,7 +175,7 @@ final class RepositoryMetadataTest extends TestCase
         if (!isset($pin[1])) {
             self::fail('Compatibility monitor must declare its pinned builder version.');
         }
-        self::assertSame(self::VERSION, $pin[1]);
+        self::assertSame(self::COMPATIBILITY_BUILDER_VERSION, $pin[1]);
         self::assertStringContainsString('project: examples/HelloShared', $workflow);
         self::assertStringContainsString('virions: examples', $workflow);
         self::assertStringContainsString('SharedGreeting', $workflow);

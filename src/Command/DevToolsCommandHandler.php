@@ -5,38 +5,15 @@ declare(strict_types=1);
 namespace NhanAZ\DevTools\Command;
 
 use function array_shift;
-use function basename;
 use function count;
-use function is_file;
 
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\ArtifactSetInstaller;
-use NhanAZ\DevTools\Build\BuildConfigResolver;
 use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\DualArtifactBuilder;
-use NhanAZ\DevTools\Build\PharArchiveReader;
-use NhanAZ\DevTools\Build\PharBuilder;
-use NhanAZ\DevTools\Build\PharExtractor;
-use NhanAZ\DevTools\Build\PluginProjectLocator;
-use NhanAZ\DevTools\Build\ProjectRole;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Build\VirionProjectLocator;
-use NhanAZ\DevTools\Build\VirionResolver;
-use NhanAZ\DevTools\Build\ZipArchiveWriter;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Validation\PluginManifestReader;
-use NhanAZ\DevTools\Validation\PluginProjectValidator;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
 use NhanAZ\DevTools\Virion\VirionRegistry;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 
 use function preg_match;
-use function realpath;
-use function str_ends_with;
 use function strtolower;
 use function substr;
 
@@ -47,24 +24,13 @@ final class DevToolsCommandHandler
     public function __construct(
         private readonly Plugin $plugin,
         private readonly FolderPluginDiscovery $pluginDiscovery,
-        private readonly PluginProjectValidator $validator,
-        private readonly PluginManifestReader $manifestReader,
-        private readonly BuildConfigResolver $configResolver,
-        private readonly VirionResolver $resolver,
-        private readonly PluginProjectLocator $projectLocator,
-        private readonly PharBuilder $builder,
-        private readonly PharExtractor $extractor,
         private readonly VirionRegistry $virions,
         private readonly string $pluginsDirectory,
         private readonly string $virionsDirectory,
         private readonly string $buildDirectory,
-        private readonly ?VirionBuilder $virionBuilder = null,
-        private readonly ?ZipArchiveWriter $zipWriter = null,
-        private readonly ?ArtifactInspector $artifactInspector = null,
-        private readonly ?ProjectRoleDetector $roleDetector = null,
-        private readonly ?VirionProjectLocator $virionProjectLocator = null,
-        private readonly ?VirionManifestReader $virionManifestReader = null,
-        private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
+        private readonly BuildJobRunner $jobs,
+        /** @var array<string, bool> */
+        private readonly array $enabledCommands = [],
     ) {}
 
     /** @param list<string> $arguments */
@@ -80,6 +46,18 @@ final class DevToolsCommandHandler
         $subcommand = strtolower(array_shift($arguments) ?? 'help');
         try {
             $this->validateArguments($subcommand, $arguments);
+            if ($subcommand !== 'help'
+                && !$sender->hasPermission("devtools.command.{$subcommand}")
+                && !$sender->hasPermission('devtools.command')) {
+                $sender->sendMessage("You do not have permission to use /devtools {$subcommand}.");
+
+                return true;
+            }
+            if (in_array($subcommand, ['doctor', 'build', 'extract'], true) && !($this->enabledCommands[$subcommand] ?? true)) {
+                $sender->sendMessage("The /devtools {$subcommand} command is disabled by configuration.");
+
+                return true;
+            }
             return match ($subcommand) {
                 'status' => $this->status($sender),
                 'doctor' => $this->doctor($sender, $arguments),
@@ -148,6 +126,7 @@ final class DevToolsCommandHandler
             . 'Development plugin folders found: ' . count($projects) . "\n"
             . 'Shared virions loaded: ' . count($loaded) . "\n"
             . "Async worker class loading: {$async}\n"
+            . "Background job: {$this->jobs->status()}\n"
             . "Build output: {$this->buildDirectory}",
         );
 
@@ -158,34 +137,7 @@ final class DevToolsCommandHandler
     private function doctor(CommandSender $sender, array $arguments): bool
     {
         $selection = array_shift($arguments);
-        $projects = $selection === null
-            ? $this->pluginDiscovery->discover($this->pluginsDirectory)
-            : [$this->projectLocator->locate($selection, $this->pluginsDirectory)];
-        if ($projects === []) {
-            $sender->sendMessage("No development plugin folders were found in {$this->pluginsDirectory}.");
-
-            return true;
-        }
-        foreach ($projects as $project) {
-            $result = $this->validator->validate($project);
-            $sender->sendMessage("Checking {$project}");
-            foreach ($result->issues() as $issue) {
-                $sender->sendMessage($issue->format());
-            }
-            if ($result->hasErrors()) {
-                continue;
-            }
-            try {
-                $manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
-                $config = $this->configResolver->resolve($project, $manifest->description->getName());
-                $resolved = $this->resolver->resolve($config->virions, $this->virionsDirectory);
-                $sender->sendMessage('Project structure and dependency selection passed (' . count($resolved) . ' virions). Shading, static analysis and runtime tests were not run. Check /devtools virions for the shared server registry.');
-            } catch (Throwable $error) {
-                $sender->sendMessage("Dependency check failed for {$project}: {$error->getMessage()}");
-            }
-        }
-
-        return true;
+        return $this->submit($sender, 'doctor', ['selection' => $selection], $selection === null ? 'all plugin folders' : "plugin {$selection}");
     }
 
     /** @param list<string> $arguments */
@@ -202,58 +154,11 @@ final class DevToolsCommandHandler
             return true;
         }
         $overwrite = in_array('--overwrite', $arguments, true);
-        if ($target === 'virion') {
-            if ($this->virionBuilder === null || $this->virionProjectLocator === null) {
-                throw new BuildException('Virion building is not configured.');
-            }
-            $project = $this->virionProjectLocator->locate($selection, $this->virionsDirectory);
-            $sender->sendMessage("Validating and staging virion {$project}...");
-            $result = $this->virionBuilder->build($project, $this->buildDirectory, $overwrite);
-            $sender->sendMessage("Built virion {$result->manifest->name} successfully.\nFiles: {$result->fileCount}\nOutput: {$result->outputPath}");
-
-            return true;
-        }
-
-        $project = $this->projectLocator->locate($selection, $this->pluginsDirectory);
-        if ($target === 'both') {
-            if ($this->virionBuilder === null || $this->roleDetector === null) {
-                throw new BuildException('Dual-role building is not configured.');
-            }
-            if ($this->roleDetector->detect($project) !== ProjectRole::DUAL) {
-                throw new BuildException("Build type both requires {$project} to contain both plugin.yml and virion.yml.");
-            }
-            $sender->sendMessage("Validating and staging dual-role project {$project}...");
-            $pluginName = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
-            $virionName = $this->virionManifestReader?->read($project . DIRECTORY_SEPARATOR . 'virion.yml')->name ?? basename($project);
-            $dualArtifactBuilder = $this->dualArtifactBuilder ?? new DualArtifactBuilder(
-                new Filesystem(),
-                $this->builder,
-                $this->virionBuilder,
-                new ArtifactSetInstaller(),
-            );
-            $artifacts = $dualArtifactBuilder->build(
-                $project,
-                $this->virionsDirectory,
-                $this->buildDirectory,
-                $overwrite,
-                $pluginName . '-plugin',
-                $virionName . '-virion',
-            );
-            $sender->sendMessage("Built dual-role project successfully.\nPlugin output: {$artifacts['plugin']}\nVirion output: {$artifacts['virion']}");
-
-            return true;
-        }
-
-        $sender->sendMessage("Validating and staging {$project}...");
-        $result = $this->builder->build($project, $this->virionsDirectory, $this->buildDirectory, $overwrite);
-        $sender->sendMessage(
-            "Built {$result->pluginName} successfully.\n"
-            . "Files: {$result->fileCount}\n"
-            . 'Shaded virions: ' . count($result->shadedVirions) . "\n"
-            . "Output: {$result->outputPath}",
-        );
-
-        return true;
+        return $this->submit($sender, 'build', [
+            'target' => $target,
+            'selection' => $selection,
+            'overwrite' => $overwrite,
+        ], "{$target} build for {$selection}");
     }
 
     /** @param list<string> $arguments */
@@ -275,58 +180,12 @@ final class DevToolsCommandHandler
                 $type = substr($argument, 7);
             }
         }
-        $path = $this->locatePhar($selection);
-        $detectedType = $this->artifactInspector?->inspect($path)['type'] ?? 'plugin';
-        if (!is_string($detectedType)) {
-            throw new BuildException('Artifact type could not be detected.');
-        }
-        if ($type === 'auto') {
-            $type = $detectedType;
-        }
-        if ($type === 'both') {
-            throw new BuildException('A dual-role artifact requires --type=plugin or --type=virion for extraction.');
-        }
-        if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
-            throw new BuildException('Usage: /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]');
-        }
-        if ($this->artifactInspector !== null && !ArtifactInspector::roleMatches($detectedType, $type)) {
-            throw new BuildException("Artifact type {$detectedType} does not match requested type {$type}.");
-        }
-        $name = basename($path);
-        if (str_ends_with(strtolower($name), '.phar')) {
-            $name = substr($name, 0, -5);
-        }
-        if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
-            throw new BuildException("Cannot derive a safe plugin folder name from {$path}.");
-        }
-        try {
-            Path::normalizeRelative($name);
-        } catch (\RuntimeException $error) {
-            throw new BuildException("Cannot derive a portable plugin folder name from {$path}: {$error->getMessage()}", 0, $error);
-        }
-        if ($format === 'zip') {
-            if ($this->zipWriter === null) {
-                throw new BuildException('ZIP conversion is not configured.');
-            }
-            $destination = Path::join(realpath($this->buildDirectory) ?: $this->buildDirectory, $name . '.zip');
-            $count = $this->zipWriter->write(new PharArchiveReader($path), $destination, $overwrite);
-            $sender->sendMessage("Archived {$count} files to {$destination}.");
-
-            return true;
-        }
-        $baseDirectory = $type === 'virion' ? $this->virionsDirectory : $this->pluginsDirectory;
-        $base = realpath($baseDirectory);
-        if ($base === false) {
-            throw new BuildException("Cannot resolve {$type} directory {$baseDirectory}.");
-        }
-        $destination = Path::join($base, $name);
-        if (dirname($destination) !== $base) {
-            throw new BuildException("Refusing extraction destination outside {$base}.");
-        }
-        $count = $this->extractor->extract(new PharArchiveReader($path), $destination, $overwrite);
-        $sender->sendMessage("Extracted {$count} files to {$destination}.");
-
-        return true;
+        return $this->submit($sender, 'extract', [
+            'selection' => $selection,
+            'format' => $format,
+            'type' => $type,
+            'overwrite' => $overwrite,
+        ], "extract {$selection}");
     }
 
     private function virions(CommandSender $sender): bool
@@ -359,28 +218,25 @@ final class DevToolsCommandHandler
         return true;
     }
 
-    private function locatePhar(string $selection): string
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function submit(CommandSender $sender, string $operation, array $payload, string $description): bool
     {
-        $candidates = [
-            $selection,
-            $this->buildDirectory . DIRECTORY_SEPARATOR . $selection,
-            $this->pluginsDirectory . DIRECTORY_SEPARATOR . $selection,
-            $this->virionsDirectory . DIRECTORY_SEPARATOR . $selection,
-        ];
-        if (!str_ends_with(strtolower($selection), '.phar')) {
-            $candidates[] = $this->buildDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
-            $candidates[] = $this->pluginsDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
-            $candidates[] = $this->virionsDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
+        if ($this->jobs->isBusy()) {
+            $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
+
+            return true;
         }
-        foreach ($candidates as $candidate) {
-            if (is_file($candidate)) {
-                $real = realpath($candidate);
-                if ($real !== false) {
-                    return $real;
-                }
+        $sender->sendMessage("Queued DevTools {$description}.");
+        if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender): void {
+            foreach ($result['messages'] as $message) {
+                $sender->sendMessage($message);
             }
+        })) {
+            $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
         }
 
-        throw new BuildException("Cannot find PHAR {$selection}. Check the path or the build/ directory.");
+        return true;
     }
 }

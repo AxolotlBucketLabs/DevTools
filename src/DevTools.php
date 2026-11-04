@@ -4,21 +4,11 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools;
 
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\ArtifactSetInstaller;
 use NhanAZ\DevTools\Build\BuildConfigResolver;
-use NhanAZ\DevTools\Build\DualArtifactBuilder;
-use NhanAZ\DevTools\Build\NamespaceShader;
-use NhanAZ\DevTools\Build\PharBuilder;
-use NhanAZ\DevTools\Build\PharExtractor;
 use NhanAZ\DevTools\Build\PhpParserNamespaceLoader;
-use NhanAZ\DevTools\Build\PluginProjectLocator;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Build\VirionProjectLocator;
-use NhanAZ\DevTools\Build\VirionResolver;
-use NhanAZ\DevTools\Build\ZipArchiveWriter;
+use NhanAZ\DevTools\Command\BuildJobRunner;
 use NhanAZ\DevTools\Command\DevToolsCommandHandler;
+use NhanAZ\DevTools\Command\ThreadBuildJobRunner;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
 use NhanAZ\DevTools\Loader\FolderPluginLoader;
 use NhanAZ\DevTools\Loader\PluginSourceConflictDetector;
@@ -44,9 +34,11 @@ use Throwable;
 final class DevTools extends PluginBase
 {
     private ?DevToolsCommandHandler $commandHandler = null;
+    private ?BuildJobRunner $jobRunner = null;
 
     protected function onLoad(): void
     {
+        $this->saveDefaultConfig();
         $this->registerBuildDependencyAutoloader();
 
         $filesystem = new Filesystem();
@@ -144,43 +136,20 @@ final class DevTools extends PluginBase
             ),
         );
 
-        $builder = new PharBuilder(
-            $filesystem,
-            $validator,
-            $manifestReader,
-            $configResolver,
-            new VirionResolver($virionDiscovery, $virionFactory, $selector),
-            $virionScanner,
-            new NamespaceShader(),
-            $sourceInspector,
-        );
-        $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner);
+        $this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory);
         $this->commandHandler = new DevToolsCommandHandler(
             $this,
             $pluginDiscovery,
-            $validator,
-            $manifestReader,
-            $configResolver,
-            new VirionResolver($virionDiscovery, $virionFactory, $selector),
-            new PluginProjectLocator($pluginDiscovery, $manifestReader),
-            $builder,
-            new PharExtractor($filesystem),
             $registry,
             $pluginsDirectory,
             $virionsDirectory,
             $buildDirectory,
-            $virionBuilder,
-            new ZipArchiveWriter($filesystem),
-            new ArtifactInspector($manifestReader, $virionManifestReader),
-            new ProjectRoleDetector(),
-            new VirionProjectLocator($virionDiscovery, $virionFactory),
-            $virionManifestReader,
-            new DualArtifactBuilder(
-                $filesystem,
-                $builder,
-                $virionBuilder,
-                new ArtifactSetInstaller(),
-            ),
+            $this->jobRunner,
+            [
+                'doctor' => (bool) $this->getConfig()->getNested('commands.doctor', true),
+                'build' => (bool) $this->getConfig()->getNested('commands.build', true),
+                'extract' => (bool) $this->getConfig()->getNested('commands.extract', true),
+            ],
         );
 
         foreach ($registry->entries() as $entry) {
@@ -199,6 +168,7 @@ final class DevTools extends PluginBase
 
     protected function onDisable(): void
     {
+        $this->jobRunner?->shutdown();
         PhpParserNamespaceLoader::unregister();
     }
 

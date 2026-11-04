@@ -4,15 +4,8 @@ declare(strict_types=1);
 
 namespace NhanAZ\DevTools\Tests\Command;
 
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\BuildConfigResolver;
-use NhanAZ\DevTools\Build\PharExtractor;
-use NhanAZ\DevTools\Build\PluginProjectLocator;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Build\VirionProjectLocator;
-use NhanAZ\DevTools\Build\VirionResolver;
-use NhanAZ\DevTools\Build\ZipArchiveWriter;
+use NhanAZ\DevTools\Command\BuildJobRunner;
+use NhanAZ\DevTools\Command\BuildWorkerApplication;
 use NhanAZ\DevTools\Command\DevToolsCommandHandler;
 use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
 use NhanAZ\DevTools\Support\YamlReader;
@@ -20,7 +13,6 @@ use NhanAZ\DevTools\Tests\TestCase;
 use NhanAZ\DevTools\Virion\VirionDiscovery;
 use NhanAZ\DevTools\Virion\VirionManifestReader;
 use NhanAZ\DevTools\Virion\VirionProjectFactory;
-use NhanAZ\DevTools\Virion\VirionProjectSelector;
 use NhanAZ\DevTools\Virion\VirionRegistry;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
@@ -148,8 +140,19 @@ final class DevToolsCommandHandlerTest extends TestCase
         self::assertDirectoryDoesNotExist($this->temporaryDirectory . '/virions/BuildFixture');
     }
 
-    /** @param list<string> $arguments */
-    private function command(array $arguments, string $label = 'devtools'): string
+    public function test_server_build_can_be_disabled_without_disabling_folder_loading_commands(): void
+    {
+        $messages = $this->command(['build', 'BuildFixture'], 'devtools', ['build' => false]);
+
+        self::assertStringContainsString('disabled by configuration', $messages);
+        self::assertStringNotContainsString('Queued DevTools', $messages);
+    }
+
+    /**
+     * @param list<string> $arguments
+     * @param array<string, bool> $enabledCommands
+     */
+    private function command(array $arguments, string $label = 'devtools', array $enabledCommands = []): string
     {
         [$reader, $validator] = $this->validationServices();
         $discovery = new FolderPluginDiscovery();
@@ -160,26 +163,49 @@ final class DevToolsCommandHandlerTest extends TestCase
         $handler = new DevToolsCommandHandler(
             $this->createMock(Plugin::class),
             $discovery,
-            $validator,
-            $reader,
-            new BuildConfigResolver($yaml),
-            new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector()),
-            new PluginProjectLocator($discovery, $reader),
-            $this->builder(),
-            new PharExtractor($this->filesystem),
             new VirionRegistry(),
             $this->temporaryDirectory . '/plugins',
             $this->temporaryDirectory . '/virions',
             $this->temporaryDirectory . '/build',
-            new VirionBuilder($this->filesystem, $virionManifestReader, $virionFactory, new \NhanAZ\DevTools\Virion\VirionClassScanner(new \NhanAZ\DevTools\Support\PhpSourceInspector())),
-            new ZipArchiveWriter($this->filesystem),
-            new ArtifactInspector($reader, $virionManifestReader),
-            new ProjectRoleDetector(),
-            new VirionProjectLocator($virionDiscovery, $virionFactory),
-            $virionManifestReader,
+            new class (
+                $this->temporaryDirectory . '/plugins',
+                $this->temporaryDirectory . '/virions',
+                $this->temporaryDirectory . '/build',
+            ) implements BuildJobRunner {
+                public function __construct(
+                    private readonly string $pluginsDirectory,
+                    private readonly string $virionsDirectory,
+                    private readonly string $buildDirectory,
+                ) {}
+
+                public function submit(string $operation, array $payload, callable $onComplete): bool
+                {
+                    $onComplete(BuildWorkerApplication::run($operation, $payload + [
+                        'pluginsDirectory' => $this->pluginsDirectory,
+                        'virionsDirectory' => $this->virionsDirectory,
+                        'buildDirectory' => $this->buildDirectory,
+                    ]));
+
+                    return true;
+                }
+
+                public function isBusy(): bool
+                {
+                    return false;
+                }
+
+                public function status(): string
+                {
+                    return 'idle';
+                }
+
+                public function shutdown(): void {}
+            },
+            $enabledCommands,
         );
         $messages = [];
         $sender = $this->createMock(CommandSender::class);
+        $sender->method('hasPermission')->willReturn(true);
         $sender->method('sendMessage')->willReturnCallback(static function (string $message) use (&$messages): void {
             $messages[] = $message;
         });

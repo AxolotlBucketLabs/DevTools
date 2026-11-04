@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 - 2026-11-04
+
+- Run server-side `doctor`, build and extraction commands on a dedicated worker thread instead of the server tick thread or PocketMine's central async task pool.
+- Reject concurrent heavy server operations, preserve artifacts until a complete operation succeeds and allow production servers to disable the heavy commands through `config.yml`.
+- Add command-specific permission checks while preserving the legacy `devtools.command` permission.
+
 ## 2.0.2 - 2026-11-04
 
 - Reject virion classes declared only in `.inc` or `.phtml` files when no matching `.php` autoload path exists.

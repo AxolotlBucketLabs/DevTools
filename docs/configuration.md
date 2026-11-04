@@ -1,6 +1,26 @@
 # Configuration
 
-DevTools has no global configuration file. During server startup and normal local build resolution, DevTools does not download source, follow symlinks, overwrite output without permission or hot-reload PHP.
+DevTools creates a server-local `config.yml` on first startup. During server startup and normal local build resolution, DevTools does not download source, follow symlinks, overwrite output without permission or hot-reload PHP.
+
+The server configuration controls only the potentially expensive administrative commands. Folder plugin loading, shared virion loading, the `status` command and the `virions` command remain available when these commands are disabled.
+
+```yaml
+commands:
+  doctor: true
+  build: true
+  extract: true
+```
+
+Set the expensive commands to `false` on a production server that uses DevTools only for folder plugins and shared virions:
+
+```yaml
+commands:
+  doctor: false
+  build: false
+  extract: false
+```
+
+Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use PocketMine's central async task pool. DevTools accepts only one background operation at a time; a second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
 
 An individual folder plugin may contain an optional `devtools.yml`.
 
