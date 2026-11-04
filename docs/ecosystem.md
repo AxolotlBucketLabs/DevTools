@@ -5,10 +5,13 @@ GitHub Actions workflow.
 
 ## Snapshot
 
-- Checked on 2026-11-03.
+- Checked on 2026-11-04.
 - 72 repositories were verified across four organizations.
 - A repository is counted when its public default-branch workflow references
   DevTools or one of DevTools' reusable workflows.
+- All 72 repositories currently resolve to the stable `v2.1.1` release: 73
+  workflow references use the maintained `@v2` channel, while the two
+  SimpleEconomy references pin the same `v2.1.1` commit directly.
 - This is a documentation snapshot, not telemetry. The list can become stale
   when projects change their workflows.
 - Organization-level repositories and repositories that only mention DevTools
