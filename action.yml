@@ -111,7 +111,7 @@ runs:
             echo "Dependency preparation requires a committed composer.lock. Resolve dependencies locally first." >&2
             exit 1
           fi
-          composer install --working-dir="$PROJECT_PATH" --no-dev --no-scripts --no-plugins --prefer-dist --no-interaction --no-progress --ignore-platform-req=ext-webrtc
+          composer install --working-dir="$PROJECT_PATH" --no-dev --no-scripts --no-plugins --no-autoloader --prefer-dist --no-interaction --no-progress --ignore-platform-req=ext-webrtc
         fi
         php "$DEVTOOLS_ACTION_PATH/bin/devtools.php" prepare "--project=$PROJECT_PATH" "--virions=$VIRIONS_PATH" --json
 

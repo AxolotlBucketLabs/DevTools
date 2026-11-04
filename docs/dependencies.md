@@ -31,12 +31,12 @@ This affects only DevTools dependency selection. It leaves `.poggit.yml` untouch
 Run Composer in the plugin project, with a reviewed lockfile. Dependency install scripts and plugins are not needed for the supported formats.
 
 ```sh
-composer install --no-dev --no-scripts --no-plugins --no-interaction
+composer install --no-dev --no-scripts --no-plugins --no-autoloader --no-interaction
 php /path/to/DevTools/bin/devtools.php prepare --project=. --virions=virions-prepared --json
 php -d phar.readonly=0 /path/to/DevTools/bin/devtools.php build --project=. --virions=virions-prepared --out=build --json
 ```
 
-`prepare` reads `composer.json`, `composer.lock`, `vendor/composer/installed.json` and package metadata as data. It does not execute `vendor/autoload.php`, package code, Composer scripts or Composer plugins. `build` and `doctor` infer the exact locked runtime graph from the same files. Do not repeat Composer dependencies in `devtools.yml`. `require-dev` packages are excluded. The Axolotl-PM server package is a runtime platform input and is not copied into a plugin.
+`prepare` reads `composer.json`, `composer.lock`, `vendor/composer/installed.json` and package metadata as data. It does not execute `vendor/autoload.php`, package code, Composer scripts or Composer plugins. The action also skips Composer's generated autoloader because DevTools reads the installed metadata directly. `build` and `doctor` infer the exact locked runtime graph from the same files. Do not repeat Composer dependencies in `devtools.yml`. `require-dev` packages are excluded. The Axolotl-PM server package is a runtime platform input and is not copied into a plugin.
 
 Preparation requires a **new destination directory**. All selected packages are staged and checked before that directory is installed. An existing destination is never overwritten. For an update, prepare into a new directory and switch `--virions` after success. With no Composer runtime dependencies, preparation returns an empty result without creating a directory. To use prepared packages in shared development loading, place the resulting package folders in the server's configured virions directory. They have ordinary `virion.yml` manifests and therefore use the existing loader.
 

@@ -96,6 +96,28 @@ jobs:
           test "$(sha256sum "$PHAR_PATH" | cut -d ' ' -f 1)" = "$BUILD_SHA256"
           test -s "$BUILD_METADATA"
 
+      - name: Build Composer-prepared example through this action
+        if: matrix.php == '8.4'
+        id: composer-example-build
+        uses: ./
+        with:
+          project: examples/ComposerPlugin
+          virions: examples/ComposerPlugin/.devtools-virions
+          output: build/action-composer-example
+          prepare-dependencies: true
+
+      - name: Verify Composer-prepared action output
+        if: matrix.php == '8.4'
+        shell: bash
+        env:
+          PHAR_PATH: ${{ steps.composer-example-build.outputs.phar }}
+          BUILD_SHA256: ${{ steps.composer-example-build.outputs.sha256 }}
+        run: |
+          test "$PHAR_PATH" = "$GITHUB_WORKSPACE/build/action-composer-example/ComposerPlugin.phar"
+          test -s "$PHAR_PATH"
+          test "$(sha256sum "$PHAR_PATH" | cut -d ' ' -f 1)" = "$BUILD_SHA256"
+          test -f "$GITHUB_WORKSPACE/examples/ComposerPlugin/.devtools-virions/devtools-prepared.json"
+
       - name: Build documented example with PHPStan level 4
         if: matrix.php == '8.4'
         id: example-build-phpstan

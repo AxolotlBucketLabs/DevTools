@@ -201,6 +201,7 @@ final class RepositoryMetadataTest extends TestCase
         $ciContents = file_get_contents($ciPath);
         $releaseContents = file_get_contents($releasePath);
         $agentGuide = file_get_contents($root . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'ai-agent.md');
+        $examplesReadme = file_get_contents($root . DIRECTORY_SEPARATOR . 'examples' . DIRECTORY_SEPARATOR . 'README.md');
         $agentTemplate = file_get_contents($root . DIRECTORY_SEPARATOR . 'examples' . DIRECTORY_SEPARATOR . 'agent'
             . DIRECTORY_SEPARATOR . 'AGENTS.md');
 
@@ -252,8 +253,15 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('php "$PHPSTAN_PHAR" analyse', $actionContents);
         self::assertStringNotContainsString('vendor/phpstan/phpstan/phpstan" analyse', $actionContents);
         self::assertStringNotContainsString('vendor/bin/phpstan', $actionContents);
+        self::assertIsString($ciContents);
         self::assertStringContainsString('--no-scripts', $actionContents);
         self::assertStringContainsString('--no-plugins', $actionContents);
+        self::assertStringContainsString('--no-autoloader', $actionContents);
+        self::assertStringContainsString('examples/ComposerPlugin', $ciContents);
+        self::assertStringContainsString('prepare-dependencies: true', $ciContents);
+        self::assertStringContainsString('virions: examples/ComposerPlugin/.devtools-virions', $ciContents);
+        self::assertIsString($examplesReadme);
+        self::assertStringContainsString('Composer-prepared virion example', $examplesReadme);
         self::assertIsString($exampleContents);
         self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
         self::assertStringContainsString('uses: NhanAZ/DevTools@v2', $exampleContents);
@@ -267,7 +275,6 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('setup-php-action/dist/index.js', $exampleContents);
         self::assertStringNotContainsString('pmmp/setup-php-action', $exampleContents);
         self::assertStringNotContainsString('phpstan:', $exampleContents);
-        self::assertIsString($ciContents);
         self::assertStringContainsString('uses: ./', $ciContents);
         self::assertStringContainsString('name: HelloShared-${{ github.sha }}', $ciContents);
         self::assertStringContainsString('phpstan: "4"', $ciContents);
@@ -275,6 +282,8 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('phpstan-paths: tests/Fixtures/PhpStanDependency/src', $ciContents);
         self::assertIsString($releaseContents);
         self::assertStringContainsString("grep -Fx '.github/workflows/build.yml'", $releaseContents);
+        self::assertStringContainsString("grep -Fx 'ComposerPlugin/composer.json'", $releaseContents);
+        self::assertStringContainsString("grep -Fx 'ComposerPlugin/composer.lock'", $releaseContents);
         self::assertStringContainsString("grep -Fx 'agent/AGENTS.md'", $releaseContents);
         self::assertIsString($agentGuide);
         self::assertStringContainsString('(cli.md)', $agentGuide);

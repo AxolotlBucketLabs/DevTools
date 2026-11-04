@@ -30,7 +30,7 @@ php bin/devtools.php extract --artifact=/path/to/SharedGreeting.phar --out=build
 For supported Composer libraries, install from the reviewed plugin lockfile before preparation.
 
 ```sh
-composer install --working-dir=/path/to/MyPlugin --no-dev --no-scripts --no-plugins
+composer install --working-dir=/path/to/MyPlugin --no-dev --no-scripts --no-plugins --no-autoloader
 php bin/devtools.php prepare --project=/path/to/MyPlugin --virions=prepared
 php -d phar.readonly=0 bin/devtools.php build --project=/path/to/MyPlugin --virions=prepared
 ```
