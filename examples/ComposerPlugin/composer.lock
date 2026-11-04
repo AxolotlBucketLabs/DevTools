@@ -1,0 +1,54 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "c9c8c49bfdf47e42ec708c14c667c26f",
+    "packages": [
+        {
+            "name": "devtools/example-composer-greeting",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/composer-greeting",
+                "reference": "9f8dff832416cb0641360bc894d7afbacdfdcf6c"
+            },
+            "require": {
+                "php": ">=8.4"
+            },
+            "type": "library",
+            "extra": {
+                "virion": {
+                    "spec": "3.0",
+                    "namespace-root": "DevToolsExample\\ComposerGreeting"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "DevToolsExample\\ComposerGreeting\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "A local Composer Virion v3 fixture",
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.4.0"
+    },
+    "plugin-api-version": "2.9.0"
+}

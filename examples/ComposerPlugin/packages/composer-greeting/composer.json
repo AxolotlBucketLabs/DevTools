@@ -1,0 +1,21 @@
+{
+    "name": "devtools/example-composer-greeting",
+    "version": "1.0.0",
+    "description": "A local Composer Virion v3 fixture",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "DevToolsExample\\ComposerGreeting\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.4"
+    },
+    "extra": {
+        "virion": {
+            "spec": "3.0",
+            "namespace-root": "DevToolsExample\\ComposerGreeting"
+        }
+    }
+}

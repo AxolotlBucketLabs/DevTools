@@ -17,6 +17,20 @@ The bundled workflow uses the `NhanAZ/DevTools@v2` action channel. For reusable 
 
 The example intentionally omits `phpstan`, so analysis is off. The [GitHub Actions guide](https://github.com/NhanAZ/DevTools/blob/v2/docs/github-actions.md) shows how to opt in with an explicitly pinned server source.
 
+## Composer-prepared virion example
+
+`ComposerPlugin/` demonstrates the Composer path for a plugin that declares a supported Virion v3 package in `composer.json`. Its committed `composer.lock` and local path repository make the example deterministic and independent of Packagist. The CI workflow installs that lockfile with scripts, plugins and the generated Composer autoloader disabled, prepares the package into `.devtools-virions`, then builds the plugin through the same composite action used by external repositories.
+
+For a real project, publish or reference the reviewed Composer package through the repository's normal Composer configuration, commit the resulting `composer.lock`, and enable the action input:
+
+```yaml
+with:
+  prepare-dependencies: true
+  virions: .devtools-virions
+```
+
+DevTools still does not download dependencies during server startup or an ordinary local build. The explicit preparation step is the only network-capable part of this workflow.
+
 ## Coding agent template
 
 The ZIP also includes `agent/AGENTS.md`. Copy it to the root of a plugin repository when AI coding agents should preserve DevTools workflow rules across sessions. For a one-time setup, paste the [versioned AI agent prompt](https://github.com/NhanAZ/DevTools/blob/v2/docs/ai-agent.md) into the agent instead.

@@ -95,6 +95,8 @@ jobs:
           (cd examples && zip -X -r "../dist/DevTools-examples-${VERSION}.zip" .)
           unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx 'HelloShared/plugin.yml'
           unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx 'SharedGreeting/virion.yml'
+          unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx 'ComposerPlugin/composer.json'
+          unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx 'ComposerPlugin/composer.lock'
           unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx '.github/workflows/build.yml'
           unzip -Z1 "dist/DevTools-examples-${VERSION}.zip" | grep -Fx 'agent/AGENTS.md'
           cp RELEASE_NOTES.md dist/RELEASE_NOTES.md
