@@ -19,6 +19,26 @@ Focused suites are `composer test:loader`, `composer test:virion`, and `composer
 
 For the CLI use `php -d phar.readonly=0 vendor/bin/phpunit --testsuite cli`. Action and release handoff behavior uses `node --test .github/scripts/*.test.mjs`. The pinned real-server harness is documented under [runtime validation](runtime-validation.md). It runs separately from ordinary builds.
 
+## Shared code graph
+
+DevTools keeps a committed [Graphify](https://github.com/Graphify-Labs/graphify)
+code graph at `graphify-out/graph.json`. It is a navigation aid for understanding
+relationships across the loader, virion and build modules; it does not replace
+tests, PHPStan, or the release checks.
+
+Install Graphify with `graphifyy`, then rebuild the graph from the repository
+root with:
+
+```text
+graphify extract . --code-only
+```
+
+Only `graphify-out/graph.json` is shared. HTML visualizations, reports, caches,
+and other generated files remain ignored. After code changes, run
+`graphify update .` and include the refreshed graph with the change.
+For graph merge conflicts, configure Graphify's merge driver as described in
+the [team workflow guide](https://docs.graphify.com/cookbooks/shared-team-graph).
+
 `composer check` is the release-equivalent local gate. It runs strict Composer validation, all-project PHP syntax, style, PHPStan level max, all tests, self-build, and PHAR content, signature and secret validation. It returns nonzero on any failed stage.
 
 ## Test strategy

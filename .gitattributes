@@ -1,3 +1,4 @@
 * text=auto eol=lf
 *.phar binary
 *.zip binary
+graphify-out/graph.json merge=graphify linguist-generated=true -diff

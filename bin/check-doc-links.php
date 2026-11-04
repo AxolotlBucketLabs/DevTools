@@ -13,7 +13,8 @@ foreach ($iterator as $entry) {
     }
     $path = str_replace('\\', '/', $entry->getPathname());
     if (str_contains($path, '/vendor/') || str_contains($path, '/build/')
-        || str_contains($path, '/.git/') || str_contains($path, '/.devtools-dependencies/')) {
+        || str_contains($path, '/.git/') || str_contains($path, '/.devtools-dependencies/')
+        || str_contains($path, '/.codex/skills/graphify/')) {
         continue;
     }
     $markdownFiles[] = $entry->getPathname();

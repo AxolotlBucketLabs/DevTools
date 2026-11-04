@@ -77,3 +77,10 @@ No hot reload, downloader, registry, marketplace, web UI, database, Composer rep
 5. Do not read or refactor the entire repository for a local change.
 6. Keep ordinary changes within one or two modules.
 7. Run the focused tests first, then the complete quality suite.
+
+## graphify
+
+DevTools maintains an optional architecture graph at `graphify-out/graph.json`.
+When Graphify is installed, use it to explore relationships and run
+`graphify update .` after code changes. See
+[`docs/development.md`](docs/development.md#shared-code-graph).

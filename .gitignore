@@ -2,6 +2,7 @@
 /.phpunit.cache/
 /.phpstan-cache/
 /.devtools-dependencies/
+/.codex/
 /.env
 /.env.*
 /build/
@@ -15,3 +16,7 @@ composer.phar
 *.tmp
 *.phar
 *.log
+
+# Graphify keeps only the shared code graph in version control.
+/graphify-out/*
+!/graphify-out/graph.json
