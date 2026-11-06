@@ -1,6 +1,6 @@
 # Build and release Axolotl-PM plugins on GitHub
 
-The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds; virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
+The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds. Virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
 These interfaces are available in the current `v3.0.0` release. Most repositories should use the maintained `v3` channel: `AxolotlBucketLabs/DevTools@v3` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3` or `build-virion.yml@v3` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v3.0.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
 
@@ -198,7 +198,7 @@ git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v3.0.
 uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v3.0.0
 ```
 
-The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v3 workflow contract no longer accepts the removed `devtools-ref` input; remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com; these reusable workflows are not supported on GitHub Enterprise Server without that context.
+The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v3 workflow contract no longer accepts the removed `devtools-ref` input. Remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com. These reusable workflows are not supported on GitHub Enterprise Server without that context.
 
 ## Migrate from v1
 

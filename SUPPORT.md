@@ -4,12 +4,12 @@ Start with the [quick start](README.md#quick-start) and [troubleshooting guide](
 
 Include the following details when reporting a reproducible bug.
 
-- DevTools, Axolotl-PM, API and PHP versions
-- operating system
-- the smallest relevant `plugin.yml`, `devtools.yml`, or `virion.yml`
-- exact reproduction steps
-- expected and actual results
-- a sanitized log excerpt
+- Include the DevTools, Axolotl-PM, API and PHP versions.
+- Include the operating system.
+- Include the smallest relevant `plugin.yml`, `devtools.yml`, or `virion.yml`.
+- Include exact reproduction steps.
+- Include the expected and actual results.
+- Include a sanitized log excerpt.
 
 Remove addresses, tokens, passwords, cookies, paths revealing private usernames, and unrelated plugin data. Security vulnerabilities must follow [SECURITY.md](SECURITY.md), not a public issue.
 

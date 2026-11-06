@@ -123,7 +123,7 @@ GitHub Actions workflow.
 
 ## Platform integrations
 
-- BedrockNexus is intentionally excluded from this migration inventory; its
+- BedrockNexus is intentionally excluded from this migration inventory. Its
   workflow template will be updated separately.
 - [BedrockNexus](https://bedrocknexus.com/) provides an official
   [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml)

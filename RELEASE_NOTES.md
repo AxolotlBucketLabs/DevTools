@@ -6,9 +6,9 @@ This major release moves DevTools to the AxolotlBucketLabs organization and rena
 
 - Update GitHub Actions references from `NhanAZ/DevTools` to `AxolotlBucketLabs/DevTools`.
 - Update direct PHP imports from `NhanAZ\DevTools` to `AxolotlBucketLabs\DevTools`.
-- The maintained workflow channel is now `v3`; the `v2` channel remains available at its prior release for consumers that need a staged migration.
+- The maintained workflow channel is now `v3`. The `v2` channel remains available at its prior release for consumers that need a staged migration.
 
 ## Compatibility
 
 - CLI and GitHub Actions builds remain synchronous, with the v3 workflow contract matching the v2 build inputs and outputs.
-- PHAR creation still requires PHP to run with `phar.readonly=0`; loading an existing PHAR does not.
+- PHAR creation still requires PHP to run with `phar.readonly=0`. Loading an existing PHAR does not.

@@ -5,7 +5,7 @@ DevTools supports Axolotl-PM. The table below maps common workflows to the suppo
 | Tool and workflow | DevTools equivalent | Limits |
 | --- | --- | --- |
 | pmmp/DevTools folder loading | Install DevTools PHAR and load folders containing `plugin.yml` and `src/` | No hot reload, plugin scaffolding, permission inspection, event inspection or `makeplugin all` |
-| pmmp/DevTools packaging and extraction | `/devtools build`, `/devtools extract`, CLI `build` and `extract` | No arbitrary multiple source roots; extraction remains transactional and archive-safe |
+| pmmp/DevTools packaging and extraction | `/devtools build`, `/devtools extract`, CLI `build` and `extract` | No arbitrary multiple source roots. Extraction remains transactional and archive-safe. |
 | DEVirion shared development libraries | Local folder and PHAR virions, compatible transitive selection and shared class loading | No downloads or source namespace isolation. Incompatible shared requirements fail |
 | pmmp-plugin-actions builds | Composite or reusable workflow using the same CLI, with optional PHPStan and preparation | PHP setup uses a pinned Axolotl-PM helper |
 | pmmp-plugin-actions releases and nightlies | Publish checked artifact bytes with exact tag matching and prerelease handling | Nightlies use immutable commit tags rather than a moving release URL |

@@ -4,7 +4,7 @@ DevTools is one Axolotl-PM plugin and one Composer project. Its boundaries follo
 
 ## System overview
 
-The runtime loader and the artifact builder share validation and virion metadata, but they serve different purposes. Runtime loading keeps development folders available on a server; building packages the same project into a standalone PHAR.
+The runtime loader and the artifact builder share validation and virion metadata, but they serve different purposes. Runtime loading keeps development folders available on a server. Building packages the same project into a standalone PHAR.
 
 ```mermaid
 flowchart TB
@@ -62,7 +62,7 @@ flowchart TB
     Extractor --> Extracted
 ```
 
-The server path registers folder plugins and shared virions with Axolotl-PM. The build path uses local project inputs and prepared virions, shades declared virions into plugin-private namespaces when needed, and verifies the resulting PHAR. Dependency source preparation remains outside DevTools; normal loading and building do not download external code.
+The server path registers folder plugins and shared virions with Axolotl-PM. The build path uses local project inputs and prepared virions, shades declared virions into plugin-private namespaces when needed, and verifies the resulting PHAR. Dependency source preparation remains outside DevTools. Normal loading and building do not download external code.
 
 ## Folder loading at startup
 

@@ -33,7 +33,7 @@ For the CLI use `php -d phar.readonly=0 vendor/bin/phpunit --testsuite cli`. Act
 
 DevTools keeps a committed [Graphify](https://github.com/Graphify-Labs/graphify)
 code graph at `graphify-out/graph.json`. It is a navigation aid for understanding
-relationships across the loader, virion and build modules; it does not replace
+relationships across the loader, virion and build modules. It does not replace
 tests, PHPStan, or the release checks.
 
 Install Graphify with `graphifyy`, then rebuild the graph from the repository

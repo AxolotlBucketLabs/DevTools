@@ -21,7 +21,7 @@ Install DevTools itself as a PHAR so its folder loader can start. Restart the se
 
 ## Build a plugin on GitHub
 
-Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v3` workflow channel by default. Use `@latest` when you intentionally want every stable release, including future major versions; use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`; no server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
+Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v3` workflow channel by default. Use `@latest` when you intentionally want every stable release, including future major versions. Use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`. No server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
 
 ## What it does
 
@@ -87,7 +87,7 @@ Use the [coding agent guide](docs/ai-agent.md) for CLI automation or GitHub work
 
 ## Commands
 
-The command keeps the legacy `devtools.command` permission for compatibility. Its handler also recognizes the corresponding command-specific permission; the legacy permission remains an allow-all override for existing installations. Operators receive the permissions by default.
+The command keeps the legacy `devtools.command` permission for compatibility. Its handler also recognizes the corresponding command-specific permission. The legacy permission remains an allow-all override for existing installations. Operators receive the permissions by default.
 
 ```text
 /devtools status
@@ -138,7 +138,7 @@ commands:
 
 ## Production guidance
 
-Use folder plugins and shared virions for development, or disable the heavy server commands when DevTools is installed on a production server only for loading. Deploy tested PHARs to production; editing source in place can leave partially changed code after a restart. For a project containing both `plugin.yml` and `virion.yml`, use `build both` to create two role-specific PHARs; DevTools never merges a plugin into a virion or a virion into another virion. Plugin-to-virion injection is rejected because a plugin manifest is not a virion contract.
+Use folder plugins and shared virions for development, or disable the heavy server commands when DevTools is installed on a production server only for loading. Deploy tested PHARs to production. Editing source in place can leave partially changed code after a restart. For a project containing both `plugin.yml` and `virion.yml`, use `build both` to create two role-specific PHARs. DevTools never merges a plugin into a virion or a virion into another virion. Plugin-to-virion injection is rejected because a plugin manifest is not a virion contract.
 
 ## License and provenance
 

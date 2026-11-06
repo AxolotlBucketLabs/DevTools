@@ -24,7 +24,7 @@ If `.poggit.yml` is retained for Poggit while the reviewed Composer lock supplie
 import-poggit-libraries: false
 ```
 
-This affects only DevTools dependency selection. It leaves `.poggit.yml` untouched and still imports explicit `virions` from `devtools.yml` and `extra.devtools.virions` from Composer. The default is to import matching `.poggit.yml` libraries; an invalid value fails before building.
+This affects only DevTools dependency selection. It leaves `.poggit.yml` untouched and still imports explicit `virions` from `devtools.yml` and `extra.devtools.virions` from Composer. The default is to import matching `.poggit.yml` libraries. An invalid value fails before building.
 
 ## Composer preparation
 
@@ -46,7 +46,7 @@ Supported Composer packages must meet the following requirements.
 - One PSR-4 mapping for that namespace to a single directory, or one namespace-based PSR-0 mapping to a single directory. Composer's one-element directory array is accepted, and the directory may be the package root (`""` or `"./"`). A package may instead use one classmap root, including the package root, when all PHP source is under the `namespace-root` directory inside it. Class namespace, path and case must match. When a file declares its own matching class plus other classes in the same namespace and directory, `prepare` creates a small autoload shim for each colocated class and records the mapping in its provenance. A misnamed standalone class still fails. Legacy underscore-to-directory PSR-0 class layouts are not supported.
 - Runtime package dependencies that also satisfy this contract. Composer's locked graph decides their versions. DevTools does not solve constraints or accept virtual packages or replacements as missing implementation code. The one platform exception is `pocketmine/pocketmine-mp` when the locked `axolotl-pm/pocketmine-mp` package explicitly replaces it. Axolotl-PM itself is never bundled as a virion.
 - PHP platform constraints using caret versions or comparison ranges, optionally separated by `||`, `php-64bit` with `*`, and `ext-*` requirements with `*`. These are preserved in generated metadata and checked during preparation, build selection and shared loading. Composer checks `composer-runtime-api` during installation, so DevTools omits it from the generated runtime manifest. Other platform expressions fail explicitly. The generated manifest also retains DevTools' PHP 8.4 baseline. This does not override the package's stricter Composer constraint.
-- Resources colocated under the selected source directory when code relies on `__DIR__` relative paths. Their bytes and relative layout are preserved. A package whose root `resources/` belongs to the consuming plugin may explicitly set `extra.virion.exclude-root-resources: true`; those package-root files are intentionally not imported, while source-relative resources remain supported.
+- Resources colocated under the selected source directory when code relies on `__DIR__` relative paths. Their bytes and relative layout are preserved. A package whose root `resources/` belongs to the consuming plugin may explicitly set `extra.virion.exclude-root-resources: true`. Those package-root files are intentionally not imported, while source-relative resources remain supported.
 
 DevTools explicitly rejects `shared-namespace-root`, Composer `autoload.files`, multiple package source roots, classmap PHP files outside the declared namespace tree, custom vendor directories, development versions without a full Git commit, package root `resources/` without an explicit `extra.virion.exclude-root-resources: true`, and general Composer packages without supported virion metadata. Root plugin `autoload.files` and classmap entries are also rejected because Axolotl-PM does not execute Composer's bootstrap automatically. Root Composer mappings must use one directory per namespace within `src/`. Paths outside `src/` and arrays of source roots are rejected. Composer mappings do not register another runtime loader. Plugin namespace and filename layout remain governed by `plugin.yml` and `src/`.
 
@@ -68,7 +68,7 @@ Shared development loading registers one selected namespace and version in the s
 
 A build shades the complete selected graph into the plugin's private namespace. Separate plugins can bundle separate versions, but their library types are distinct and static state is separate. Do not exchange objects of a privately bundled library as a cross-plugin API. Define that API in an intentionally external plugin dependency instead. There is no public or shared namespace contract for bundled virions.
 
-The AST shader rewrites namespaces and supported static PHP class references. Dynamic references must satisfy the [shading rules](building.md#what-the-builder-validates). Test async worker behavior on the pinned server runtime; ordinary PHP unit execution does not cover it.
+The AST shader rewrites namespaces and supported static PHP class references. Dynamic references must satisfy the [shading rules](building.md#what-the-builder-validates). Test async worker behavior on the pinned server runtime. Ordinary PHP unit execution does not cover it.
 
 ## Compatibility limits
 

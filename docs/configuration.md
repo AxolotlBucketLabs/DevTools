@@ -20,7 +20,7 @@ commands:
   extract: false
 ```
 
-Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use PocketMine's central async task pool. DevTools accepts only one background operation at a time; a second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
+Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use PocketMine's central async task pool. DevTools accepts only one background operation at a time. A second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
 
 An individual folder plugin may contain an optional `devtools.yml`.
 
@@ -37,12 +37,12 @@ include-paths:
 
 Each entry is either a plain name, meaning any valid version, or a map with exactly `name` and `version`. The supported constraints are listed below.
 
-- `*`
-- exact versions such as `1.2.3`
-- caret ranges such as `^1.2.3`
-- tilde ranges such as `~1.2.3`
-- wildcards such as `1.*` or `1.2.*`
-- comparison ranges such as `>=1.2.0 <2.0.0`
+- Use `*` for any valid version.
+- Use exact versions such as `1.2.3`.
+- Use caret ranges such as `^1.2.3`.
+- Use tilde ranges such as `~1.2.3`.
+- Use wildcards such as `1.*` or `1.2.*`.
+- Use comparison ranges such as `>=1.2.0 <2.0.0`.
 
 Unknown keys, invalid names, empty values, unsupported expressions, duplicate copies of the selected version, and unsatisfied constraints fail with the responsible file and requirement in the message.
 
@@ -56,7 +56,7 @@ Paths that differ only by letter casing are rejected instead of silently replaci
 
 ## `import-poggit-libraries`
 
-Set this optional boolean to `false` when a project keeps legacy `.poggit.yml` declarations for Poggit but uses its reviewed Composer lock or explicit `devtools.yml` declarations as the DevTools dependency source. It defaults to `true`. This setting only changes DevTools dependency selection; it never downloads the declared libraries. See [dependency preparation](dependencies.md) for the migration workflow.
+Set this optional boolean to `false` when a project keeps legacy `.poggit.yml` declarations for Poggit but uses its reviewed Composer lock or explicit `devtools.yml` declarations as the DevTools dependency source. It defaults to `true`. This setting only changes DevTools dependency selection. It never downloads the declared libraries. See [dependency preparation](dependencies.md) for the migration workflow.
 
 Composer `extra.devtools.virions` and local `.poggit.yml` `libs` remain supported for migration. `devtools.yml` is the clearest format for new non-Composer projects.
 

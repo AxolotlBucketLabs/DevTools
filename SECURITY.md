@@ -12,4 +12,4 @@ Include the DevTools version, Axolotl-PM version and API, operating system, rele
 
 ## Security boundaries
 
-Plugin and virion source is trusted development code when loaded by PHP. Metadata inspection, building, and extraction do not execute it. Builds use local inputs. Staging and extraction reject symbolic links, non-portable paths, and destination escape; shading rejects ambiguous namespaces. Existing build outputs require explicit overwrite. Extraction stages a sibling tree and installs it with backup and restore.
+Plugin and virion source is trusted development code when loaded by PHP. Metadata inspection, building, and extraction do not execute it. Builds use local inputs. Staging and extraction reject symbolic links, non-portable paths, and destination escape. Shading rejects ambiguous namespaces. Existing build outputs require explicit overwrite. Extraction stages a sibling tree and installs it with backup and restore.

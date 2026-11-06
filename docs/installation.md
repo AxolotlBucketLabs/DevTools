@@ -8,7 +8,7 @@
 4. Start the server. DevTools creates server-root `virions/` and `build/` directories if they are missing.
 5. Run `/devtools status` as an operator and check that the displayed version matches the release.
 
-DevTools creates `config.yml` in its data directory on first startup. Server-side `doctor`, `build` and `extract` commands run on a dedicated worker thread and are enabled by default for compatibility. If the production server only needs folder plugin and virion loading, set those three command options to `false`; this does not disable loading or the lightweight inspection commands.
+DevTools creates `config.yml` in its data directory on first startup. Server-side `doctor`, `build` and `extract` commands run on a dedicated worker thread and are enabled by default for compatibility. If the production server only needs folder plugin and virion loading, set those three command options to `false`. This does not disable loading or the lightweight inspection commands.
 
 DevTools cannot bootstrap itself from a source folder on an otherwise unmodified server. Always install its release PHAR first.
 

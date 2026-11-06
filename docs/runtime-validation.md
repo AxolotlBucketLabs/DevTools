@@ -12,8 +12,8 @@ additional boundary.
   DevTools' `composer.lock`.
 - Windows x64, **PHP 8.4.24 ZTS** with Axolotl-PM's required extensions, including
   `pmmpthread`. PHP 8.4 is the source compatibility baseline. The complete CI
-  quality gate also runs on PHP 8.5; this runtime result does not claim an
-  executed PHP 8.5 server test.
+quality gate also runs on PHP 8.5. This runtime result does not claim an
+executed PHP 8.5 server test.
 
 ## Reproduce
 
