@@ -18,7 +18,7 @@ composer check
 
 Focused suites are `composer test:loader`, `composer test:virion`, and `composer test:build`. `composer analyse`, `composer qa`, and `composer build:self` remain compatibility aliases.
 
-Install `yamllint` 1.38.0 in the development environment before running `composer yamllint`:
+Install `yamllint` 1.38.0 in the development environment before running `composer yamllint`. Run the command below after installation.
 
 ```text
 python -m pip install yamllint==1.38.0
@@ -36,8 +36,8 @@ code graph at `graphify-out/graph.json`. It is a navigation aid for understandin
 relationships across the loader, virion and build modules. It does not replace
 tests, PHPStan, or the release checks.
 
-Install Graphify with `graphifyy`, then rebuild the graph from the repository
-root with:
+Install Graphify with the `graphifyy` package, then rebuild the graph from the
+repository root with the command below.
 
 ```text
 graphify extract . --code-only

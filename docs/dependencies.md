@@ -18,7 +18,7 @@ Only dependencies reachable from the final selected roots belong to a build. Dep
 
 For a package supplied from Git outside Composer, use the repository and full commit supplied by its author, check out that commit explicitly, and place the documented package subdirectory in `virions/`. DevTools does not infer repository URLs from package names, fetch Git revisions, or maintain a second Git lockfile. Source acquisition for these packages remains an external, explicit step. `.poggit.yml` library names and constraints remain a migration input, not a download instruction.
 
-If `.poggit.yml` is retained for Poggit while the reviewed Composer lock supplies all libraries for the DevTools build, set the following in `devtools.yml`:
+When `.poggit.yml` is retained for Poggit but the reviewed Composer lock supplies all libraries for the DevTools build, set `import-poggit-libraries` to `false` in `devtools.yml`.
 
 ```yaml
 import-poggit-libraries: false

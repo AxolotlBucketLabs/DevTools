@@ -11,7 +11,7 @@ commands:
   extract: true
 ```
 
-Set the expensive commands to `false` on a production server that uses DevTools only for folder plugins and shared virions:
+On a production server that uses DevTools only for folder plugins and shared virions, set the expensive commands to `false`.
 
 ```yaml
 commands:

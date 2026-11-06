@@ -72,7 +72,7 @@ The default package includes `plugin.yml`, `src/`, `resources/`, common license 
 
 Builds reject unsafe dynamic class references, affected namespaces stored in strings, ambiguous grouped imports, undeclared development namespaces, namespace-level functions or constants outside a virion's antigen, and manifest dependencies on DevTools or DEVirion.
 
-The shader accepts specific dynamic patterns whose behavior it can verify:
+The shader accepts specific dynamic patterns when it can verify their behavior.
 
 - Static class expressions, including literal class strings and `::class` references, in class-name arguments. Variable class-name arguments in `is_a()` and variable `instanceof` targets are rejected because shading can change their runtime identity.
 - A factory annotated with `@devtools-allow-dynamic-class $variable`, where `return new $variable()` immediately follows top-level throwing `class_exists()` and `is_subclass_of(..., Interface::class)` guards. An annotated factory may also select from a local static map of explicit `::class` values immediately before returning.

@@ -27,7 +27,7 @@ The reusable workflow checks out the plugin, sets up Axolotl-PM PHP using setup-
 
 Default `project: .` expects `plugin.yml` and `src/` at the repository root. A plugin without virions needs no Composer manifest or additional DevTools configuration. Local virions remain usable through `virions: virions`. The included `examples/.github/workflows/build.yml` uses the maintained `v3` composite action channel for `HelloShared` and `SharedGreeting`.
 
-For a virion repository, use the reusable virion workflow:
+For a virion repository, use the following reusable workflow.
 
 ```yaml
 name: Build and validate virion
@@ -99,7 +99,7 @@ The composite action installs its own locked tool dependencies with scripts and 
 | `sha256` | output | - | SHA-256 of the exact PHAR. |
 | `metadata` | output | - | Absolute path to the CLI JSON build result. |
 
-The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to an Axolotl-PM Git ref before PHPStan: use the verified release tag `5.51.1` for ordinary analysis, or its full commit SHA `e881fc1bc1c401545baf6bd1f824e41ff3f57bd1` when strict reproducibility is required. Keep the server source ref independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
+The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-name`, `axolotl-ref`, and `phpstan-server` inputs. Set `axolotl-ref` to an Axolotl-PM Git ref before PHPStan. Use the verified release tag `5.51.1` for ordinary analysis, or its full commit SHA `e881fc1bc1c401545baf6bd1f824e41ff3f57bd1` when strict reproducibility is required. Keep the server source ref independent of the tested runtime version. The workflow exports `plugin-name`, `plugin-version`, `sha256`, `artifact-name`, and immutable `artifact-id`. Local artifact paths are only meaningful inside the build job. Another job must download using `artifact-id`.
 
 ## Optional static analysis
 
@@ -174,7 +174,7 @@ Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never t
 
 Use the `v3` major channel for the normal developer workflow. DevTools moves that tag only to a compatible stable v3 release after its release checks pass. This avoids requiring every consumer repository to edit its workflow for each compatible patch or minor release.
 
-Use the `latest` channel only when the repository intentionally accepts stable releases across major versions:
+Use the `latest` channel only when the repository intentionally accepts stable releases across major versions.
 
 ```yaml
 uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@latest
@@ -182,13 +182,13 @@ uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@latest
 
 DevTools moves `latest` only to a validated stable release. It may move from v3 to v4, so a repository using it must be prepared for breaking changes. This is an opt-in convenience channel, not the default recommendation.
 
-Use an exact release when a repository wants controlled upgrades:
+Use an exact release when a repository needs controlled upgrades.
 
 ```yaml
 uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3.0.0
 ```
 
-Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment:
+Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment.
 
 ```sh
 git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v3.0.0^{}'
@@ -202,7 +202,7 @@ The called job reads its own `workflow_sha` and `workflow_repository`, checks ou
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v3` and remove legacy inputs that v3 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v3.0.0` or a full SHA when the repository requires a controlled or strict pin:
+Update the reusable workflow reference to `@v3` and remove legacy inputs that v3 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v3.0.0` or a full SHA when the repository requires a controlled or strict pin.
 
 ```diff
  with:
