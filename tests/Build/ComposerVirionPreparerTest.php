@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\ComposerVirionPlan;
-use NhanAZ\DevTools\Build\ComposerVirionPreparer;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\ComposerVirionPlan;
+use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
+use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use Phar;
 
 final class ComposerVirionPreparerTest extends TestCase

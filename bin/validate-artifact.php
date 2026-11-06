@@ -43,7 +43,7 @@ if (is_string($expectedVersion)) {
     }
 }
 if (($manifest['name'] ?? null) !== 'DevTools'
-    || ($manifest['main'] ?? null) !== 'NhanAZ\\DevTools\\DevTools'
+    || ($manifest['main'] ?? null) !== 'AxolotlBucketLabs\\DevTools\\DevTools'
     || ($manifest['api'] ?? null) !== '5.0.0') {
     artifactFailure('plugin.yml identity, main class, or API is incorrect');
 }

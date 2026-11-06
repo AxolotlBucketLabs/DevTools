@@ -4,14 +4,14 @@ Load [Axolotl-PM](https://github.com/axolotl-pm/PocketMine-MP) plugins from fold
 
 See the [architecture overview](ARCHITECTURE.md) for how folder loading, shared virions, and PHAR builds fit together.
 
-[![CI](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml/badge.svg)](https://github.com/NhanAZ/DevTools/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/NhanAZ/DevTools)](https://github.com/NhanAZ/DevTools/releases/latest)
+[![CI](https://github.com/AxolotlBucketLabs/DevTools/actions/workflows/ci.yml/badge.svg)](https://github.com/AxolotlBucketLabs/DevTools/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/AxolotlBucketLabs/DevTools)](https://github.com/AxolotlBucketLabs/DevTools/releases/latest)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Discord server online members](https://img.shields.io/discord/986553214889517088?label=Discord&amp;logo=discord&amp;logoColor=white&amp;color=5865F2)](https://discord.gg/j2X83ujT6c)
 
 ## Quick start
 
-1. Download the DevTools PHAR from the [latest release](https://github.com/NhanAZ/DevTools/releases/latest). GitHub's "Source code" archives are for developing DevTools.
+1. Download the DevTools PHAR from the [latest release](https://github.com/AxolotlBucketLabs/DevTools/releases/latest). GitHub's "Source code" archives are for developing DevTools.
 2. Stop your Axolotl-PM server and copy the PHAR to `plugins/DevTools.phar`.
 3. Put your development plugin folder, containing `plugin.yml` and `src/`, directly inside `plugins/`.
 4. Start the server. Confirm that DevTools reports folder loading, shared virions, and PHAR building as ready, then run `/devtools status` as an operator.
@@ -21,7 +21,7 @@ Install DevTools itself as a PHAR so its folder loader can start. Restart the se
 
 ## Build a plugin on GitHub
 
-Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v2` workflow channel by default. Use `@latest` when you intentionally want every stable release, including future major versions; use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`; no server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
+Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to `.github/workflows/build.yml` and push. It follows the maintained DevTools `v3` workflow channel by default. Use `@latest` when you intentionally want every stable release, including future major versions; use a release tag or full commit SHA when your project requires a controlled or strict pin. Download the PHAR from the run's **Artifacts** section. A plugin without dependencies needs only `plugin.yml` and `src/`; no server checkout, project-local Composer installation, `devtools.yml`, or `virions/` is required.
 
 ## What it does
 

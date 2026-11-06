@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Virion\VirionException;
-use NhanAZ\DevTools\Virion\VirionVersionConstraint;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
+use AxolotlBucketLabs\DevTools\Virion\VirionVersionConstraint;
 use PHPUnit\Framework\TestCase;
 
 final class VirionVersionConstraintTest extends TestCase

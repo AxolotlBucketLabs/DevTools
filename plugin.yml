@@ -1,12 +1,12 @@
 name: DevTools
-version: 2.1.1
-main: NhanAZ\DevTools\DevTools
+version: 3.0.0
+main: AxolotlBucketLabs\DevTools\DevTools
 api: 5.0.0
 load: STARTUP
-src-namespace-prefix: NhanAZ\DevTools
+src-namespace-prefix: AxolotlBucketLabs\DevTools
 description: Folder loading, shared development virions and standalone plugin or virion PHAR tooling for Axolotl-PM
-author: NhanAZ
-website: https://github.com/NhanAZ/DevTools
+author: AxolotlBucketLabs
+website: https://github.com/AxolotlBucketLabs/DevTools
 commands:
   devtools:
     description: Inspect and build development plugins and virions

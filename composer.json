@@ -1,5 +1,5 @@
 {
-    "name": "nhanaz/devtools",
+    "name": "axolotlbucketlabs/devtools",
     "description": "Folder loading, shared development virions and standalone plugin or virion PHAR tooling for Axolotl-PM",
     "keywords": [
         "pocketmine-mp",
@@ -13,7 +13,7 @@
             "no-api": true
         }
     ],
-    "homepage": "https://github.com/NhanAZ/DevTools",
+    "homepage": "https://github.com/AxolotlBucketLabs/DevTools",
     "type": "pocketmine-plugin",
     "license": "MIT",
     "require": {
@@ -31,7 +31,7 @@
     },
     "autoload": {
         "psr-4": {
-            "NhanAZ\\DevTools\\": "src/"
+            "AxolotlBucketLabs\\DevTools\\": "src/"
         },
         "files": [
             "src/Build/php-parser-bootstrap.php"
@@ -39,7 +39,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "NhanAZ\\DevTools\\Tests\\": "tests/"
+            "AxolotlBucketLabs\\DevTools\\Tests\\": "tests/"
         }
     },
     "config": {
@@ -51,12 +51,12 @@
     },
     "extra": {
         "devtools": {
-            "release-version": "2.1.1"
+            "release-version": "3.0.0"
         }
     },
     "support": {
-        "issues": "https://github.com/NhanAZ/DevTools/issues",
-        "source": "https://github.com/NhanAZ/DevTools"
+        "issues": "https://github.com/AxolotlBucketLabs/DevTools/issues",
+        "source": "https://github.com/AxolotlBucketLabs/DevTools"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

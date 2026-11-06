@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Validation;
+namespace AxolotlBucketLabs\DevTools\Validation;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 
 use function file_get_contents;
 use function is_dir;
 use function is_file;
 use function is_string;
-
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-
 use function preg_match;
 use function scandir;
 use function str_replace;

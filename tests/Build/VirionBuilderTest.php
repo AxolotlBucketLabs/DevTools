@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
+use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use Phar;
 
 final class VirionBuilderTest extends TestCase
@@ -82,7 +82,7 @@ final class VirionBuilderTest extends TestCase
     {
         $project = $this->copyFixture('SharedVirion', 'virions/SharedVirion');
 
-        $this->expectException(\NhanAZ\DevTools\Build\BuildException::class);
+        $this->expectException(\AxolotlBucketLabs\DevTools\Build\BuildException::class);
         $this->expectExceptionMessage('source or resources');
         (new VirionBuilder(
             $this->filesystem,
@@ -98,7 +98,7 @@ final class VirionBuilderTest extends TestCase
         $this->filesystem->ensureDirectory($project . '/resources');
         file_put_contents($project . '/resources/default.txt', 'unsupported root resource');
 
-        $this->expectException(\NhanAZ\DevTools\Build\BuildException::class);
+        $this->expectException(\AxolotlBucketLabs\DevTools\Build\BuildException::class);
         $this->expectExceptionMessage('root resources');
         (new VirionBuilder(
             $this->filesystem,
@@ -116,7 +116,7 @@ final class VirionBuilderTest extends TestCase
             "name: RootClass\nversion: 1.0.0\nantigen: Shared\\Virion\\Greeting\napi: 5.0.0\n",
         );
 
-        $this->expectException(\NhanAZ\DevTools\Virion\VirionException::class);
+        $this->expectException(\AxolotlBucketLabs\DevTools\Virion\VirionException::class);
         $this->expectExceptionMessage('must be below antigen');
         (new VirionBuilder(
             $this->filesystem,

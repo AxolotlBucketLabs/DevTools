@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\NodeTraverser;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\NodeVisitor\NameResolver;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\NodeVisitor\ParentConnectingVisitor;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Parser;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\ParserFactory;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\PrettyPrinter\Standard;
 
 use function file_get_contents;
 use function file_put_contents;
@@ -11,12 +18,6 @@ use FilesystemIterator;
 
 use function in_array;
 
-use NhanAZ\DevTools\Vendor\PhpParser\NodeTraverser;
-use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\NameResolver;
-use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitor\ParentConnectingVisitor;
-use NhanAZ\DevTools\Vendor\PhpParser\Parser;
-use NhanAZ\DevTools\Vendor\PhpParser\ParserFactory;
-use NhanAZ\DevTools\Vendor\PhpParser\PrettyPrinter\Standard;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

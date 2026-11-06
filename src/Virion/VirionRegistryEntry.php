@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
 
 final class VirionRegistryEntry
 {

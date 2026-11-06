@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use Phar;
 use PharFileInfo;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -49,7 +49,7 @@ final class PharBuilderTest extends TestCase
 
         $this->expectException(BuildException::class);
         $this->expectExceptionMessage('DevTools does not download external dependencies automatically');
-        $this->expectExceptionMessage('https://github.com/NhanAZ/DevTools/blob/main/docs/dependencies.md');
+        $this->expectExceptionMessage('https://github.com/AxolotlBucketLabs/DevTools/blob/main/docs/dependencies.md');
         $this->builder()->build(
             $project,
             $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions',
@@ -786,13 +786,13 @@ PHP,
             $mainPath,
             str_replace(
                 'use Shared\\Virion\\Greeting;',
-                "use NhanAZ\\DevTools\\DevTools;\nuse Shared\\Virion\\Greeting;",
+                "use AxolotlBucketLabs\\DevTools\\DevTools;\nuse Shared\\Virion\\Greeting;",
                 $source,
             ),
         );
 
         $this->expectException(BuildException::class);
-        $this->expectExceptionMessage('development-only namespace nhanaz\\devtools');
+        $this->expectExceptionMessage('development-only namespace axolotlbucketlabs\\devtools');
 
         $this->builder()->build($project, $virions, $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build');
     }

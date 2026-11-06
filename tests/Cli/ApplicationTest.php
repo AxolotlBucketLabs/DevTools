@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Cli;
+namespace AxolotlBucketLabs\DevTools\Tests\Cli;
 
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 final class ApplicationTest extends TestCase
 {

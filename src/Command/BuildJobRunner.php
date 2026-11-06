@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Command;
+namespace AxolotlBucketLabs\DevTools\Command;
 
 interface BuildJobRunner
 {

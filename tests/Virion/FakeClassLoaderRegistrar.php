@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Virion\ClassLoaderRegistrar;
+use AxolotlBucketLabs\DevTools\Virion\ClassLoaderRegistrar;
 
 final class FakeClassLoaderRegistrar implements ClassLoaderRegistrar
 {

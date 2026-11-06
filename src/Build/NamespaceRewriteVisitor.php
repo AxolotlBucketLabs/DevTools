@@ -2,28 +2,27 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\Concat;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\FuncCall;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Instanceof_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\New_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\StaticCall;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\StaticPropertyFetch;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\InterpolatedStringPart;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Name;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Name\FullyQualified;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Scalar\String_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\GroupUse;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Namespace_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\UseUse;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\NodeVisitorAbstract;
 
 use function ltrim;
-
-use NhanAZ\DevTools\Vendor\PhpParser\Node;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\Concat;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\FuncCall;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Instanceof_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\New_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\StaticCall;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\StaticPropertyFetch;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\InterpolatedStringPart;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Name;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Name\FullyQualified;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Scalar\String_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\GroupUse;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Namespace_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\UseUse;
-use NhanAZ\DevTools\Vendor\PhpParser\NodeVisitorAbstract;
-
 use function str_starts_with;
 use function strlen;
 use function strpos;

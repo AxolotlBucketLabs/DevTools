@@ -8,7 +8,7 @@ import { createCandidate, resolveCandidate, validateIdentity, verifyArchive, ver
 
 const commit = 'a'.repeat(40);
 const workflow = '.github/workflows/release-candidate.yml';
-const repository = 'NhanAZ/DevTools';
+const repository = 'AxolotlBucketLabs/DevTools';
 const env = { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/release-preparation', GITHUB_SHA: commit, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', GITHUB_REPOSITORY: repository, GITHUB_WORKFLOW_REF: `${repository}/${workflow}@refs/heads/release-preparation` };
 
 function apiFixture() {

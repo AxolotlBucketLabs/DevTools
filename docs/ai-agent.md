@@ -5,7 +5,7 @@ The automation interface is the [CLI contract](cli.md). Commands, path rules, di
 ## Task template
 
 ```text
-Build this Axolotl-PM plugin with NhanAZ/DevTools.
+Build this Axolotl-PM plugin with AxolotlBucketLabs/DevTools.
 1. Read the project's instructions, plugin.yml, devtools.yml, Composer lockfile and metadata and existing workflows. Preserve unrelated changes.
 2. Read docs/cli.md, docs/dependencies.md and docs/github-actions.md from the exact DevTools checkout in use. Run --help --json and --version --json.
 3. Run doctor --project=<absolute path> --json. Distinguish malformed project, missing prepared dependencies and unavailable environment.

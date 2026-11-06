@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
 
 use function array_filter;
 use function array_map;

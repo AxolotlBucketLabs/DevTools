@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Validation;
+namespace AxolotlBucketLabs\DevTools\Tests\Validation;
 
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 final class PluginProjectValidatorTest extends TestCase
 {

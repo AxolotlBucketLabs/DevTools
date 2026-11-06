@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint;
 
 use function bin2hex;
 use function file_exists;
@@ -15,12 +22,6 @@ use function ini_get;
 use function is_dir;
 use function is_file;
 
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
-use NhanAZ\DevTools\Virion\VirionSourceFingerprint;
 use Phar;
 
 use function random_bytes;

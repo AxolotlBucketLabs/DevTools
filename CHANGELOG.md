@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0 - 2026-11-06
+
+- Transfer project ownership to the AxolotlBucketLabs organization and update maintained links, workflow references and release metadata.
+- Rename the DevTools PHP namespace from `NhanAZ\DevTools` to `AxolotlBucketLabs\DevTools`.
+- Publish the breaking `v3` workflow channel and preserve the existing `v2` release line for consumers that have not migrated yet.
+
 ## 2.1.1 - 2026-11-04
 
 - Allow Composer virions to explicitly exclude consumer-owned package-root resources while preserving resources colocated with their source tree.

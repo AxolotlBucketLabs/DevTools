@@ -2,46 +2,46 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
 
 use function array_search;
+
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Arg;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Array_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\ArrayDimFetch;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\ArrowFunction;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Assign;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\BooleanOr;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\NotIdentical;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\BooleanNot;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Closure;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\ConstFetch;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\FuncCall;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Instanceof_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\New_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\StaticCall;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Throw_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Expr\Variable;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\FunctionLike;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Identifier;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Name;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Scalar\MagicConst\Class_ as ClassMagicConst;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Scalar\String_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Class_ as ClassStatement;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\ClassMethod;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Expression as ExpressionStatement;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\If_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Namespace_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Return_;
+use AxolotlBucketLabs\DevTools\Vendor\PhpParser\Node\Stmt\Static_;
+
 use function count;
 use function in_array;
 use function is_string;
 use function ltrim;
-
-use NhanAZ\DevTools\Vendor\PhpParser\Node;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Arg;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Array_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ArrayDimFetch;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ArrowFunction;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Assign;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\BooleanOr;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BinaryOp\NotIdentical;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\BooleanNot;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ClassConstFetch;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Closure;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\ConstFetch;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\FuncCall;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Instanceof_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\New_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\StaticCall;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Throw_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Expr\Variable;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\FunctionLike;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Identifier;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Name;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Scalar\MagicConst\Class_ as ClassMagicConst;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Scalar\String_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Class_ as ClassStatement;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\ClassMethod;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Expression as ExpressionStatement;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\If_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Namespace_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Return_;
-use NhanAZ\DevTools\Vendor\PhpParser\Node\Stmt\Static_;
-
 use function str_contains;
 use function str_starts_with;
 use function strlen;

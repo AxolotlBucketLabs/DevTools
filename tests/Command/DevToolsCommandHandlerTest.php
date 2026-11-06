@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Command;
+namespace AxolotlBucketLabs\DevTools\Tests\Command;
 
-use NhanAZ\DevTools\Command\BuildJobRunner;
-use NhanAZ\DevTools\Command\BuildWorkerApplication;
-use NhanAZ\DevTools\Command\DevToolsCommandHandler;
-use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionDiscovery;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
-use NhanAZ\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Command\BuildJobRunner;
+use AxolotlBucketLabs\DevTools\Command\BuildWorkerApplication;
+use AxolotlBucketLabs\DevTools\Command\DevToolsCommandHandler;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 

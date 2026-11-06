@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Loader;
+namespace AxolotlBucketLabs\DevTools\Tests\Loader;
 
-use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
-use NhanAZ\DevTools\Loader\FolderPluginLoader;
-use NhanAZ\DevTools\Loader\PluginSourceConflictDetector;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginLoader;
+use AxolotlBucketLabs\DevTools\Loader\PluginSourceConflictDetector;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
 use pocketmine\plugin\PluginDescriptionParseException;
 use pocketmine\thread\ThreadSafeClassLoader;

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\ClassLoaderRegistrar;
-use NhanAZ\DevTools\Virion\PocketMineClassLoaderRegistrar;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionDiscovery;
-use NhanAZ\DevTools\Virion\VirionManager;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
-use NhanAZ\DevTools\Virion\VirionProjectSelector;
-use NhanAZ\DevTools\Virion\VirionRegistry;
-use NhanAZ\DevTools\Virion\VirionRequirement;
-use NhanAZ\DevTools\Virion\VirionStatus;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\ClassLoaderRegistrar;
+use AxolotlBucketLabs\DevTools\Virion\PocketMineClassLoaderRegistrar;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionManager;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
+use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use Phar;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use pocketmine\thread\ThreadSafeClassLoader;
@@ -79,7 +79,7 @@ final class VirionManagerTest extends TestCase
         $packageHash = str_repeat('a', 64);
         file_put_contents($location . '/devtools-provenance.json', json_encode([
             'composerPackageSha256' => $packageHash,
-            'sourceSha256' => (new \NhanAZ\DevTools\Virion\VirionSourceFingerprint())->hash($location . '/src'),
+            'sourceSha256' => (new \AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint())->hash($location . '/src'),
             'manifestSha256' => hash_file('sha256', $location . '/virion.yml'),
         ], JSON_THROW_ON_ERROR));
         file_put_contents($location . '/virion.yml', "composer-platform: {php: '*'}\n", FILE_APPEND);

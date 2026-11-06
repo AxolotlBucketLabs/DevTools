@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\FilesystemException;
+use AxolotlBucketLabs\DevTools\Support\Path;
 
 use function dirname;
 use function explode;
 use function file_exists;
 use function file_put_contents;
 use function is_dir;
-
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\FilesystemException;
-use NhanAZ\DevTools\Support\Path;
-
 use function random_bytes;
 use function realpath;
 use function rename;

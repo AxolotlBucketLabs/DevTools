@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Command;
+namespace AxolotlBucketLabs\DevTools\Command;
+
+use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
 
 use function is_string;
 use function json_decode;
@@ -10,7 +12,6 @@ use function json_encode;
 
 use const JSON_THROW_ON_ERROR;
 
-use NhanAZ\DevTools\Build\PhpParserNamespaceLoader;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\Thread;

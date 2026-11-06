@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Validation;
+namespace AxolotlBucketLabs\DevTools\Tests\Validation;
 
 use PHPUnit\Framework\TestCase;
 
 final class RepositoryMetadataTest extends TestCase
 {
-    private const VERSION = '2.1.1';
+    private const VERSION = '3.0.0';
     private const COMPATIBILITY_BUILDER_VERSION = '2.1.1';
     private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 
@@ -171,7 +171,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertIsString($workflow);
         self::assertIsArray(yaml_parse($workflow));
 
-        self::assertSame(1, preg_match('/uses: NhanAZ\\/DevTools@[a-f0-9]{40} # v([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $pin));
+        self::assertSame(1, preg_match('/uses: AxolotlBucketLabs\\/DevTools@[a-f0-9]{40} # v([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $pin));
         if (!isset($pin[1])) {
             self::fail('Compatibility monitor must declare its pinned builder version.');
         }
@@ -265,7 +265,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('Composer-prepared virion example', $examplesReadme);
         self::assertIsString($exampleContents);
         self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
-        self::assertStringContainsString('uses: NhanAZ/DevTools@v2', $exampleContents);
+        self::assertStringContainsString('uses: AxolotlBucketLabs/DevTools@v3', $exampleContents);
         self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
         self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
         self::assertStringNotContainsString('retention-days', $exampleContents);
@@ -291,7 +291,7 @@ final class RepositoryMetadataTest extends TestCase
         self::assertStringContainsString('(dependencies.md)', $agentGuide);
         self::assertStringContainsString('(github-actions.md)', $agentGuide);
         self::assertIsString($agentTemplate);
-        self::assertStringContainsString('build-plugin.yml@v2` by default', $agentTemplate);
+        self::assertStringContainsString('build-plugin.yml@v3` by default', $agentTemplate);
         self::assertStringContainsString('Do not guess virion repositories', $agentTemplate);
         self::assertStringContainsString('Upload exactly one artifact', $agentTemplate);
     }

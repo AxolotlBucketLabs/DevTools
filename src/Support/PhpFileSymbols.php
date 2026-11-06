@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Support;
+namespace AxolotlBucketLabs\DevTools\Support;
 
 final class PhpFileSymbols
 {

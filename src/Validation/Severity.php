@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Validation;
+namespace AxolotlBucketLabs\DevTools\Validation;
 
 enum Severity: string
 {

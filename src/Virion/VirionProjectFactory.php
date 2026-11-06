@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
 
 use function bin2hex;
 use function copy;
@@ -10,7 +12,6 @@ use function file_exists;
 use function is_dir;
 use function is_file;
 
-use NhanAZ\DevTools\Support\Filesystem;
 use Phar;
 
 use function random_bytes;

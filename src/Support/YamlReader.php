@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Support;
+namespace AxolotlBucketLabs\DevTools\Support;
 
 use function file_get_contents;
 use function get_debug_type;

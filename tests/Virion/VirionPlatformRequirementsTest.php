@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionException;
-use NhanAZ\DevTools\Virion\VirionPlatformRequirements;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
+use AxolotlBucketLabs\DevTools\Virion\VirionPlatformRequirements;
 
 final class VirionPlatformRequirementsTest extends TestCase
 {

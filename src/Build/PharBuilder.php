@@ -2,7 +2,16 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifest;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
+use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionProject;
 
 use function file_exists;
 
@@ -13,16 +22,6 @@ use function in_array;
 use function ini_get;
 use function is_dir;
 use function is_file;
-
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Validation\PluginManifest;
-use NhanAZ\DevTools\Validation\PluginManifestReader;
-use NhanAZ\DevTools\Validation\PluginProjectValidator;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionProject;
-
 use function pathinfo;
 
 use Phar;
@@ -111,7 +110,7 @@ final class PharBuilder
             );
         $developmentOnlyNamespaces = $isDevToolsBuild
             ? []
-            : ['NhanAZ\\DevTools', 'poggit\\virion'];
+            : ['AxolotlBucketLabs\\DevTools', 'poggit\\virion'];
         $forbiddenStandaloneNamespaces = array_merge($availableAntigens, $developmentOnlyNamespaces);
 
         if (Filesystem::isLink($outputDirectory)) {

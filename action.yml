@@ -1,6 +1,6 @@
 name: Build Axolotl-PM plugin or virion PHAR
 description: Build a standalone Axolotl-PM plugin or virion PHAR with optional local dependencies and opt-in PHPStan analysis.
-author: NhanAZ
+author: AxolotlBucketLabs
 
 inputs:
   type:

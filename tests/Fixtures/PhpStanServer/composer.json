@@ -1,5 +1,5 @@
 {
-    "name": "nhanaz/devtools-phpstan-server-fixture",
+    "name": "axolotlbucketlabs/devtools-phpstan-server-fixture",
     "description": "Minimal server API fixture for the DevTools GitHub Action test",
     "type": "project",
     "license": "MIT",

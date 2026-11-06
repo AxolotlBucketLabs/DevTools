@@ -4,4 +4,4 @@ main: DevToolsExample\HelloShared\Main
 api: 5.0.0
 src-namespace-prefix: DevToolsExample\HelloShared
 description: Minimal folder plugin using the SharedGreeting development virion
-author: NhanAZ
+author: AxolotlBucketLabs

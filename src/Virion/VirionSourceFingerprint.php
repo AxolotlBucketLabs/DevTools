@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use FilesystemIterator;
-use NhanAZ\DevTools\Support\Filesystem;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

@@ -2,7 +2,35 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Command;
+namespace AxolotlBucketLabs\DevTools\Command;
+
+use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
+use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
+use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
+use AxolotlBucketLabs\DevTools\Build\PharBuilder;
+use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Build\PluginProjectLocator;
+use AxolotlBucketLabs\DevTools\Build\ProjectRole;
+use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
+use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
+use AxolotlBucketLabs\DevTools\Build\VirionProjectLocator;
+use AxolotlBucketLabs\DevTools\Build\VirionResolver;
+use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
+use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 
 use function basename;
 use function count;
@@ -10,35 +38,6 @@ use function dirname;
 use function in_array;
 use function is_file;
 use function is_string;
-
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\ArtifactSetInstaller;
-use NhanAZ\DevTools\Build\BuildConfigResolver;
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\DualArtifactBuilder;
-use NhanAZ\DevTools\Build\PharArchiveReader;
-use NhanAZ\DevTools\Build\PharBuilder;
-use NhanAZ\DevTools\Build\PharExtractor;
-use NhanAZ\DevTools\Build\PluginProjectLocator;
-use NhanAZ\DevTools\Build\ProjectRole;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Build\VirionProjectLocator;
-use NhanAZ\DevTools\Build\VirionResolver;
-use NhanAZ\DevTools\Build\ZipArchiveWriter;
-use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Validation\PluginManifestReader;
-use NhanAZ\DevTools\Validation\PluginProjectValidator;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionDiscovery;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
-use NhanAZ\DevTools\Virion\VirionProjectFactory;
-use NhanAZ\DevTools\Virion\VirionProjectSelector;
-
 use function preg_match;
 use function realpath;
 use function str_ends_with;
@@ -290,7 +289,7 @@ final class BuildWorkerApplication
             $configResolver,
             $resolver,
             $virionScanner,
-            new \NhanAZ\DevTools\Build\NamespaceShader(),
+            new \AxolotlBucketLabs\DevTools\Build\NamespaceShader(),
             $sourceInspector,
         );
         $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner);

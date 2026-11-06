@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Command;
+namespace AxolotlBucketLabs\DevTools\Command;
 
 use function array_shift;
+
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+
 use function count;
 
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Loader\FolderPluginDiscovery;
-use NhanAZ\DevTools\Virion\VirionRegistry;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 

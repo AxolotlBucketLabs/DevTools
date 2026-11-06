@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionClassScanner;
-use NhanAZ\DevTools\Virion\VirionException;
-use NhanAZ\DevTools\Virion\VirionManifest;
-use NhanAZ\DevTools\Virion\VirionProject;
-use NhanAZ\DevTools\Virion\VirionSourceFingerprint;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifest;
+use AxolotlBucketLabs\DevTools\Virion\VirionProject;
+use AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint;
 
 final class VirionSourceTraversalTest extends TestCase
 {

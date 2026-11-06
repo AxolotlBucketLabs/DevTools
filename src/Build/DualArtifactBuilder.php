@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
 
 use function bin2hex;
-
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-
 use function random_bytes;
 
 final class DualArtifactBuilder

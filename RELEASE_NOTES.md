@@ -1,12 +1,14 @@
-# DevTools 2.1.1
+# DevTools 3.0.0
 
-This patch release keeps the v2 workflow contract while allowing Composer virions to describe resources owned by their consuming plugin.
+This major release moves DevTools to the AxolotlBucketLabs organization and renames its PHP namespace to `AxolotlBucketLabs\DevTools`.
 
-## Added
+## Breaking changes
 
-- Composer virions may set `extra.virion.exclude-root-resources: true` when their package-root resources belong to the consuming plugin. DevTools continues to preserve resources colocated under the selected source directory.
+- Update GitHub Actions references from `NhanAZ/DevTools` to `AxolotlBucketLabs/DevTools`.
+- Update direct PHP imports from `NhanAZ\DevTools` to `AxolotlBucketLabs\DevTools`.
+- The maintained workflow channel is now `v3`; the `v2` channel remains available at its prior release for consumers that need a staged migration.
 
 ## Compatibility
 
-- CLI and GitHub Actions builds remain synchronous.
+- CLI and GitHub Actions builds remain synchronous, with the v3 workflow contract matching the v2 build inputs and outputs.
 - PHAR creation still requires PHP to run with `phar.readonly=0`; loading an existing PHAR does not.

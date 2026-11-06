@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds; virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in the current `v2.1.1` release. Most repositories should use the maintained `v2` channel: `NhanAZ/DevTools@v2` for the composite action and `NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2` or `build-virion.yml@v2` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `NhanAZ/DevTools@latest` or the corresponding reusable workflow reference. Use `@v2.1.1` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
+These interfaces are available in the current `v3.0.0` release. Most repositories should use the maintained `v3` channel: `AxolotlBucketLabs/DevTools@v3` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3` or `build-virion.yml@v3` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v3.0.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
 
 ## Short build workflow
 
@@ -18,14 +18,14 @@ permissions:
   contents: read
 jobs:
   build:
-    uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3
     with:
       php-version: '8.4'
 ```
 
 The reusable workflow checks out the plugin, sets up Axolotl-PM PHP using setup-helper commit `b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e`, checks out the selected DevTools revision, builds, inspects the PHAR and uploads one artifact containing the PHAR plus `build-metadata.json`. Find that artifact under **Actions -> workflow run -> Artifacts**. The metadata contains the tool version, plugin version, resolved dependency information, checks, and PHAR hash from the versioned [CLI contract](cli.md).
 
-Default `project: .` expects `plugin.yml` and `src/` at the repository root. A plugin without virions needs no Composer manifest or additional DevTools configuration. Local virions remain usable through `virions: virions`. The included `examples/.github/workflows/build.yml` uses the maintained `v2` composite action channel for `HelloShared` and `SharedGreeting`.
+Default `project: .` expects `plugin.yml` and `src/` at the repository root. A plugin without virions needs no Composer manifest or additional DevTools configuration. Local virions remain usable through `virions: virions`. The included `examples/.github/workflows/build.yml` uses the maintained `v3` composite action channel for `HelloShared` and `SharedGreeting`.
 
 For a virion repository, use the reusable virion workflow:
 
@@ -36,7 +36,7 @@ permissions:
   contents: read
 jobs:
   build:
-    uses: NhanAZ/DevTools/.github/workflows/build-virion.yml@v2
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/build-virion.yml@v3
     with:
       project: .
       php-version: '8.4'
@@ -64,7 +64,7 @@ Use the composite action when your repository needs extra checkouts or checks. S
 
 ```yaml
       - id: build
-        uses: NhanAZ/DevTools@v2
+        uses: AxolotlBucketLabs/DevTools@v3
         with:
           project: .
           virions: virions
@@ -113,7 +113,7 @@ Check out the Axolotl-PM source, then pass its local path to the composite actio
           path: .devtools-server
           persist-credentials: false
       - id: build
-        uses: NhanAZ/DevTools@v2
+        uses: AxolotlBucketLabs/DevTools@v3
         with:
           phpstan: '4'
           phpstan-server: .devtools-server
@@ -137,7 +137,7 @@ permissions:
   actions: read
 jobs:
   release:
-    uses: NhanAZ/DevTools/.github/workflows/release-plugin.yml@v2
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/release-plugin.yml@v3
     with:
       mode: tag
 ```
@@ -163,7 +163,7 @@ permissions:
   actions: read
 jobs:
   nightly:
-    uses: NhanAZ/DevTools/.github/workflows/release-plugin.yml@v2
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/release-plugin.yml@v3
     with:
       mode: nightly
 ```
@@ -172,37 +172,37 @@ Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never t
 
 ## Select the builder revision
 
-Use the `v2` major channel for the normal developer workflow. DevTools moves that tag only to a compatible stable v2 release after its release checks pass. This avoids requiring every consumer repository to edit its workflow for each compatible patch or minor release.
+Use the `v3` major channel for the normal developer workflow. DevTools moves that tag only to a compatible stable v3 release after its release checks pass. This avoids requiring every consumer repository to edit its workflow for each compatible patch or minor release.
 
 Use the `latest` channel only when the repository intentionally accepts stable releases across major versions:
 
 ```yaml
-uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@latest
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@latest
 ```
 
-DevTools moves `latest` only to a validated stable release. It may move from v2 to v3, so a repository using it must be prepared for breaking changes. This is an opt-in convenience channel, not the default recommendation.
+DevTools moves `latest` only to a validated stable release. It may move from v3 to v4, so a repository using it must be prepared for breaking changes. This is an opt-in convenience channel, not the default recommendation.
 
 Use an exact release when a repository wants controlled upgrades:
 
 ```yaml
-uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2.1.1
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3.0.0
 ```
 
 Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment:
 
 ```sh
-git ls-remote https://github.com/NhanAZ/DevTools.git 'refs/tags/v2.1.1^{}'
+git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v3.0.0^{}'
 ```
 
 ```yaml
-uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v2.1.1
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v3.0.0
 ```
 
-The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v2 workflow contract no longer accepts the removed `devtools-ref` input; remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com; these reusable workflows are not supported on GitHub Enterprise Server without that context.
+The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v3 workflow contract no longer accepts the removed `devtools-ref` input; remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com; these reusable workflows are not supported on GitHub Enterprise Server without that context.
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v2` and remove legacy inputs that v2 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v2.1.1` or a full SHA when the repository requires a controlled or strict pin:
+Update the reusable workflow reference to `@v3` and remove legacy inputs that v3 no longer declares. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v3.0.0` or a full SHA when the repository requires a controlled or strict pin:
 
 ```diff
  with:
@@ -211,7 +211,7 @@ Update the reusable workflow reference to `@v2` and remove legacy inputs that v2
    php-version: '8.4'
 ```
 
-The v2 workflow uses the repository's own artifact and log retention policy. It also leaves each push and pull request build eligible to finish instead of cancelling an earlier build on the same ref.
+The v3 workflow uses the repository's own artifact and log retention policy. It also leaves each push and pull request build eligible to finish instead of cancelling an earlier build on the same ref.
 
 ## Releasing DevTools itself
 

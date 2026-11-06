@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\NamespaceShader;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\NamespaceShader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 final class NamespaceShaderTest extends TestCase
 {
@@ -59,7 +59,7 @@ declare(strict_types=1);
 
 require $argv[1] . '/vendor/autoload.php';
 require $argv[2];
-(new \NhanAZ\DevTools\Build\NamespaceShader())->shadeDirectory($argv[3], ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
+(new \AxolotlBucketLabs\DevTools\Build\NamespaceShader())->shadeDirectory($argv[3], ['Shared\\Virion' => 'Fixture\\Shade\\Shared']);
 echo "ok\n";
 PHP);
 

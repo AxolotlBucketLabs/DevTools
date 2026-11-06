@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
+
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
 
 use function is_array;
 use function is_scalar;
-
-use NhanAZ\DevTools\Support\YamlReader;
-
 use function preg_match;
 
 use Throwable;

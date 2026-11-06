@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Loader;
+namespace AxolotlBucketLabs\DevTools\Loader;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
+use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
 
 use function basename;
 
@@ -12,10 +17,6 @@ use function implode;
 use function is_dir;
 use function is_file;
 
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Validation\PluginManifestReader;
-use NhanAZ\DevTools\Validation\PluginProjectValidator;
 use pocketmine\plugin\PluginDescription;
 use pocketmine\plugin\PluginDescriptionParseException;
 use pocketmine\plugin\PluginLoader;

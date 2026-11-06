@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Cli;
+namespace AxolotlBucketLabs\DevTools\Cli;
 
+use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
+use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
+use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
+use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
+use AxolotlBucketLabs\DevTools\Build\PharBuilder;
+use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Build\ProjectRole;
+use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
+use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
+use AxolotlBucketLabs\DevTools\Build\VirionResolver;
+use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
+use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use InvalidArgumentException;
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\ArtifactSetInstaller;
-use NhanAZ\DevTools\Build\BuildConfigResolver;
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\ComposerVirionPreparer;
-use NhanAZ\DevTools\Build\DualArtifactBuilder;
-use NhanAZ\DevTools\Build\PharArchiveReader;
-use NhanAZ\DevTools\Build\PharBuilder;
-use NhanAZ\DevTools\Build\PharExtractor;
-use NhanAZ\DevTools\Build\ProjectRole;
-use NhanAZ\DevTools\Build\ProjectRoleDetector;
-use NhanAZ\DevTools\Build\VirionBuilder;
-use NhanAZ\DevTools\Build\VirionResolver;
-use NhanAZ\DevTools\Build\ZipArchiveWriter;
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Validation\PluginManifestReader;
-use NhanAZ\DevTools\Validation\PluginProjectValidator;
-use NhanAZ\DevTools\Virion\VirionManifestReader;
 use Throwable;
 
 final class Application

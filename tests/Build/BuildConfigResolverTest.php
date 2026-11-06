@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\BuildConfigResolver;
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Support\YamlReader;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 final class BuildConfigResolverTest extends TestCase
 {

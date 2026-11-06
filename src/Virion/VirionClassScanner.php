@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 
 use function file_get_contents;
 
@@ -13,9 +17,6 @@ use function is_dir;
 use function is_file;
 use function ltrim;
 
-use NhanAZ\DevTools\Support\Filesystem;
-use NhanAZ\DevTools\Support\Path;
-use NhanAZ\DevTools\Support\PhpSourceInspector;
 use ParseError;
 
 use function pathinfo;

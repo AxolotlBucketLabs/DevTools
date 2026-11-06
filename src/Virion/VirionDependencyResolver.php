@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Virion;
+namespace AxolotlBucketLabs\DevTools\Virion;
 
-use NhanAZ\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
 
 final class VirionDependencyResolver
 {

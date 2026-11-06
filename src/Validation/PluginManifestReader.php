@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Validation;
+namespace AxolotlBucketLabs\DevTools\Validation;
 
-use NhanAZ\DevTools\Support\YamlReader;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use pocketmine\plugin\PluginDescription;
 
 use function restore_error_handler;

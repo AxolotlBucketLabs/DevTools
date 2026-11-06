@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
 
-use NhanAZ\DevTools\Virion\VirionRequirement;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 
 final class BuildConfig
 {

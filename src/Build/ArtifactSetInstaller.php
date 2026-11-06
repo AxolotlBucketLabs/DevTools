@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
+
+use AxolotlBucketLabs\DevTools\Support\Filesystem;
 
 use function bin2hex;
 use function file_exists;
 use function is_file;
-
-use NhanAZ\DevTools\Support\Filesystem;
-
 use function random_bytes;
 use function rename;
 

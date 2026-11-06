@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\ArchiveEntry;
-use NhanAZ\DevTools\Build\ArtifactInspector;
-use NhanAZ\DevTools\Build\BuildException;
-use NhanAZ\DevTools\Build\PharArchiveReader;
-use NhanAZ\DevTools\Build\PharExtractor;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Build\ArchiveEntry;
+use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+use AxolotlBucketLabs\DevTools\Build\BuildException;
+use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
+use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 final class PharExtractorTest extends TestCase
 {

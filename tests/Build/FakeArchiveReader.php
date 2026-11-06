@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\ArchiveEntry;
-use NhanAZ\DevTools\Build\ArchiveReader;
+use AxolotlBucketLabs\DevTools\Build\ArchiveEntry;
+use AxolotlBucketLabs\DevTools\Build\ArchiveReader;
 
 final class FakeArchiveReader implements ArchiveReader
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Validation;
+namespace AxolotlBucketLabs\DevTools\Tests\Validation;
 
-use NhanAZ\DevTools\Support\PhpSourceInspector;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class PhpSourceInspectorTest extends TestCase

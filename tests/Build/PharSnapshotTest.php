@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Build;
+namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
-use NhanAZ\DevTools\Build\PharSnapshot;
-use NhanAZ\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Build\PharSnapshot;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
 
 final class PharSnapshotTest extends TestCase

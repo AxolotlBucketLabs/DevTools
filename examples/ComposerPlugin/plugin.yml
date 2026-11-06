@@ -4,4 +4,4 @@ main: DevToolsExample\ComposerPlugin\Main
 api: 5.0.0
 src-namespace-prefix: DevToolsExample\ComposerPlugin
 description: Minimal plugin whose virion dependency is prepared from Composer
-author: NhanAZ
+author: AxolotlBucketLabs

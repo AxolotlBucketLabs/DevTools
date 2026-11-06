@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Virion;
+namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
-use NhanAZ\DevTools\Tests\TestCase;
-use NhanAZ\DevTools\Virion\VirionDependencyResolver;
-use NhanAZ\DevTools\Virion\VirionException;
-use NhanAZ\DevTools\Virion\VirionManifest;
-use NhanAZ\DevTools\Virion\VirionProject;
-use NhanAZ\DevTools\Virion\VirionProjectSelector;
-use NhanAZ\DevTools\Virion\VirionRequirement;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionDependencyResolver;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifest;
+use AxolotlBucketLabs\DevTools\Virion\VirionProject;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 
 final class VirionDependencyResolverTest extends TestCase
 {

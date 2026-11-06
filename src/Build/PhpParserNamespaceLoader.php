@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Build;
+namespace AxolotlBucketLabs\DevTools\Build;
 
 use function bin2hex;
 
@@ -34,7 +34,7 @@ use function unlink;
 
 final class PhpParserNamespaceLoader
 {
-    private const PREFIX = 'NhanAZ\\DevTools\\Vendor\\PhpParser\\';
+    private const PREFIX = 'AxolotlBucketLabs\\DevTools\\Vendor\\PhpParser\\';
 
     /** @var (Closure(string): void)|null */
     private static ?Closure $autoloader = null;

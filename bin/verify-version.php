@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use NhanAZ\DevTools\Virion\VirionVersionConstraint;
+use AxolotlBucketLabs\DevTools\Virion\VirionVersionConstraint;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 

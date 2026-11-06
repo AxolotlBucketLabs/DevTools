@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\DevTools\Tests\Command;
+namespace AxolotlBucketLabs\DevTools\Tests\Command;
+
+use AxolotlBucketLabs\DevTools\Command\BuildWorkerThread;
+use AxolotlBucketLabs\DevTools\Tests\TestCase;
 
 use function is_file;
 use function is_string;
@@ -11,8 +14,6 @@ use function json_encode;
 
 use const JSON_THROW_ON_ERROR;
 
-use NhanAZ\DevTools\Command\BuildWorkerThread;
-use NhanAZ\DevTools\Tests\TestCase;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandler;
@@ -41,7 +42,7 @@ final class BuildWorkerThreadTest extends TestCase
         $worker = new BuildWorkerThread($requests, $responses, $entry);
         $loader = new ThreadSafeClassLoader();
         $root = dirname(__DIR__, 2);
-        $loader->addPath('NhanAZ\\DevTools', $root . '/src');
+        $loader->addPath('AxolotlBucketLabs\\DevTools', $root . '/src');
         $loader->addPath('pocketmine', $root . '/vendor/axolotl-pm/pocketmine-mp/src');
         $worker->setClassLoaders([$loader]);
         $worker->start();
