@@ -75,7 +75,7 @@ The reusable workflow supports push and pull-request builds. Use the [step-level
 
 ## Ecosystem
 
-DevTools is currently verified in 72 public repositories across several plugin
+DevTools is currently verified in 78 public repositories across several plugin
 and virion ecosystems. See the [ecosystem inventory](docs/ecosystem.md) for the
 full project list, snapshot date and detection method.
 
@@ -142,4 +142,4 @@ Use folder plugins and shared virions for development, or disable the heavy serv
 
 ## License and provenance
 
-DevTools is MIT licensed. The bundled `nikic/php-parser` uses BSD-3-Clause. See [third-party notices](THIRD_PARTY_NOTICES.md) for its license and provenance.
+DevTools is MIT licensed. The bundled `nikic/php-parser` uses BSD-3-Clause. See [third-party notices](THIRD_PARTY_NOTICES.md) for its license.

@@ -9,9 +9,10 @@ GitHub Actions workflow.
 - 78 repositories were verified across five organizations.
 - A repository is counted when its public default-branch workflow references
   DevTools or one of DevTools' reusable workflows.
-- All 78 repositories currently resolve to the stable `v3.0.0` release: 75
-  workflow references use the maintained `@v3` channel, while 10 references
-  pin the `04fd726101109739bf1fd629dbe8499d3e2864bb` release commit directly.
+- At the time of the snapshot, all 78 repositories resolved to stable
+  `v3.0.0`. Of the workflow references, 75 used the maintained `@v3` channel,
+  while 10 pinned the `04fd726101109739bf1fd629dbe8499d3e2864bb` release commit
+  directly.
 - The transferred ScoreHud and await-generator repositories are not counted
   because their default-branch workflows do not currently reference DevTools.
 - This is a documentation snapshot, not telemetry. The list can become stale
