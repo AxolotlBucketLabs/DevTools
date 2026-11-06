@@ -5,13 +5,15 @@ GitHub Actions workflow.
 
 ## Snapshot
 
-- Checked on 2026-11-04.
-- 72 repositories were verified across four organizations.
+- Checked on 2026-11-06.
+- 78 repositories were verified across five organizations.
 - A repository is counted when its public default-branch workflow references
   DevTools or one of DevTools' reusable workflows.
-- All 72 repositories currently resolve to the stable `v2.1.1` release: 73
-  workflow references use the maintained `@v2` channel, while the two
-  SimpleEconomy references pin the same `v2.1.1` commit directly.
+- All 78 repositories currently resolve to the stable `v3.0.0` release: 75
+  workflow references use the maintained `@v3` channel, while 10 references
+  pin the `04fd726101109739bf1fd629dbe8499d3e2864bb` release commit directly.
+- The transferred ScoreHud and await-generator repositories are not counted
+  because their default-branch workflows do not currently reference DevTools.
 - This is a documentation snapshot, not telemetry. The list can become stale
   when projects change their workflows.
 - Organization-level repositories and repositories that only mention DevTools
@@ -19,18 +21,28 @@ GitHub Actions workflow.
 
 | Organization | Verified repositories |
 | --- | ---: |
-| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 43 |
+| [AxolotlBucketLabs](https://github.com/AxolotlBucketLabs) | 7 |
+| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 42 |
 | [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 4 |
 | [thebigcrafter](https://github.com/thebigcrafter) | 17 |
 | [ReinfyTeam](https://github.com/ReinfyTeam) | 8 |
-| **Total** | **72** |
+| **Total** | **78** |
+
+## AxolotlBucketLabs
+
+- [arithmexp](https://github.com/AxolotlBucketLabs/arithmexp)
+- [FormAPI](https://github.com/AxolotlBucketLabs/FormAPI)
+- [PersonaSkin](https://github.com/AxolotlBucketLabs/PersonaSkin)
+- [pmforms](https://github.com/AxolotlBucketLabs/pmforms)
+- [PureChat](https://github.com/AxolotlBucketLabs/PureChat)
+- [PurePerms](https://github.com/AxolotlBucketLabs/PurePerms)
+- [SimplePacketHandler](https://github.com/AxolotlBucketLabs/SimplePacketHandler)
 
 ## NhanAZ-Plugins
 
 - [AdvancedRules](https://github.com/NhanAZ-Plugins/AdvancedRules)
 - [animated-Wings](https://github.com/NhanAZ-Plugins/animated-Wings)
 - [AnonChat](https://github.com/NhanAZ-Plugins/AnonChat)
-- [AntiPoggitStaff](https://github.com/NhanAZ-Plugins/AntiPoggitStaff)
 - [AntiServerStop](https://github.com/NhanAZ-Plugins/AntiServerStop)
 - [AntiTrampleFarmland](https://github.com/NhanAZ-Plugins/AntiTrampleFarmland)
 - [BackgroundMusic](https://github.com/NhanAZ-Plugins/BackgroundMusic)
@@ -111,6 +123,8 @@ GitHub Actions workflow.
 
 ## Platform integrations
 
+- BedrockNexus is intentionally excluded from this migration inventory; its
+  workflow template will be updated separately.
 - [BedrockNexus](https://bedrocknexus.com/) provides an official
   [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml)
   powered by DevTools.
