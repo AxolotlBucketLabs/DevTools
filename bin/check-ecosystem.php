@@ -48,31 +48,27 @@ $isNonEmptyString = static fn(mixed $value): bool => is_string($value) && $value
 if (($data['$schema'] ?? null) !== './ecosystem.schema.json') {
     $failures[] = 'The data file must reference ./ecosystem.schema.json';
 }
-if (($data['schema_version'] ?? null) !== 1) {
-    $failures[] = 'The data file must use schema version 1';
+if (($data['schema_version'] ?? null) !== 2) {
+    $failures[] = 'The data file must use schema version 2';
 }
 if (($schema['$schema'] ?? null) !== 'https://json-schema.org/draft/2020-12/schema') {
     $failures[] = 'The schema must use JSON Schema draft 2020-12';
 }
 
-$requireKeys($data, ['scope', 'devtools', 'summary', 'verified_repositories', 'migrations'], 'data');
+$requireKeys($data, ['scope', 'devtools', 'summary', 'repositories'], 'data');
 $scope = is_array($data['scope'] ?? null) ? $data['scope'] : [];
 $devtools = is_array($data['devtools'] ?? null) ? $data['devtools'] : [];
 $summary = is_array($data['summary'] ?? null) ? $data['summary'] : [];
-$verified = is_array($data['verified_repositories'] ?? null) ? $data['verified_repositories'] : [];
-$migrations = is_array($data['migrations'] ?? null) ? $data['migrations'] : [];
+$repositories = is_array($data['repositories'] ?? null) ? $data['repositories'] : [];
 
 $requireKeys(
     $scope,
-    ['checked_on', 'description', 'organizations', 'include_archived', 'repositories_inspected', 'workflow_files_inspected', 'counting_rule', 'exclusions'],
+    ['description', 'organizations', 'include_archived', 'repositories_inspected', 'workflow_files_inspected', 'counting_rule', 'exclusions'],
     'data.scope',
 );
 $requireKeys($devtools, ['stable_version', 'stable_commit', 'reference_policy'], 'data.devtools');
-$requireKeys($summary, ['verified_repositories', 'migrated_repositories', 'total_repositories', 'organization_totals'], 'data.summary');
+$requireKeys($summary, ['total_repositories', 'organization_totals'], 'data.summary');
 
-if (!is_string($scope['checked_on'] ?? null) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $scope['checked_on']) !== 1) {
-    $failures[] = 'data.scope.checked_on must use YYYY-MM-DD';
-}
 if (($scope['include_archived'] ?? null) !== false) {
     $failures[] = 'data.scope.include_archived must be false';
 }
@@ -126,21 +122,9 @@ $readRepositories = static function (array $records, string $group) use (&$failu
     return $keys;
 };
 
-$verifiedKeys = $readRepositories($verified, 'verified_repositories');
-$migrationKeys = $readRepositories($migrations, 'migrations');
-foreach (array_intersect_key($verifiedKeys, $migrationKeys) as $key => $_) {
-    $failures[] = "Repository {$key} appears in both verified_repositories and migrations";
-}
-
-$verifiedCount = count($verified);
-$migrationCount = count($migrations);
-if (($summary['verified_repositories'] ?? null) !== $verifiedCount) {
-    $failures[] = 'The verified repository summary does not match the data';
-}
-if (($summary['migrated_repositories'] ?? null) !== $migrationCount) {
-    $failures[] = 'The migration summary does not match the data';
-}
-if (($summary['total_repositories'] ?? null) !== $verifiedCount + $migrationCount) {
+$repositoryKeys = $readRepositories($repositories, 'repositories');
+$repositoryCount = count($repositories);
+if (($summary['total_repositories'] ?? null) !== $repositoryCount) {
     $failures[] = 'The total repository summary does not match the data';
 }
 
@@ -152,18 +136,15 @@ foreach ($totals as $index => $total) {
         $failures[] = "{$path} must be an object";
         continue;
     }
-    $requireKeys($total, ['organization', 'verified', 'migrated', 'total'], $path);
+    $requireKeys($total, ['organization', 'repositories'], $path);
     $organization = $total['organization'] ?? null;
     if (!is_string($organization) || $organization === '') {
         $failures[] = "{$path}.organization must be a non-empty string";
         continue;
     }
     $totalOrganizations[$organization] = true;
-    $verifiedForOrganization = count(array_filter($verified, static fn(mixed $record): bool => is_array($record) && ($record['organization'] ?? null) === $organization));
-    $migratedForOrganization = count(array_filter($migrations, static fn(mixed $record): bool => is_array($record) && ($record['organization'] ?? null) === $organization));
-    if (($total['verified'] ?? null) !== $verifiedForOrganization
-        || ($total['migrated'] ?? null) !== $migratedForOrganization
-        || ($total['total'] ?? null) !== $verifiedForOrganization + $migratedForOrganization) {
+    $repositoriesForOrganization = count(array_filter($repositories, static fn(mixed $record): bool => is_array($record) && ($record['organization'] ?? null) === $organization));
+    if (($total['repositories'] ?? null) !== $repositoriesForOrganization) {
         $failures[] = "The organization summary does not match {$organization}";
     }
 }
@@ -176,4 +157,4 @@ if ($failures !== []) {
     exit(1);
 }
 
-fwrite(STDOUT, "Ecosystem data is valid ({$verifiedCount} verified, {$migrationCount} migrated, " . ($verifiedCount + $migrationCount) . " total repositories).\n");
+fwrite(STDOUT, "Ecosystem data is valid ({$repositoryCount} repositories).\n");

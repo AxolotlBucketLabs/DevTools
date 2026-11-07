@@ -77,7 +77,7 @@ The reusable workflow supports push and pull-request builds. Use the [step-level
 
 DevTools is currently verified in 143 public repositories across several plugin
 and virion ecosystems. See the [ecosystem inventory](docs/ecosystem.md) for the
-summary, complete JSON data, snapshot date and detection method.
+summary, complete JSON data and detection method.
 
 - [BedrockNexus](https://bedrocknexus.com/) provides an official [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml) powered by DevTools.
 

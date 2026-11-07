@@ -1,9 +1,8 @@
 {
   "$schema": "./ecosystem.schema.json",
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": {
-    "checked_on": "2026-11-07",
-    "description": "A point-in-time inventory of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
+    "description": "An inventory of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
     "organizations": [
       "AxolotlBucketLabs",
       "NhanAZ-Plugins",
@@ -40,43 +39,31 @@
     "reference_policy": "@v3 or the exact release commit"
   },
   "summary": {
-    "verified_repositories": 79,
-    "migrated_repositories": 64,
     "total_repositories": 143,
     "organization_totals": [
       {
         "organization": "AxolotlBucketLabs",
-        "verified": 7,
-        "migrated": 0,
-        "total": 7
+        "repositories": 7
       },
       {
         "organization": "NhanAZ-Plugins",
-        "verified": 41,
-        "migrated": 52,
-        "total": 93
+        "repositories": 93
       },
       {
         "organization": "NhanAZ-Libraries",
-        "verified": 5,
-        "migrated": 2,
-        "total": 7
+        "repositories": 7
       },
       {
         "organization": "thebigcrafter",
-        "verified": 18,
-        "migrated": 6,
-        "total": 24
+        "repositories": 24
       },
       {
         "organization": "ReinfyTeam",
-        "verified": 8,
-        "migrated": 4,
-        "total": 12
+        "repositories": 12
       }
     ]
   },
-  "verified_repositories": [
+  "repositories": [
     {
       "organization": "AxolotlBucketLabs",
       "name": "arithmexp",
@@ -471,9 +458,7 @@
       "organization": "ReinfyTeam",
       "name": "SlapperRotation",
       "url": "https://github.com/ReinfyTeam/SlapperRotation"
-    }
-  ],
-  "migrations": [
+    },
     {
       "organization": "NhanAZ-Plugins",
       "name": "aBuyParticles",
