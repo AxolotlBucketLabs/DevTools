@@ -2,7 +2,7 @@
 
 Choose the entry that matches the reported problem.
 
-- If a folder is not loaded, check the released DevTools PHAR, folder location, and `/devtools doctor`.
+- If a folder is not loaded, check the released DevTools PHAR, folder location, required virions, and `/devtools doctor`.
 - If `plugin.yml` or the main source is missing, check that the project contains both `plugin.yml` and `src/`, then check `main` and `src-namespace-prefix`.
 - If a virion is skipped or conflicts, run `/devtools virions` and check the declarations and local versions.
 - If a build fails, read the reported path and suggested next step before changing source or using `--overwrite`.
@@ -21,6 +21,10 @@ Create `plugin.yml` at the project root. Check `main` and `src-namespace-prefix`
 ## Axolotl-PM reports an API, dependency, cycle, or duplicate error
 
 DevTools does not bypass Axolotl-PM's safety checks. Update the plugin's `api`, install required hard dependencies, remove the dependency cycle or duplicate copy, or correct load declarations. Missing `softdepend` entries do not block loading, but code must still handle their absence.
+
+## A folder plugin requires a missing virion
+
+DevTools rejects the affected folder plugin before Axolotl-PM enables it. Prepare the locked Composer packages into a new directory, copy the resulting virion package into the server's `virions/` directory, and restart the server. For a packaged plugin, build with dependency preparation enabled so the virion is shaded into the PHAR. Do not rely on the plugin's private `vendor/` directory for shared folder loading.
 
 ## A virion is skipped
 

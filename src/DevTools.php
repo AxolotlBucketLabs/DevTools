@@ -26,6 +26,8 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
@@ -68,6 +70,8 @@ final class DevTools extends PluginBase
         $selector = new VirionProjectSelector();
         $configResolver = new BuildConfigResolver($yaml);
         $requirements = [];
+        /** @var array<string, list<VirionRequirement>> $requirementsByProject */
+        $requirementsByProject = [];
         /** @var array<string, string> $configurationFailures */
         $configurationFailures = [];
         $normalizeProjectPath = static function (string $path): string {
@@ -87,9 +91,9 @@ final class DevTools extends PluginBase
                 continue;
             }
             try {
-                foreach ($configResolver->resolve($project, $manifest->description->getName())->virions as $requirement) {
-                    $requirements[] = $requirement;
-                }
+                $projectRequirements = $configResolver->resolve($project, $manifest->description->getName())->virions;
+                $requirementsByProject[$normalizeProjectPath($project)] = $projectRequirements;
+                $requirements = array_merge($requirements, $projectRequirements);
             } catch (Throwable $error) {
                 $configurationFailures[$normalizeProjectPath($project)] = $error->getMessage();
                 $this->getLogger()->warning(
@@ -124,6 +128,10 @@ final class DevTools extends PluginBase
         $configurationFailureChecker = static function (string $root) use (&$configurationFailures, $normalizeProjectPath): ?string {
             return $configurationFailures[$normalizeProjectPath($root)] ?? null;
         };
+        $requirementChecker = new VirionRequirementChecker($registry, $selector);
+        $dependencyFailureChecker = static function (string $root) use ($requirementsByProject, $normalizeProjectPath, $requirementChecker): ?string {
+            return $requirementChecker->failure($requirementsByProject[$normalizeProjectPath($root)] ?? []);
+        };
 
         $server->getPluginManager()->registerInterface(
             new FolderPluginLoader(
@@ -133,6 +141,7 @@ final class DevTools extends PluginBase
                 $ownSourceProject,
                 $virionConflictChecker,
                 $configurationFailureChecker,
+                $dependencyFailureChecker,
             ),
         );
 

@@ -18,13 +18,13 @@ The folder name does not determine the plugin name. `plugin.yml` does. Namespace
 
 ## Validation and server behavior
 
-DevTools validates the manifest, main namespace, path and declaration, API syntax, dependencies, resources, casing, and symbolic links before registration. Axolotl-PM's plugin manager then remains authoritative for duplicate plugin names or classes, API compatibility, missing hard dependencies, soft dependencies, dependency cycles, `loadbefore`, startup order, disable state, and failures during loading or enabling.
+DevTools validates the manifest, main namespace, path and declaration, API syntax, shared virion dependencies, resources, casing, and symbolic links before registration. A folder plugin with a missing or incompatible required virion is rejected before Axolotl-PM can enable it. Axolotl-PM's plugin manager then remains authoritative for duplicate plugin names or classes, API compatibility, missing hard dependencies, soft dependencies, dependency cycles, `loadbefore`, startup order, disable state, and failures during loading or enabling.
 
 If a folder and a PHAR declare the same plugin name, DevTools logs a warning. The current Axolotl-PM loader API registers custom loaders after the built-in PHAR loader, so DevTools cannot guarantee folder precedence for that plugin duplicate. Remove the PHAR or verify the startup log. This limitation does not apply to virions, whose resolver explicitly prefers folders over same-name PHARs.
 
 When DevTools is installed as a PHAR and its source checkout is kept at `plugins/DevTools/`, that checkout is reserved for development commands and is skipped by the folder loader. Other immediate child folders are still loaded normally.
 
-Run `/devtools doctor [plugin]` for project-local diagnostics. Server-level dependency and enable errors remain in the Axolotl-PM log because they depend on every installed plugin.
+Run `/devtools doctor [plugin]` for project-local diagnostics. Server-level dependency errors are reported during startup and the affected folder plugin is rejected before enablement.
 
 Paths containing spaces or Unicode are supported through filesystem APIs and are covered by validation and build tests. Project roots, manifests, source roots, resources, and main-class path components may not be symlinks. Copy trusted development source into the server tree instead.
 

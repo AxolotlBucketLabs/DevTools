@@ -37,6 +37,7 @@ final class FolderPluginLoader implements PluginLoader
     /**
      * @param (Closure(string): list<string>)|null $virionConflictChecker
      * @param ((Closure(string): (string|null))|null) $configurationFailureChecker
+     * @param ((Closure(string): (string|null))|null) $dependencyFailureChecker
      */
     public function __construct(
         private readonly ThreadSafeClassLoader $classLoader,
@@ -45,6 +46,7 @@ final class FolderPluginLoader implements PluginLoader
         ?string $excludedProject = null,
         private readonly ?Closure $virionConflictChecker = null,
         private readonly ?Closure $configurationFailureChecker = null,
+        private readonly ?Closure $dependencyFailureChecker = null,
     ) {
         $this->excludedProject = $excludedProject === null ? null : self::normalizePath($excludedProject);
     }
@@ -91,6 +93,12 @@ final class FolderPluginLoader implements PluginLoader
             }
             throw new RuntimeException("Cannot load folder plugin at {$root}.\n\n" . implode("\n\n", $messages));
         }
+        $dependencyFailure = $this->dependencyFailure($root);
+        if ($dependencyFailure !== null) {
+            throw new RuntimeException(
+                "Cannot load folder plugin at {$root}. {$dependencyFailure}",
+            );
+        }
 
         $manifest = $this->manifestReader->read($root . DIRECTORY_SEPARATOR . 'plugin.yml');
         if ($this->virionConflictChecker !== null) {
@@ -136,6 +144,10 @@ final class FolderPluginLoader implements PluginLoader
             }
             throw new PluginDescriptionParseException(implode("\n\n", $messages));
         }
+        $dependencyFailure = $this->dependencyFailure($file);
+        if ($dependencyFailure !== null) {
+            throw new PluginDescriptionParseException($dependencyFailure);
+        }
 
         return $this->manifestReader->read($file . DIRECTORY_SEPARATOR . 'plugin.yml')->description;
     }
@@ -163,6 +175,15 @@ final class FolderPluginLoader implements PluginLoader
         }
 
         return ($this->configurationFailureChecker)($path);
+    }
+
+    private function dependencyFailure(string $path): ?string
+    {
+        if ($this->dependencyFailureChecker === null) {
+            return null;
+        }
+
+        return ($this->dependencyFailureChecker)($path);
     }
 
     private static function normalizePath(string $path): string

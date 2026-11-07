@@ -79,6 +79,26 @@ final class FolderPluginLoaderTest extends TestCase
         $loader->getPluginDescription($project);
     }
 
+    public function test_missing_required_virion_is_rejected_before_plugin_discovery(): void
+    {
+        $project = $this->copyFixture('ValidPlugin', 'plugins/MissingVirion');
+        [$reader, $validator] = $this->validationServices();
+        $loader = new FolderPluginLoader(
+            new ThreadSafeClassLoader(),
+            $reader,
+            $validator,
+            null,
+            null,
+            null,
+            static fn(string $root): string => 'Required virion dktapps.pmforms is missing. Add a compatible package to the selected virions directory.',
+        );
+
+        $this->expectException(PluginDescriptionParseException::class);
+        $this->expectExceptionMessage('Required virion dktapps.pmforms is missing');
+
+        $loader->getPluginDescription($project);
+    }
+
     public function test_hidden_and_build_directories_are_skipped(): void
     {
         $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
