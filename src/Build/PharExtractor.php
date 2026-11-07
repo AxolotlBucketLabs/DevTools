@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\FilesystemException;
 use AxolotlBucketLabs\DevTools\Support\Path;
@@ -21,10 +22,14 @@ use function strtolower;
 
 final class PharExtractor
 {
-    public function __construct(private readonly Filesystem $filesystem) {}
+    public function __construct(
+        private readonly Filesystem $filesystem,
+        private readonly ?DebugLogger $debug = null,
+    ) {}
 
     public function extract(ArchiveReader $archive, string $destination, bool $overwrite = false): int
     {
+        $this->debug?->debug("Starting archive extraction to {$destination}.");
         if (Filesystem::isLink($destination)) {
             throw new BuildException("Refusing symbolic-link extraction destination: {$destination}");
         }
@@ -132,7 +137,10 @@ final class PharExtractor
             }
         }
 
-        return count($pending);
+        $count = count($pending);
+        $this->debug?->debug("Extracted {$count} file(s) to {$base}.");
+
+        return $count;
     }
 
     private function assertNoSymlinkParent(string $base, string $relative): void

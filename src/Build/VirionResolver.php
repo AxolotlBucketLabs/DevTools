@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Virion\VirionDependencyResolver;
 use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -23,6 +24,7 @@ final class VirionResolver
         private readonly VirionDiscovery $discovery,
         private readonly VirionProjectFactory $projectFactory,
         private readonly VirionProjectSelector $selector,
+        private readonly ?DebugLogger $debug = null,
     ) {}
 
     /**
@@ -32,6 +34,7 @@ final class VirionResolver
      */
     public function resolve(array $requirements, string $virionsDirectory, bool $snapshotPhars = true): array
     {
+        $this->debug?->debug('Resolving ' . count($requirements) . " virion requirement(s) from {$virionsDirectory}.");
         if ($requirements === []) {
             return [];
         }
@@ -44,7 +47,9 @@ final class VirionResolver
         $invalidFolderFailures = [];
         $failures = [];
         $platform = new \AxolotlBucketLabs\DevTools\Virion\VirionPlatformRequirements();
-        foreach ($this->discovery->discover($virionsDirectory) as $location) {
+        $locations = $this->discovery->discover($virionsDirectory);
+        $this->debug?->debug('Discovered ' . count($locations) . ' virion source location(s).');
+        foreach ($locations as $location) {
             try {
                 $project = $this->projectFactory->open($location, $snapshotPhars);
                 $candidatesByName[VirionName::key($project->manifest->name)][] = [$location, $project];
@@ -100,7 +105,13 @@ final class VirionResolver
             }
         }
         try {
-            return (new VirionDependencyResolver($this->selector))->resolve($available, $requirements);
+            $resolved = (new VirionDependencyResolver($this->selector))->resolve($available, $requirements);
+            $this->debug?->debug('Resolved virions: ' . implode(', ', array_map(
+                static fn(VirionProject $project): string => $project->manifest->name . '@' . $project->manifest->version,
+                $resolved,
+            )));
+
+            return $resolved;
         } catch (VirionException $error) {
             throw new BuildException($error->getMessage(), 0, $error);
         }
@@ -117,6 +128,8 @@ final class VirionResolver
                 // Invalid projects are diagnosed by runtime discovery and declared-name resolution.
             }
         }
+
+        $this->debug?->debug('Validated ' . count($projects) . ' virion source project(s) for standalone build checks.');
 
         return $projects;
     }

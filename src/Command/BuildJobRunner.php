@@ -8,7 +8,7 @@ interface BuildJobRunner
 {
     /**
      * @param array<string, mixed> $payload
-     * @param callable(array{success: bool, messages: list<string>}): void $onComplete
+     * @param callable(array{success: bool, messages: list<string>, debug?: list<string>}): void $onComplete
      */
     public function submit(string $operation, array $payload, callable $onComplete): bool;
 

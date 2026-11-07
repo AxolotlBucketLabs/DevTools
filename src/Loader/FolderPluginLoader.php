@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Loader;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -47,6 +48,7 @@ final class FolderPluginLoader implements PluginLoader
         private readonly ?Closure $virionConflictChecker = null,
         private readonly ?Closure $configurationFailureChecker = null,
         private readonly ?Closure $dependencyFailureChecker = null,
+        private readonly ?DebugLogger $debug = null,
     ) {
         $this->excludedProject = $excludedProject === null ? null : self::normalizePath($excludedProject);
     }
@@ -73,6 +75,7 @@ final class FolderPluginLoader implements PluginLoader
             throw new RuntimeException("Cannot load folder plugin because its path cannot be resolved at {$file}.");
         }
         $normalized = str_replace('\\', '/', $root);
+        $this->debug?->debug("Validating folder plugin {$root}.");
         if (isset($this->registeredPaths[$normalized])) {
             return;
         }
@@ -114,6 +117,7 @@ final class FolderPluginLoader implements PluginLoader
             $root . DIRECTORY_SEPARATOR . 'src',
         );
         $this->registeredPaths[$normalized] = true;
+        $this->debug?->debug("Registered folder plugin {$manifest->description->getName()}.");
     }
 
     public function getPluginDescription(string $file): ?PluginDescription

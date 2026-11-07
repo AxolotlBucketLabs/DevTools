@@ -12,6 +12,7 @@ use AxolotlBucketLabs\DevTools\Command\ThreadBuildJobRunner;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginLoader;
 use AxolotlBucketLabs\DevTools\Loader\PluginSourceConflictDetector;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
@@ -41,6 +42,12 @@ final class DevTools extends PluginBase
     protected function onLoad(): void
     {
         $this->saveDefaultConfig();
+        $debug = new DebugLogger((bool) $this->getConfig()->getNested('logging.debug', false)
+            ? function (string $message): void {
+                $this->getLogger()->debug($message);
+            }
+            : null);
+        $debug->debug('Starting DevTools runtime initialization.');
         $this->registerBuildDependencyAutoloader();
 
         $filesystem = new Filesystem();
@@ -80,7 +87,9 @@ final class DevTools extends PluginBase
 
             return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
         };
-        foreach ($pluginDiscovery->discover($pluginsDirectory) as $project) {
+        $pluginProjects = $pluginDiscovery->discover($pluginsDirectory);
+        $debug->debug('Discovered ' . count($pluginProjects) . ' development plugin folder(s).');
+        foreach ($pluginProjects as $project) {
             try {
                 $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
             } catch (Throwable $error) {
@@ -109,6 +118,7 @@ final class DevTools extends PluginBase
             $registry,
             $selector,
             $server->getApiVersion(),
+            $debug,
         );
         $manager->discoverAndLoad($virionsDirectory, $requirements);
 
@@ -142,10 +152,11 @@ final class DevTools extends PluginBase
                 $virionConflictChecker,
                 $configurationFailureChecker,
                 $dependencyFailureChecker,
+                $debug,
             ),
         );
 
-        $this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory);
+        $this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory, $debug);
         $this->commandHandler = new DevToolsCommandHandler(
             $this,
             $pluginDiscovery,
@@ -159,6 +170,7 @@ final class DevTools extends PluginBase
                 'build' => (bool) $this->getConfig()->getNested('commands.build', true),
                 'extract' => (bool) $this->getConfig()->getNested('commands.extract', true),
             ],
+            $debug,
         );
 
         foreach ($registry->entries() as $entry) {
@@ -168,6 +180,7 @@ final class DevTools extends PluginBase
                 $this->getLogger()->warning($entry->message);
             }
         }
+        $debug->debug('DevTools runtime initialization completed.');
     }
 
     protected function onEnable(): void

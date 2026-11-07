@@ -36,6 +36,8 @@ Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to 
 
 Server startup and ordinary builds use local dependencies. DevTools does not replace Composer or provide hot reload.
 
+For troubleshooting, set `logging.debug: true` in the server `config.yml`, or add `--debug` to a CLI command. DEBUG is off by default and reports lifecycle, discovery, dependency-selection and artifact summaries without printing source contents or credentials.
+
 ## Requirements
 
 - PHP `8.4` or newer, 64-bit, with the extensions required by the server

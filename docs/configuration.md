@@ -9,6 +9,9 @@ commands:
   doctor: true
   build: true
   extract: true
+
+logging:
+  debug: false
 ```
 
 On a production server that uses DevTools only for folder plugins and shared virions, set the expensive commands to `false`.
@@ -21,6 +24,12 @@ commands:
 ```
 
 Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use PocketMine's central async task pool. DevTools accepts only one background operation at a time. A second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
+
+## `logging.debug`
+
+Set `logging.debug` to `true` while diagnosing development loading, shared-virion selection, or a build/extraction job. DEBUG output is disabled by default and is written through Axolotl-PM's plugin logger, so Axolotl-PM's own debug logging level must also allow debug messages. The output includes lifecycle, discovery, selection and artifact counts, but does not include source contents, credentials or file contents.
+
+Keep this disabled on production servers unless troubleshooting. It does not change validation, dependency selection or build behavior.
 
 An individual folder plugin may contain an optional `devtools.yml`.
 

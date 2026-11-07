@@ -18,6 +18,7 @@ use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -42,11 +43,13 @@ final class Application
         private readonly VirionManifestReader $virionManifestReader,
         private readonly ProjectRoleDetector $roleDetector,
         private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
+        private readonly ?DebugLogger $debug = null,
     ) {}
 
     /** @param list<string> $arguments */
     public function run(array $arguments): int
     {
+        $this->debug?->debug('CLI invocation started.');
         $json = in_array('--json', $arguments, true);
         $command = 'help';
         $checks = ['structure' => 'not_run', 'dependencies' => 'not_run', 'artifact' => 'not_run', 'static_analysis' => 'not_run', 'runtime' => 'not_run'];
@@ -55,6 +58,7 @@ final class Application
         $exit = 0;
         try {
             [$command, $options] = $this->parse($arguments, $command);
+            $this->debug?->debug("CLI command {$command} selected.");
             if ($command === 'help') {
                 $data = ['help' => self::help()];
             } elseif ($command === 'version') {
@@ -179,6 +183,7 @@ final class Application
                 }
             }
         } catch (Throwable $error) {
+            $this->debug?->debug('CLI operation failed: ' . $error->getMessage());
             $exit = $error instanceof InvalidArgumentException ? 2 : 1;
             $diagnostics[] = [
                 'code' => $exit === 2 ? 'cli.usage' : 'operation.' . $command . '_failed',
@@ -186,6 +191,8 @@ final class Application
                 'suggestion' => $exit === 2 ? 'Run --help for supported commands and options.' : 'Correct the reported input or environment problem and retry. No runtime validation is implied.',
             ];
         }
+
+        $this->debug?->debug("CLI command {$command} finished with exit code {$exit}.");
         $response = ['schema_version' => 1, 'success' => $exit === 0, 'command' => $command, 'tool' => ['name' => 'DevTools', 'version' => $this->version], 'data' => (object) $data, 'diagnostics' => $diagnostics, 'checks' => $checks];
         if ($json) {
             fwrite(STDOUT, json_encode($response, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) . "\n");
@@ -215,7 +222,7 @@ final class Application
         $command = null;
         $options = [];
         foreach ($arguments as $argument) {
-            if ($argument === '--json') {
+            if ($argument === '--json' || $argument === '--debug') {
                 continue;
             }
             if ($argument === '--help' || $argument === '--version') {
@@ -240,7 +247,7 @@ final class Application
             }
             throw new InvalidArgumentException("Unknown command or argument {$argument}.");
         }
-        if (isset($options['help']) || $arguments === [] || $arguments === ['--json']) {
+        if (isset($options['help']) || $arguments === [] || array_diff($arguments, ['--json', '--debug']) === []) {
             return ['help', []];
         }
         if (isset($options['version'])) {
@@ -320,6 +327,7 @@ Usage: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
   extract  --artifact=PATH --out=PATH [--type=auto|plugin|virion] [--format=folder|zip] [--project=PATH] [--overwrite]
   --help | --version
 --json writes one schema_version=1 result to stdout. Logs and PHP diagnostics use stderr.
+--debug writes detailed diagnostic logs to stderr. It is disabled by default.
 The project defaults to the current directory. Virions use PROJECT/virions. Builds use PROJECT/build.
 Other relative paths resolve from project. Commands do not prompt. Replacement requires --overwrite.
 prepare imports supported locked Composer virions after composer install --no-dev --no-scripts --no-plugins.

@@ -8,6 +8,7 @@ use function array_shift;
 
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 
 use function count;
@@ -33,6 +34,7 @@ final class DevToolsCommandHandler
         private readonly BuildJobRunner $jobs,
         /** @var array<string, bool> */
         private readonly array $enabledCommands = [],
+        private readonly ?DebugLogger $debug = null,
     ) {}
 
     /** @param list<string> $arguments */
@@ -46,6 +48,7 @@ final class DevToolsCommandHandler
         }
 
         $subcommand = strtolower(array_shift($arguments) ?? 'help');
+        $this->debug?->debug("Received /devtools {$subcommand} command.");
         try {
             $this->validateArguments($subcommand, $arguments);
             if ($subcommand !== 'help'
@@ -226,16 +229,23 @@ final class DevToolsCommandHandler
     private function submit(CommandSender $sender, string $operation, array $payload, string $description): bool
     {
         if ($this->jobs->isBusy()) {
+            $this->debug?->debug("Rejected {$operation} command because another background job is running.");
             $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
 
             return true;
         }
         $sender->sendMessage("Queued DevTools {$description}.");
-        if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender): void {
+        $this->debug?->debug("Submitting {$operation} command for {$description}.");
+        $debug = $this->debug;
+        if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug): void {
+            foreach ($result['debug'] ?? [] as $message) {
+                $debug?->debug($message);
+            }
             foreach ($result['messages'] as $message) {
                 $sender->sendMessage($message);
             }
         })) {
+            $this->debug?->debug("Failed to queue {$operation} command for {$description}.");
             $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
         }
 

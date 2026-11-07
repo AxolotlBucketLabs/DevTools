@@ -4,3 +4,8 @@ commands:
   doctor: true
   build: true
   extract: true
+
+# Detailed diagnostics are disabled by default. When enabled, output is still
+# subject to Axolotl-PM's own debug logging level.
+logging:
+  debug: false

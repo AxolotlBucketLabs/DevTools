@@ -20,6 +20,7 @@ use AxolotlBucketLabs\DevTools\Build\VirionProjectLocator;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
@@ -55,23 +56,34 @@ final class BuildWorkerApplication
 {
     /**
      * @param array<string, mixed> $payload
-     * @return array{success: bool, messages: list<string>}
+     * @return array{success: bool, messages: list<string>, debug: list<string>}
      */
     public static function run(string $operation, array $payload): array
     {
+        $debugMessages = [];
+        $debug = new DebugLogger(($payload['debug'] ?? false) === true
+            ? static function (string $message) use (&$debugMessages): void {
+                $debugMessages[] = $message;
+            }
+            : null);
+        $debug->debug("Worker operation {$operation} started.");
         try {
             $messages = match ($operation) {
-                'doctor' => self::doctor($payload),
-                'build' => self::build($payload),
-                'extract' => self::extract($payload),
+                'doctor' => self::doctor($payload, $debug),
+                'build' => self::build($payload, $debug),
+                'extract' => self::extract($payload, $debug),
                 default => throw new BuildException("Unknown background operation {$operation}."),
             };
+            $debug->debug("Worker operation {$operation} completed successfully.");
 
-            return ['success' => true, 'messages' => $messages];
+            return ['success' => true, 'messages' => $messages, 'debug' => $debugMessages];
         } catch (\Throwable $error) {
+            $debug->debug("Worker operation {$operation} failed: {$error->getMessage()}");
+
             return [
                 'success' => false,
                 'messages' => ["DevTools could not complete the command.\n{$error->getMessage()}"],
+                'debug' => $debugMessages,
             ];
         }
     }
@@ -80,9 +92,9 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function doctor(array $payload): array
+    private static function doctor(array $payload, DebugLogger $debug): array
     {
-        $services = self::services($payload);
+        $services = self::services($payload, $debug);
         $selection = $payload['selection'] ?? null;
         if ($selection !== null && !is_string($selection)) {
             throw new BuildException('The doctor selection must be a string.');
@@ -121,9 +133,9 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function build(array $payload): array
+    private static function build(array $payload, DebugLogger $debug): array
     {
-        $services = self::services($payload);
+        $services = self::services($payload, $debug);
         $target = $payload['target'] ?? 'plugin';
         $selection = $payload['selection'] ?? null;
         $overwrite = $payload['overwrite'] ?? false;
@@ -179,9 +191,9 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function extract(array $payload): array
+    private static function extract(array $payload, DebugLogger $debug): array
     {
-        $services = self::services($payload);
+        $services = self::services($payload, $debug);
         $selection = $payload['selection'] ?? null;
         $format = $payload['format'] ?? 'folder';
         $type = $payload['type'] ?? 'auto';
@@ -261,7 +273,7 @@ final class BuildWorkerApplication
      *     buildDirectory: string
      * }
      */
-    private static function services(array $payload): array
+    private static function services(array $payload, DebugLogger $debug): array
     {
         foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
             if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
@@ -281,7 +293,7 @@ final class BuildWorkerApplication
         $virionScanner = new VirionClassScanner($sourceInspector);
         $selector = new VirionProjectSelector();
         $configResolver = new BuildConfigResolver($yaml);
-        $resolver = new VirionResolver($virionDiscovery, $virionFactory, $selector);
+        $resolver = new VirionResolver($virionDiscovery, $virionFactory, $selector, $debug);
         $builder = new PharBuilder(
             $filesystem,
             $validator,
@@ -291,8 +303,9 @@ final class BuildWorkerApplication
             $virionScanner,
             new \AxolotlBucketLabs\DevTools\Build\NamespaceShader(),
             $sourceInspector,
+            $debug,
         );
-        $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner);
+        $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner, $debug);
 
         return [
             'pluginDiscovery' => $pluginDiscovery,
@@ -302,7 +315,7 @@ final class BuildWorkerApplication
             'resolver' => $resolver,
             'projectLocator' => new PluginProjectLocator($pluginDiscovery, $manifestReader),
             'builder' => $builder,
-            'extractor' => new PharExtractor($filesystem),
+            'extractor' => new PharExtractor($filesystem, $debug),
             'virionBuilder' => $virionBuilder,
             'zipWriter' => new ZipArchiveWriter($filesystem),
             'artifactInspector' => new ArtifactInspector($manifestReader, $virionManifestReader),

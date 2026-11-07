@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+
 use function class_exists;
 
 use Closure;
@@ -49,11 +51,13 @@ final class VirionManager
         private readonly VirionRegistry $registry,
         private readonly VirionProjectSelector $selector,
         private readonly string $serverApiVersion,
+        private readonly ?DebugLogger $debug = null,
     ) {}
 
     /** @param list<VirionRequirement> $requirements */
     public function discoverAndLoad(string $directory, array $requirements = []): VirionRegistry
     {
+        $this->debug?->debug('Loading shared virions from ' . $directory . ' with ' . count($requirements) . ' project requirement(s).');
         /** @var array<string, list<VirionRequirement>> $requirementsByName */
         $requirementsByName = [];
         $hasComposerRequirements = false;
@@ -66,7 +70,9 @@ final class VirionManager
         $projectsByName = [];
         /** @var array<string, string> $invalidFolderFailures */
         $invalidFolderFailures = [];
-        foreach ($this->discovery->discover($directory) as $location) {
+        $locations = $this->discovery->discover($directory);
+        $this->debug?->debug('Discovered ' . count($locations) . ' shared virion location(s).');
+        foreach ($locations as $location) {
             try {
                 $project = $this->projectFactory->open($location);
                 $projectsByName[VirionName::key($project->manifest->name)][] = [$location, $project];
@@ -228,6 +234,8 @@ final class VirionManager
             ));
         }
 
+        $this->debug?->debug('Shared virion loading finished with ' . count($this->registry->loaded()) . ' loaded virion(s) and ' . count($this->registry->entries()) . ' registry entr' . (count($this->registry->entries()) === 1 ? 'y' : 'ies') . '.');
+
         return $this->registry;
     }
 
@@ -257,6 +265,7 @@ final class VirionManager
 
         $this->graphLoadStates[$nameKey] = 'loading';
         [$location, $project] = $selectedProjects[$nameKey];
+        $this->debug?->debug("Loading selected virion {$project->manifest->name}@{$project->manifest->version} from {$location}.");
         foreach ($project->manifest->requirements as $requirement) {
             $dependencyKey = VirionName::key($requirement->name);
             if (!isset($selectedProjects[$dependencyKey])) {
@@ -287,6 +296,9 @@ final class VirionManager
         $entry = $this->load($location);
         $loaded = $entry?->status === VirionStatus::LOADED;
         $this->graphLoadStates[$nameKey] = $loaded ? 'loaded' : 'failed';
+        $this->debug?->debug($loaded
+            ? "Loaded virion {$project->manifest->name}."
+            : "Failed to load virion {$project->manifest->name}.");
 
         return $loaded;
     }

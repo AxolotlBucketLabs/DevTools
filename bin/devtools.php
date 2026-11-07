@@ -15,6 +15,7 @@ use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Cli\Application;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
@@ -34,6 +35,11 @@ try {
     }
     require $autoload;
 
+    $debug = new DebugLogger(in_array('--debug', array_slice($argv ?? [], 1), true)
+        ? static function (string $message): void {
+            fwrite(STDERR, '[debug] ' . $message . "\n");
+        }
+        : null);
     $filesystem = new Filesystem();
     $yaml = new YamlReader();
     $inspector = new PhpSourceInspector();
@@ -43,9 +49,9 @@ try {
     $virionManifestReader = new VirionManifestReader($yaml);
     $virionFactory = new VirionProjectFactory($virionManifestReader);
     $virionDiscovery = new VirionDiscovery($filesystem);
-    $resolver = new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector());
-    $pluginBuilder = new PharBuilder($filesystem, $validator, $reader, $config, $resolver, new VirionClassScanner($inspector), new NamespaceShader(), $inspector);
-    $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, new VirionClassScanner($inspector));
+    $resolver = new VirionResolver($virionDiscovery, $virionFactory, new VirionProjectSelector(), $debug);
+    $pluginBuilder = new PharBuilder($filesystem, $validator, $reader, $config, $resolver, new VirionClassScanner($inspector), new NamespaceShader(), $inspector, $debug);
+    $virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, new VirionClassScanner($inspector), $debug);
     $version = $reader->read(dirname(__DIR__) . '/plugin.yml')->description->getVersion();
     $application = new Application(
         $version,
@@ -55,7 +61,7 @@ try {
         $resolver,
         $pluginBuilder,
         $virionBuilder,
-        new PharExtractor($filesystem),
+        new PharExtractor($filesystem, $debug),
         new ZipArchiveWriter($filesystem),
         new ArtifactInspector($reader, $virionManifestReader),
         new ComposerVirionPreparer($filesystem),
@@ -67,6 +73,7 @@ try {
             $virionBuilder,
             new ArtifactSetInstaller(),
         ),
+        $debug,
     );
     exit($application->run(array_slice($argv ?? [], 1)));
 } catch (Throwable $error) {
