@@ -6,12 +6,12 @@ GitHub Actions workflow.
 ## Snapshot
 
 - Checked on 2026-11-07.
-- 142 repositories were verified across five organizations.
+- 143 repositories were verified across five organizations.
 - The audit inspected 178 non-archived repositories and 208 default-branch
   workflow files across the five organizations.
 - A repository is counted when its public default-branch workflow references
   DevTools or one of DevTools' reusable workflows.
-- All 142 repositories now resolve to stable `v3.0.0` through the maintained
+- All 143 repositories now resolve to stable `v3.0.0` through the maintained
   `@v3` channel or the exact release commit
   `04fd726101109739bf1fd629dbe8499d3e2864bb`.
 - The inventory includes the 64 projects migrated from v2 or pre-v3 builder
@@ -26,11 +26,11 @@ GitHub Actions workflow.
 | Organization | Verified repositories |
 | --- | ---: |
 | [AxolotlBucketLabs](https://github.com/AxolotlBucketLabs) | 7 |
-| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 94 |
-| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 6 |
-| [thebigcrafter](https://github.com/thebigcrafter) | 23 |
+| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 93 |
+| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 7 |
+| [thebigcrafter](https://github.com/thebigcrafter) | 24 |
 | [ReinfyTeam](https://github.com/ReinfyTeam) | 12 |
-| **Total** | **142** |
+| **Total** | **143** |
 
 ## AxolotlBucketLabs
 
@@ -45,7 +45,7 @@ GitHub Actions workflow.
 ## NhanAZ-Plugins
 
 - [AdvancedRules](https://github.com/NhanAZ-Plugins/AdvancedRules)
-- [animated-Wings](https://github.com/NhanAZ-Plugins/animated-Wings)
+- [AnimatedWings](https://github.com/NhanAZ-Plugins/AnimatedWings)
 - [AnonChat](https://github.com/NhanAZ-Plugins/AnonChat)
 - [AntiServerStop](https://github.com/NhanAZ-Plugins/AntiServerStop)
 - [AntiTrampleFarmland](https://github.com/NhanAZ-Plugins/AntiTrampleFarmland)
@@ -65,7 +65,6 @@ GitHub Actions workflow.
 - [DumpIdItem](https://github.com/NhanAZ-Plugins/DumpIdItem)
 - [EmojiAttack](https://github.com/NhanAZ-Plugins/EmojiAttack)
 - [FormDebug](https://github.com/NhanAZ-Plugins/FormDebug)
-- [FrozenEffect](https://github.com/NhanAZ-Plugins/FrozenEffect)
 - [HealthLimit](https://github.com/NhanAZ-Plugins/HealthLimit)
 - [KeepExp](https://github.com/NhanAZ-Plugins/KeepExp)
 - [NapThe](https://github.com/NhanAZ-Plugins/NapThe)
@@ -90,9 +89,10 @@ GitHub Actions workflow.
 ## NhanAZ-Libraries
 
 - [BlockData](https://github.com/NhanAZ-Libraries/BlockData)
+- [BedrockQuery](https://github.com/NhanAZ-Libraries/BedrockQuery)
+- [FrozenEffect](https://github.com/NhanAZ-Libraries/FrozenEffect)
 - [libBedrock](https://github.com/NhanAZ-Libraries/libBedrock)
 - [libRegRsp](https://github.com/NhanAZ-Libraries/libRegRsp)
-- [QueryServer](https://github.com/NhanAZ-Libraries/QueryServer)
 
 ## thebigcrafter
 
@@ -111,6 +111,7 @@ GitHub Actions workflow.
 - [KygekTagsShop](https://github.com/thebigcrafter/KygekTagsShop)
 - [KygekWhitelistKick](https://github.com/thebigcrafter/KygekWhitelistKick)
 - [LuckyPlayer](https://github.com/thebigcrafter/LuckyPlayer)
+- [libMCUnicodeChars](https://github.com/thebigcrafter/libMCUnicodeChars)
 - [XPShop](https://github.com/thebigcrafter/XPShop)
 - [oh-my-pmmp](https://github.com/thebigcrafter/oh-my-pmmp)
 
