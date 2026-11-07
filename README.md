@@ -7,7 +7,7 @@ See the [architecture overview](ARCHITECTURE.md) for how folder loading, shared 
 [![CI](https://github.com/AxolotlBucketLabs/DevTools/actions/workflows/ci.yml/badge.svg)](https://github.com/AxolotlBucketLabs/DevTools/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/AxolotlBucketLabs/DevTools)](https://github.com/AxolotlBucketLabs/DevTools/releases/latest)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Discord server online members](https://img.shields.io/discord/986553214889517088?label=Discord&amp;logo=discord&amp;logoColor=white&amp;color=5865F2)](https://discord.gg/j2X83ujT6c)
+[![Discord server online members](https://img.shields.io/discord/1568295845374206052?label=Discord&amp;logo=discord&amp;logoColor=white&amp;color=5865F2)](https://discord.gg/Pk4FrNvHnM)
 
 ## Quick start
 
