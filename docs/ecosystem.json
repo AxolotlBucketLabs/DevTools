@@ -1,0 +1,798 @@
+{
+  "$schema": "./ecosystem.schema.json",
+  "schema_version": 1,
+  "scope": {
+    "checked_on": "2026-11-07",
+    "description": "A point-in-time inventory of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
+    "organizations": [
+      "AxolotlBucketLabs",
+      "NhanAZ-Plugins",
+      "NhanAZ-Libraries",
+      "thebigcrafter",
+      "ReinfyTeam"
+    ],
+    "include_archived": false,
+    "repositories_inspected": 178,
+    "workflow_files_inspected": 208,
+    "counting_rule": "Count a repository when its public default-branch workflow references DevTools or one of DevTools' reusable workflows.",
+    "exclusions": [
+      {
+        "name": "ScoreHud",
+        "reason": "The transferred repository default branch does not currently reference DevTools."
+      },
+      {
+        "name": "await-generator",
+        "reason": "The transferred repository default branch does not currently reference DevTools."
+      },
+      {
+        "name": "Organization-level repositories",
+        "reason": "Organization-level repositories are outside the project inventory."
+      },
+      {
+        "name": "Documentation-only mentions",
+        "reason": "Repositories that only mention DevTools in documentation are outside the project inventory."
+      }
+    ]
+  },
+  "devtools": {
+    "stable_version": "v3.0.0",
+    "stable_commit": "04fd726101109739bf1fd629dbe8499d3e2864bb",
+    "reference_policy": "@v3 or the exact release commit"
+  },
+  "summary": {
+    "verified_repositories": 79,
+    "migrated_repositories": 64,
+    "total_repositories": 143,
+    "organization_totals": [
+      {
+        "organization": "AxolotlBucketLabs",
+        "verified": 7,
+        "migrated": 0,
+        "total": 7
+      },
+      {
+        "organization": "NhanAZ-Plugins",
+        "verified": 41,
+        "migrated": 52,
+        "total": 93
+      },
+      {
+        "organization": "NhanAZ-Libraries",
+        "verified": 5,
+        "migrated": 2,
+        "total": 7
+      },
+      {
+        "organization": "thebigcrafter",
+        "verified": 18,
+        "migrated": 6,
+        "total": 24
+      },
+      {
+        "organization": "ReinfyTeam",
+        "verified": 8,
+        "migrated": 4,
+        "total": 12
+      }
+    ]
+  },
+  "verified_repositories": [
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "arithmexp",
+      "url": "https://github.com/AxolotlBucketLabs/arithmexp"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "FormAPI",
+      "url": "https://github.com/AxolotlBucketLabs/FormAPI"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "PersonaSkin",
+      "url": "https://github.com/AxolotlBucketLabs/PersonaSkin"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "pmforms",
+      "url": "https://github.com/AxolotlBucketLabs/pmforms"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "PureChat",
+      "url": "https://github.com/AxolotlBucketLabs/PureChat"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "PurePerms",
+      "url": "https://github.com/AxolotlBucketLabs/PurePerms"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "SimplePacketHandler",
+      "url": "https://github.com/AxolotlBucketLabs/SimplePacketHandler"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AdvancedRules",
+      "url": "https://github.com/NhanAZ-Plugins/AdvancedRules"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AnimatedWings",
+      "url": "https://github.com/NhanAZ-Plugins/AnimatedWings"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AnonChat",
+      "url": "https://github.com/NhanAZ-Plugins/AnonChat"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiServerStop",
+      "url": "https://github.com/NhanAZ-Plugins/AntiServerStop"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiTrampleFarmland",
+      "url": "https://github.com/NhanAZ-Plugins/AntiTrampleFarmland"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BackgroundMusic",
+      "url": "https://github.com/NhanAZ-Plugins/BackgroundMusic"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BanItem",
+      "url": "https://github.com/NhanAZ-Plugins/BanItem"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BetterCancel",
+      "url": "https://github.com/NhanAZ-Plugins/BetterCancel"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BlockDataExample",
+      "url": "https://github.com/NhanAZ-Plugins/BlockDataExample"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BlockDataRecorder",
+      "url": "https://github.com/NhanAZ-Plugins/BlockDataRecorder"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BlockGenerationMachine",
+      "url": "https://github.com/NhanAZ-Plugins/BlockGenerationMachine"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BlockGenerator",
+      "url": "https://github.com/NhanAZ-Plugins/BlockGenerator"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Calculator",
+      "url": "https://github.com/NhanAZ-Plugins/Calculator"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CommandBlocker",
+      "url": "https://github.com/NhanAZ-Plugins/CommandBlocker"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CropGrowth",
+      "url": "https://github.com/NhanAZ-Plugins/CropGrowth"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CropsXP",
+      "url": "https://github.com/NhanAZ-Plugins/CropsXP"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CustomJoinSound",
+      "url": "https://github.com/NhanAZ-Plugins/CustomJoinSound"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "DataCleaner",
+      "url": "https://github.com/NhanAZ-Plugins/DataCleaner"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "DumpIdItem",
+      "url": "https://github.com/NhanAZ-Plugins/DumpIdItem"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "EmojiAttack",
+      "url": "https://github.com/NhanAZ-Plugins/EmojiAttack"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "FormDebug",
+      "url": "https://github.com/NhanAZ-Plugins/FormDebug"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "HealthLimit",
+      "url": "https://github.com/NhanAZ-Plugins/HealthLimit"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "KeepExp",
+      "url": "https://github.com/NhanAZ-Plugins/KeepExp"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NapThe",
+      "url": "https://github.com/NhanAZ-Plugins/NapThe"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NoAD",
+      "url": "https://github.com/NhanAZ-Plugins/NoAD"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NoEmoteMessage",
+      "url": "https://github.com/NhanAZ-Plugins/NoEmoteMessage"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NoFlyWorld",
+      "url": "https://github.com/NhanAZ-Plugins/NoFlyWorld"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NoTP",
+      "url": "https://github.com/NhanAZ-Plugins/NoTP"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "OhMyTest",
+      "url": "https://github.com/NhanAZ-Plugins/OhMyTest"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "OnlyOneBiome",
+      "url": "https://github.com/NhanAZ-Plugins/OnlyOneBiome"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "ProfanityFilter",
+      "url": "https://github.com/NhanAZ-Plugins/ProfanityFilter"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "RainbowChat",
+      "url": "https://github.com/NhanAZ-Plugins/RainbowChat"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "RevivalTax",
+      "url": "https://github.com/NhanAZ-Plugins/RevivalTax"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "RulesBook",
+      "url": "https://github.com/NhanAZ-Plugins/RulesBook"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "SimpleEconomy",
+      "url": "https://github.com/NhanAZ-Plugins/SimpleEconomy"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "SoundAPI",
+      "url": "https://github.com/NhanAZ-Plugins/SoundAPI"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Stalker",
+      "url": "https://github.com/NhanAZ-Plugins/Stalker"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "TerrainGenerator",
+      "url": "https://github.com/NhanAZ-Plugins/TerrainGenerator"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "TradeNPC",
+      "url": "https://github.com/NhanAZ-Plugins/TradeNPC"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "UnlimitedSlots",
+      "url": "https://github.com/NhanAZ-Plugins/UnlimitedSlots"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "VisibleBorder",
+      "url": "https://github.com/NhanAZ-Plugins/VisibleBorder"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "BlockData",
+      "url": "https://github.com/NhanAZ-Libraries/BlockData"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "BedrockQuery",
+      "url": "https://github.com/NhanAZ-Libraries/BedrockQuery"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "FrozenEffect",
+      "url": "https://github.com/NhanAZ-Libraries/FrozenEffect"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "libBedrock",
+      "url": "https://github.com/NhanAZ-Libraries/libBedrock"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "libRegRsp",
+      "url": "https://github.com/NhanAZ-Libraries/libRegRsp"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "AdvancedPluginManager",
+      "url": "https://github.com/thebigcrafter/AdvancedPluginManager"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "BetterConfig",
+      "url": "https://github.com/thebigcrafter/BetterConfig"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "HyperBackup",
+      "url": "https://github.com/thebigcrafter/HyperBackup"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekClearConsole",
+      "url": "https://github.com/thebigcrafter/KygekClearConsole"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekEasyGamemode",
+      "url": "https://github.com/thebigcrafter/KygekEasyGamemode"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekEatHeal",
+      "url": "https://github.com/thebigcrafter/KygekEatHeal"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekJoinUI",
+      "url": "https://github.com/thebigcrafter/KygekJoinUI"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekLastPosition",
+      "url": "https://github.com/thebigcrafter/KygekLastPosition"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekPingTPS",
+      "url": "https://github.com/thebigcrafter/KygekPingTPS"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekPotionDisabler",
+      "url": "https://github.com/thebigcrafter/KygekPotionDisabler"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekRanksUI",
+      "url": "https://github.com/thebigcrafter/KygekRanksUI"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekRulesUI",
+      "url": "https://github.com/thebigcrafter/KygekRulesUI"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekTagsShop",
+      "url": "https://github.com/thebigcrafter/KygekTagsShop"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "KygekWhitelistKick",
+      "url": "https://github.com/thebigcrafter/KygekWhitelistKick"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "LuckyPlayer",
+      "url": "https://github.com/thebigcrafter/LuckyPlayer"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "libMCUnicodeChars",
+      "url": "https://github.com/thebigcrafter/libMCUnicodeChars"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "XPShop",
+      "url": "https://github.com/thebigcrafter/XPShop"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "oh-my-pmmp",
+      "url": "https://github.com/thebigcrafter/oh-my-pmmp"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "AntiVPN",
+      "url": "https://github.com/ReinfyTeam/AntiVPN"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "DiscordWebhookAPI",
+      "url": "https://github.com/ReinfyTeam/DiscordWebhookAPI"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "FakeWaterdogTransfer",
+      "url": "https://github.com/ReinfyTeam/FakeWaterdogTransfer"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "FancyPlayerCount",
+      "url": "https://github.com/ReinfyTeam/FancyPlayerCount"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "SlapBack",
+      "url": "https://github.com/ReinfyTeam/SlapBack"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "SlapperCooldown",
+      "url": "https://github.com/ReinfyTeam/SlapperCooldown"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "SlapperParticles",
+      "url": "https://github.com/ReinfyTeam/SlapperParticles"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "SlapperRotation",
+      "url": "https://github.com/ReinfyTeam/SlapperRotation"
+    }
+  ],
+  "migrations": [
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "aBuyParticles",
+      "url": "https://github.com/NhanAZ-Plugins/aBuyParticles"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Alias",
+      "url": "https://github.com/NhanAZ-Plugins/Alias"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiExplosions",
+      "url": "https://github.com/NhanAZ-Plugins/AntiExplosions"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiFallDamage",
+      "url": "https://github.com/NhanAZ-Plugins/AntiFallDamage"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiFurry",
+      "url": "https://github.com/NhanAZ-Plugins/AntiFurry"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AntiToolBox",
+      "url": "https://github.com/NhanAZ-Plugins/AntiToolBox"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "ArcoLife",
+      "url": "https://github.com/NhanAZ-Plugins/ArcoLife"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "AutoClearLagg",
+      "url": "https://github.com/NhanAZ-Plugins/AutoClearLagg"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "BuyFix",
+      "url": "https://github.com/NhanAZ-Plugins/BuyFix"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CoinAPI",
+      "url": "https://github.com/NhanAZ-Plugins/CoinAPI"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Coordinates",
+      "url": "https://github.com/NhanAZ-Plugins/Coordinates"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CopyPasteBuildDP",
+      "url": "https://github.com/NhanAZ-Plugins/CopyPasteBuildDP"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "CustomToastExample",
+      "url": "https://github.com/NhanAZ-Plugins/CustomToastExample"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "DebugStick",
+      "url": "https://github.com/NhanAZ-Plugins/DebugStick"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "DevilMode",
+      "url": "https://github.com/NhanAZ-Plugins/DevilMode"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Disable_TNT",
+      "url": "https://github.com/NhanAZ-Plugins/Disable_TNT"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "EcoAPIScore",
+      "url": "https://github.com/NhanAZ-Plugins/EcoAPIScore"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "EffectBlock-HiroTeam",
+      "url": "https://github.com/NhanAZ-Plugins/EffectBlock-HiroTeam"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "FaceLogin",
+      "url": "https://github.com/NhanAZ-Plugins/FaceLogin"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Farms",
+      "url": "https://github.com/NhanAZ-Plugins/Farms"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Fly",
+      "url": "https://github.com/NhanAZ-Plugins/Fly"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "FrameKeeper",
+      "url": "https://github.com/NhanAZ-Plugins/FrameKeeper"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "GolemAgent",
+      "url": "https://github.com/NhanAZ-Plugins/GolemAgent"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "GuardianJoin",
+      "url": "https://github.com/NhanAZ-Plugins/GuardianJoin"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "HealBar",
+      "url": "https://github.com/NhanAZ-Plugins/HealBar"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "IDItem",
+      "url": "https://github.com/NhanAZ-Plugins/IDItem"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "isEvenOrOdd",
+      "url": "https://github.com/NhanAZ-Plugins/isEvenOrOdd"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "ItemDropText",
+      "url": "https://github.com/NhanAZ-Plugins/ItemDropText"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "ItemEffect",
+      "url": "https://github.com/NhanAZ-Plugins/ItemEffect"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "ItemSender",
+      "url": "https://github.com/NhanAZ-Plugins/ItemSender"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "KeepInventory",
+      "url": "https://github.com/NhanAZ-Plugins/KeepInventory"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "KeepItems",
+      "url": "https://github.com/NhanAZ-Plugins/KeepItems"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Mask",
+      "url": "https://github.com/NhanAZ-Plugins/Mask"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "NoCraftItem",
+      "url": "https://github.com/NhanAZ-Plugins/NoCraftItem"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "OpList",
+      "url": "https://github.com/NhanAZ-Plugins/OpList"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Particles_Shape",
+      "url": "https://github.com/NhanAZ-Plugins/Particles_Shape"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Pets",
+      "url": "https://github.com/NhanAZ-Plugins/Pets"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "PlayerVaults",
+      "url": "https://github.com/NhanAZ-Plugins/PlayerVaults"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "PocketMine-Plugin-Template",
+      "url": "https://github.com/NhanAZ-Plugins/PocketMine-Plugin-Template"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "RedSkyBlockX",
+      "url": "https://github.com/NhanAZ-Plugins/RedSkyBlockX"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "RegionProtect",
+      "url": "https://github.com/NhanAZ-Plugins/RegionProtect"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Sell",
+      "url": "https://github.com/NhanAZ-Plugins/Sell"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "SimpleEconomyExample",
+      "url": "https://github.com/NhanAZ-Plugins/SimpleEconomyExample"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "SlapperParticle",
+      "url": "https://github.com/NhanAZ-Plugins/SlapperParticle"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Spawner",
+      "url": "https://github.com/NhanAZ-Plugins/Spawner"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "SpawnParticles",
+      "url": "https://github.com/NhanAZ-Plugins/SpawnParticles"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "StealSkin",
+      "url": "https://github.com/NhanAZ-Plugins/StealSkin"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "TopIS",
+      "url": "https://github.com/NhanAZ-Plugins/TopIS"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Uncensor",
+      "url": "https://github.com/NhanAZ-Plugins/Uncensor"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "Wings",
+      "url": "https://github.com/NhanAZ-Plugins/Wings"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "WorldsLoader",
+      "url": "https://github.com/NhanAZ-Plugins/WorldsLoader"
+    },
+    {
+      "organization": "NhanAZ-Plugins",
+      "name": "XYZ",
+      "url": "https://github.com/NhanAZ-Plugins/XYZ"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "CustomToast",
+      "url": "https://github.com/NhanAZ-Libraries/CustomToast"
+    },
+    {
+      "organization": "NhanAZ-Libraries",
+      "name": "EcoAPI",
+      "url": "https://github.com/NhanAZ-Libraries/EcoAPI"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "libpf",
+      "url": "https://github.com/ReinfyTeam/libpf"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "libpmform",
+      "url": "https://github.com/ReinfyTeam/libpmform"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "LibVapmPMMP",
+      "url": "https://github.com/ReinfyTeam/LibVapmPMMP"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "Slapper",
+      "url": "https://github.com/ReinfyTeam/Slapper"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "Commando",
+      "url": "https://github.com/thebigcrafter/Commando"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "Hydrogen",
+      "url": "https://github.com/thebigcrafter/Hydrogen"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "ktpmpl-cfs",
+      "url": "https://github.com/thebigcrafter/ktpmpl-cfs"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "pmforms",
+      "url": "https://github.com/thebigcrafter/pmforms"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "promise",
+      "url": "https://github.com/thebigcrafter/promise"
+    },
+    {
+      "organization": "thebigcrafter",
+      "name": "TrashCan",
+      "url": "https://github.com/thebigcrafter/TrashCan"
+    }
+  ]
+}

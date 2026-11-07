@@ -27,6 +27,7 @@ Build code works without a running server. Commands orchestrate services rather 
 | `bin/runtime-smoke.php` | Run dedicated plugin and library fixtures on isolated Axolotl-PM servers |
 | `bin/check-syntax.php` | Validate project PHP syntax |
 | `bin/check-doc-links.php` | Check local documentation links and punctuation |
+| `bin/check-ecosystem.php` | Validate the structured DevTools ecosystem inventory |
 | `bin/validate-artifact.php` | Validate the actual DevTools PHAR |
 | `bin/verify-version.php` | Verify synchronized release metadata |
 | `action.yml` | Build an external plugin through the same CLI |
@@ -37,6 +38,8 @@ Build code works without a running server. Commands orchestrate services rather 
 | `.github/workflows/release.yml` | Publish that candidate's verified original bytes |
 | `plugin.yml` | Plugin identity, commands and permission |
 | `devtools.yml` | Files included when building DevTools itself |
+| `docs/ecosystem.json` | Canonical repository inventory and audit counts |
+| `docs/ecosystem.schema.json` | JSON Schema for the ecosystem inventory |
 | `composer.json` and quality configuration files | Locked dependency and QA toolchain |
 | `examples/` | Dedicated plugin and library examples, a build workflow and a coding agent template |
 | `tests/Fixtures/` | Projects maintained by DevTools for behavior and failure-path tests |

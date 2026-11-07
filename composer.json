@@ -65,6 +65,7 @@
         "build": "@php -d phar.readonly=0 bin/devtools-build.php --overwrite",
         "build:self": "@build",
         "docs": "@php bin/check-doc-links.php",
+        "ecosystem": "@php bin/check-ecosystem.php",
         "check": [
             "composer validate --strict",
             "@syntax",
@@ -73,6 +74,7 @@
             "@phpstan",
             "@test",
             "@docs",
+            "@ecosystem",
             "@build",
             "@artifact"
         ],
