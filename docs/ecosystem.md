@@ -6,7 +6,7 @@ This page gives a short human-readable summary of public projects using DevTools
 
 DevTools is currently verified in 143 public repositories across five organizations.
 
-The audit inspected 178 non-archived repositories and 208 default-branch workflow files. All counted repositories resolve to `v3.0.0` through the maintained `@v3` channel or the exact release commit `04fd726101109739bf1fd629dbe8499d3e2864bb`.
+The audit inspected 178 non-archived repositories and 208 default-branch workflow files. All counted repositories resolve to `v3.1.0` through the maintained `@v3` channel or the exact release commit `d5e9f9ef1512e8586df94b9cc5835c088e48229d`.
 
 | Organization | Repositories |
 | --- | ---: |
