@@ -20,27 +20,27 @@ final class VirionRequirementCheckerTest extends TestCase
         $checker = new VirionRequirementChecker(new VirionRegistry(), new VirionProjectSelector());
 
         $failure = $checker->failure([
-            new VirionRequirement('dktapps.pmforms', '2.3.1', 'NPC/composer.lock:dktapps/pmforms'),
+            new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
         ]);
 
         self::assertNotNull($failure);
-        self::assertStringContainsString('dktapps.pmforms is missing', $failure);
-        self::assertStringContainsString('NPC/composer.lock:dktapps/pmforms', $failure);
+        self::assertStringContainsString('ExampleVirion is missing', $failure);
+        self::assertStringContainsString('ExamplePlugin/composer.lock:example/virion', $failure);
     }
 
     public function test_loaded_compatible_requirement_passes(): void
     {
         $registry = new VirionRegistry();
         $registry->record(new VirionRegistryEntry(
-            $this->temporaryDirectory . '/virions/dktapps.pmforms',
-            new VirionManifest('dktapps.pmforms', '2.3.1', 'dktapps\\pmforms', [], [], [], 'virion.yml'),
+            $this->temporaryDirectory . '/virions/ExampleVirion',
+            new VirionManifest('ExampleVirion', '1.0.0', 'Example\\Virion', [], [], [], 'virion.yml'),
             VirionStatus::LOADED,
-            'Loaded dktapps.pmforms 2.3.1.',
+            'Loaded ExampleVirion 1.0.0.',
         ));
         $checker = new VirionRequirementChecker($registry, new VirionProjectSelector());
 
         self::assertNull($checker->failure([
-            new VirionRequirement('dktapps.pmforms', '2.3.1', 'NPC/composer.lock:dktapps/pmforms'),
+            new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
         ]));
     }
 }

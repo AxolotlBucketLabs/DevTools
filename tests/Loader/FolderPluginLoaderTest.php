@@ -90,11 +90,11 @@ final class FolderPluginLoaderTest extends TestCase
             null,
             null,
             null,
-            static fn(string $root): string => 'Required virion dktapps.pmforms is missing. Add a compatible package to the selected virions directory.',
+            static fn(string $root): string => 'Required virion ExampleVirion is missing. Add a compatible package to the selected virions directory.',
         );
 
         $this->expectException(PluginDescriptionParseException::class);
-        $this->expectExceptionMessage('Required virion dktapps.pmforms is missing');
+        $this->expectExceptionMessage('Required virion ExampleVirion is missing');
 
         $loader->getPluginDescription($project);
     }
