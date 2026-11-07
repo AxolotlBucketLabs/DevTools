@@ -1,14 +1,18 @@
-# DevTools 3.0.0
+# DevTools 3.1.0
 
-This major release moves DevTools to the AxolotlBucketLabs organization and renames its PHP namespace to `AxolotlBucketLabs\DevTools`.
+DevTools 3.1.0 adds opt-in DEBUG diagnostics for development loading and build workflows.
 
-## Breaking changes
+## Highlights
 
-- Update GitHub Actions references from `NhanAZ/DevTools` to `AxolotlBucketLabs/DevTools`.
-- Update direct PHP imports from `NhanAZ\DevTools` to `AxolotlBucketLabs\DevTools`.
-- The maintained workflow channel is now `v3`. The `v2` channel remains available at its prior release for consumers that need a staged migration.
+- Enable server diagnostics with `logging.debug: true` in DevTools' `config.yml`.
+- Add `--debug` to CLI commands for lifecycle, discovery, dependency-selection and artifact diagnostics.
+- Keep DEBUG disabled by default and keep CLI JSON output on stdout without diagnostic noise.
+- Add diagnostics across folder plugin discovery, shared virion resolution, PHAR builds, extraction and background worker jobs.
+- Refresh the locked Symfony Filesystem dependency to `v6.4.50` to include its upstream security fix.
 
-## Compatibility
+## Compatibility and upgrade notes
 
-- CLI and GitHub Actions builds remain synchronous, with the v3 workflow contract matching the v2 build inputs and outputs.
+- This is an additive, backward-compatible release for the existing v3 workflow channel.
+- Existing server configurations continue to run with DEBUG disabled.
+- The CLI JSON schema and normal server command output are unchanged.
 - PHAR creation still requires PHP to run with `phar.readonly=0`. Loading an existing PHAR does not.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.0 - 2026-11-08
+
+- Add opt-in DEBUG diagnostics for server startup, folder plugin discovery, shared virion resolution and loading, PHAR building, extraction, and background jobs.
+- Add the CLI `--debug` option while keeping diagnostics on stderr so the versioned JSON output remains machine-readable.
+- Document the `logging.debug` server setting and keep DEBUG disabled by default without changing normal loading, validation or build behavior.
+- Refresh the locked Symfony Filesystem dependency to `v6.4.50`, which includes its upstream security fix.
+
 ## 3.0.0 - 2026-11-06
 
 - Transfer project ownership to the AxolotlBucketLabs organization and update maintained links, workflow references and release metadata.
