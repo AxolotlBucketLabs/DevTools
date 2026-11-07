@@ -96,7 +96,7 @@ jobs:
       - name: Build and analyze DevTools-owned example PHAR with the current stable builder
         if: steps.release.outputs.candidate == 'true'
         id: build
-        uses: AxolotlBucketLabs/DevTools@03c559bab26026388c84795b70fc80fad9189b51 # v3.0.0
+        uses: AxolotlBucketLabs/DevTools@04fd726101109739bf1fd629dbe8499d3e2864bb # v3.0.0
         with:
           project: examples/HelloShared
           virions: examples
