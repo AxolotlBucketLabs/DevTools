@@ -137,8 +137,8 @@ final class BuildWorkerApplication
 
             return [
                 "Built virion {$result->manifest->name} successfully.",
-                "The build contains {$result->fileCount} files.",
-                "The output path is {$result->outputPath}.",
+                "Files: {$result->fileCount}",
+                "Output: {$result->outputPath}",
             ];
         }
 
@@ -160,8 +160,8 @@ final class BuildWorkerApplication
 
             return [
                 'Built dual-role project successfully.',
-                "The plugin output path is {$artifacts['plugin']}.",
-                "The virion output path is {$artifacts['virion']}.",
+                "Plugin output: {$artifacts['plugin']}",
+                "Virion output: {$artifacts['virion']}",
             ];
         }
 
@@ -169,9 +169,9 @@ final class BuildWorkerApplication
 
         return [
             "Built {$result->pluginName} successfully.",
-            "The build contains {$result->fileCount} files.",
-            'The build contains ' . count($result->shadedVirions) . ' shaded virions.',
-            "The output path is {$result->outputPath}.",
+            "Files: {$result->fileCount}",
+            'Shaded virions: ' . count($result->shadedVirions),
+            "Output: {$result->outputPath}",
         ];
     }
 

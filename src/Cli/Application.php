@@ -312,7 +312,7 @@ final class Application
     {
         return <<<'HELP'
 DevTools for Axolotl-PM plugin development
-Run php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
+Usage: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
   build    --project=PATH [--type=plugin|virion|both] [--virions=PATH] [--out=PATH] [--overwrite]
   doctor   --project=PATH [--virions=PATH]
   prepare  --project=PATH [--virions=PATH]

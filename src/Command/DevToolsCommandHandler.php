@@ -125,11 +125,11 @@ final class DevToolsCommandHandler
         $async = $loaded === [] ? 'not needed yet' : ($loaded[0]->asyncSupported ? 'available' : 'not registered');
         $sender->sendMessage(
             "DevTools {$this->plugin->getDescription()->getVersion()}\n"
-            . 'The server found ' . count($projects) . " development plugin folders.\n"
-            . 'The server loaded ' . count($loaded) . " shared virions.\n"
-            . "Async worker class loading is {$async}.\n"
-            . "The background job is {$this->jobs->status()}.\n"
-            . "The build output is {$this->buildDirectory}.",
+            . 'Development plugin folders: ' . count($projects) . "\n"
+            . 'Shared virions loaded: ' . count($loaded) . "\n"
+            . "Async worker class loading: {$async}\n"
+            . "Background job: {$this->jobs->status()}\n"
+            . "Build output: {$this->buildDirectory}",
         );
 
         return true;
