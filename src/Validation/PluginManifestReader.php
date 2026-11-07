@@ -35,7 +35,7 @@ final class PluginManifestReader
                 restore_error_handler();
             }
             if ($warning !== null) {
-                throw new RuntimeException("Invalid plugin fields: {$warning}");
+                throw new RuntimeException("Invalid plugin fields. {$warning}");
             }
         } catch (Throwable $error) {
             throw new RuntimeException("Cannot parse plugin manifest {$path}: {$error->getMessage()}", 0, $error);

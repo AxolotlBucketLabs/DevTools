@@ -66,7 +66,7 @@ final class Application
                 }
                 $project = $this->absolute($options['project'] ?? '.', $cwd);
                 if (in_array($command, ['prepare', 'doctor', 'build'], true) && !is_dir($project)) {
-                    throw new \RuntimeException("Project directory does not exist: {$project}");
+                    throw new \RuntimeException("Project directory {$project} does not exist.");
                 }
                 $virions = $this->absolute($options['virions'] ?? 'virions', $project);
                 $overwrite = isset($options['overwrite']);
@@ -119,7 +119,7 @@ final class Application
                         $checks['structure'] = 'failed';
                         $role = $this->roleDetector->detect($project);
                         if ($role !== ProjectRole::DUAL) {
-                            throw new BuildException("Build type both requires a project containing both plugin.yml and virion.yml: {$project}");
+                            throw new BuildException("Build type both requires a project containing both plugin.yml and virion.yml. The selected project is {$project}.");
                         }
                         $pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
                         $virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
@@ -228,7 +228,7 @@ final class Application
             }
             if (preg_match('/^--(project|virions|out|artifact|type|format)=(.+)$/Ds', $argument, $match) === 1) {
                 if (isset($options[$match[1]]) || str_contains($match[2], "\0") || preg_match('/[\r\n]/', $match[2]) === 1) {
-                    throw new InvalidArgumentException("Duplicate or invalid path option: {$match[1]}");
+                    throw new InvalidArgumentException("Path option {$match[1]} is duplicate or invalid.");
                 }
                 $options[$match[1]] = $match[2];
                 continue;
@@ -238,7 +238,7 @@ final class Application
                 $reportedCommand = $command;
                 continue;
             }
-            throw new InvalidArgumentException("Unknown command or argument: {$argument}");
+            throw new InvalidArgumentException("Unknown command or argument {$argument}.");
         }
         if (isset($options['help']) || $arguments === [] || $arguments === ['--json']) {
             return ['help', []];
@@ -278,7 +278,7 @@ final class Application
     /** @param array<string, string> $options */
     private function required(array $options, string $key): string
     {
-        return $options[$key] ?? throw new InvalidArgumentException("Required option: --{$key}=PATH");
+        return $options[$key] ?? throw new InvalidArgumentException("Provide the required option --{$key}=PATH.");
     }
 
     /** @param array<string, mixed> $inspection */
@@ -312,7 +312,7 @@ final class Application
     {
         return <<<'HELP'
 DevTools for Axolotl-PM plugin development
-Usage: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
+Run php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
   build    --project=PATH [--type=plugin|virion|both] [--virions=PATH] [--out=PATH] [--overwrite]
   doctor   --project=PATH [--virions=PATH]
   prepare  --project=PATH [--virions=PATH]

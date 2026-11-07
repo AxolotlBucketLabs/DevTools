@@ -83,38 +83,38 @@ final class DevToolsCommandHandler
                 array_shift($arguments);
             }
             if ($arguments === [] || str_starts_with($arguments[0], '--')) {
-                throw new BuildException("Usage: /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
             }
             $seen = [];
             foreach (array_slice($arguments, 1) as $argument) {
                 if ($argument === '--overwrite') {
                     if (isset($seen['overwrite'])) {
-                        throw new BuildException("Usage: /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                        throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
                     }
                     $seen['overwrite'] = true;
                     continue;
                 }
                 if ($command === 'extract' && preg_match('/^--(format|type)=(folder|zip|auto|plugin|virion|both)$/D', $argument, $match) === 1) {
                     if (isset($seen[$match[1]])) {
-                        throw new BuildException('Usage: /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion]. Unknown or duplicate arguments are not accepted.');
+                        throw new BuildException('Use /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion]. Unknown or duplicate arguments are not accepted.');
                     }
                     if ($match[1] === 'format' && !in_array($match[2], ['folder', 'zip'], true)) {
-                        throw new BuildException('Usage: /devtools extract <phar> [--format=folder|zip].');
+                        throw new BuildException('Use /devtools extract <phar> [--format=folder|zip].');
                     }
                     if ($match[1] === 'type' && !in_array($match[2], ['auto', 'plugin', 'virion'], true)) {
-                        throw new BuildException('Usage: /devtools extract <phar> [--type=auto|plugin|virion].');
+                        throw new BuildException('Use /devtools extract <phar> [--type=auto|plugin|virion].');
                     }
                     $seen[$match[1]] = true;
                     continue;
                 }
-                throw new BuildException("Usage: /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
             }
         } elseif ($command === 'doctor') {
             if (count($arguments) > 1 || (isset($arguments[0]) && str_starts_with($arguments[0], '--'))) {
-                throw new BuildException('Usage: /devtools doctor [plugin]. Extra arguments are not accepted.');
+                throw new BuildException('Use /devtools doctor [plugin]. Extra arguments are not accepted.');
             }
         } elseif (in_array($command, ['status', 'virions', 'help'], true) && $arguments !== []) {
-            throw new BuildException("Usage: /devtools {$command}. This command takes no arguments.");
+            throw new BuildException("Use /devtools {$command}. This command takes no arguments.");
         }
     }
 
@@ -125,11 +125,11 @@ final class DevToolsCommandHandler
         $async = $loaded === [] ? 'not needed yet' : ($loaded[0]->asyncSupported ? 'available' : 'not registered');
         $sender->sendMessage(
             "DevTools {$this->plugin->getDescription()->getVersion()}\n"
-            . 'Development plugin folders found: ' . count($projects) . "\n"
-            . 'Shared virions loaded: ' . count($loaded) . "\n"
-            . "Async worker class loading: {$async}\n"
-            . "Background job: {$this->jobs->status()}\n"
-            . "Build output: {$this->buildDirectory}",
+            . 'The server found ' . count($projects) . " development plugin folders.\n"
+            . 'The server loaded ' . count($loaded) . " shared virions.\n"
+            . "Async worker class loading is {$async}.\n"
+            . "The background job is {$this->jobs->status()}.\n"
+            . "The build output is {$this->buildDirectory}.",
         );
 
         return true;
@@ -151,7 +151,7 @@ final class DevToolsCommandHandler
         }
         $selection = array_shift($arguments);
         if ($selection === null) {
-            $sender->sendMessage('Usage: /devtools build [plugin|virion|both] <project> [--overwrite]');
+            $sender->sendMessage('Use /devtools build [plugin|virion|both] <project> [--overwrite].');
 
             return true;
         }
@@ -168,7 +168,7 @@ final class DevToolsCommandHandler
     {
         $selection = array_shift($arguments);
         if ($selection === null) {
-            $sender->sendMessage('Usage: /devtools extract <phar> [--overwrite]');
+            $sender->sendMessage('Use /devtools extract <phar> [--overwrite].');
 
             return true;
         }
@@ -200,7 +200,7 @@ final class DevToolsCommandHandler
         }
         foreach ($entries as $entry) {
             $name = $entry->manifest === null ? basename($entry->location) : $entry->manifest->name;
-            $sender->sendMessage(ucfirst($entry->status->value) . " {$name}: {$entry->message}");
+            $sender->sendMessage(ucfirst($entry->status->value) . " {$name}. {$entry->message}");
         }
 
         return true;

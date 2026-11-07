@@ -34,7 +34,7 @@ final class VirionDependencyResolver
             $failures = [];
             foreach ($requirements as $key => $constraints) {
                 if (!isset($available[$key])) {
-                    $failures[$key] = new VirionException("Required virion {$constraints[0]->name} is missing. Requested: " . $this->selector->describeRequirements($constraints) . '. Add the transitive package to the selected virions directory.');
+                    $failures[$key] = new VirionException("Required virion {$constraints[0]->name} is missing. The project requests " . $this->selector->describeRequirements($constraints) . '. Add the transitive package to the selected virions directory.');
                     continue;
                 }
                 try {

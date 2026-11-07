@@ -47,7 +47,7 @@ final class VirionProjectSelector
             ));
             $requested = $this->describeRequirements($requirements);
             throw new VirionException(
-                "No version of virion {$name} satisfies {$requested}. Available: {$available}.",
+                "No version of virion {$name} satisfies {$requested}. Available versions are {$available}.",
             );
         }
 

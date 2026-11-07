@@ -83,7 +83,7 @@ final class VirionPlatformRequirements
                     continue;
                 }
                 if (preg_match('/^(\^|>=|<=|>|<|=)?(\d+)\.(\d+)(?:\.(\d+))?$/D', $token, $match) !== 1) {
-                    throw new VirionException("Unsupported Composer PHP constraint {$expression}. Supported: caret versions and comparison ranges, optionally separated by ||.");
+                    throw new VirionException("Unsupported Composer PHP constraint {$expression}. Use caret versions or comparison ranges, optionally separated by ||.");
                 }
                 $normalized[] = $match[1] . $match[2] . '.' . $match[3] . '.' . ($match[4] ?? '0');
             }

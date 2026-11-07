@@ -81,7 +81,7 @@ final class DevTools extends PluginBase
                 $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
             } catch (Throwable $error) {
                 $this->getLogger()->warning(
-                    "Cannot read plugin manifest for {$project}: {$error->getMessage()}",
+                    "Cannot read plugin manifest for {$project}. {$error->getMessage()}",
                 );
 
                 continue;
@@ -93,7 +93,7 @@ final class DevTools extends PluginBase
             } catch (Throwable $error) {
                 $configurationFailures[$normalizeProjectPath($project)] = $error->getMessage();
                 $this->getLogger()->warning(
-                    "Cannot read shared-virion requirements for {$project}: {$error->getMessage()}",
+                    "Cannot read shared-virion requirements for {$project}. {$error->getMessage()}",
                 );
             }
         }

@@ -68,7 +68,7 @@ final class FolderPluginLoader implements PluginLoader
 
         $root = realpath($file);
         if ($root === false) {
-            throw new RuntimeException("Cannot load folder plugin because its path cannot be resolved: {$file}");
+            throw new RuntimeException("Cannot load folder plugin because its path cannot be resolved at {$file}.");
         }
         $normalized = str_replace('\\', '/', $root);
         if (isset($this->registeredPaths[$normalized])) {
@@ -77,7 +77,7 @@ final class FolderPluginLoader implements PluginLoader
         $configurationFailure = $this->configurationFailure($root);
         if ($configurationFailure !== null) {
             throw new RuntimeException(
-                "Cannot load folder plugin at {$root}: DevTools configuration is invalid. {$configurationFailure}",
+                "Cannot load folder plugin at {$root}. DevTools configuration is invalid. {$configurationFailure}",
             );
         }
 
@@ -97,7 +97,7 @@ final class FolderPluginLoader implements PluginLoader
             $conflicts = ($this->virionConflictChecker)($root);
             if ($conflicts !== []) {
                 throw new RuntimeException(
-                    "Cannot load folder plugin at {$root}: it shadows a loaded shared virion.\n- " . implode("\n- ", $conflicts),
+                    "Cannot load folder plugin at {$root}. It shadows a loaded shared virion.\n- " . implode("\n- ", $conflicts),
                 );
             }
         }
@@ -116,8 +116,8 @@ final class FolderPluginLoader implements PluginLoader
         if (!is_file($file . DIRECTORY_SEPARATOR . 'plugin.yml')) {
             throw new PluginDescriptionParseException(
                 "This folder contains src/ and looks like a plugin, but plugin.yml is missing.\n"
-                . "File: {$file}" . DIRECTORY_SEPARATOR . "plugin.yml\n"
-                . 'Next: Create plugin.yml with name, version, main, and api fields.',
+                . "The expected file is {$file}" . DIRECTORY_SEPARATOR . "plugin.yml\n"
+                . 'Create plugin.yml next with name, version, main, and api fields.',
             );
         }
         $configurationFailure = $this->configurationFailure($file);

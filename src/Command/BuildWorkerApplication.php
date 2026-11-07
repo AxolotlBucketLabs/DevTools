@@ -110,7 +110,7 @@ final class BuildWorkerApplication
                 $resolved = $services['resolver']->resolve($config->virions, $services['virionsDirectory']);
                 $messages[] = 'Project structure and dependency selection passed (' . count($resolved) . ' virions). Shading, static analysis and runtime tests were not run. Check /devtools virions for the shared server registry.';
             } catch (\Throwable $error) {
-                $messages[] = "Dependency check failed for {$project}: {$error->getMessage()}";
+                $messages[] = "Dependency check failed for {$project}. {$error->getMessage()}";
             }
         }
 
@@ -137,8 +137,8 @@ final class BuildWorkerApplication
 
             return [
                 "Built virion {$result->manifest->name} successfully.",
-                "Files: {$result->fileCount}",
-                "Output: {$result->outputPath}",
+                "The build contains {$result->fileCount} files.",
+                "The output path is {$result->outputPath}.",
             ];
         }
 
@@ -160,8 +160,8 @@ final class BuildWorkerApplication
 
             return [
                 'Built dual-role project successfully.',
-                "Plugin output: {$artifacts['plugin']}",
-                "Virion output: {$artifacts['virion']}",
+                "The plugin output path is {$artifacts['plugin']}.",
+                "The virion output path is {$artifacts['virion']}.",
             ];
         }
 
@@ -169,9 +169,9 @@ final class BuildWorkerApplication
 
         return [
             "Built {$result->pluginName} successfully.",
-            "Files: {$result->fileCount}",
-            'Shaded virions: ' . count($result->shadedVirions),
-            "Output: {$result->outputPath}",
+            "The build contains {$result->fileCount} files.",
+            'The build contains ' . count($result->shadedVirions) . ' shaded virions.',
+            "The output path is {$result->outputPath}.",
         ];
     }
 
@@ -202,7 +202,7 @@ final class BuildWorkerApplication
             throw new BuildException('A dual-role artifact requires --type=plugin or --type=virion for extraction.');
         }
         if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
-            throw new BuildException('Usage: /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]');
+            throw new BuildException('Use /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite].');
         }
         if (!ArtifactInspector::roleMatches($detectedType, $type)) {
             throw new BuildException("Artifact type {$detectedType} does not match requested type {$type}.");

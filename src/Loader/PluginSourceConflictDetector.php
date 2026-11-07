@@ -76,7 +76,7 @@ final class PluginSourceConflictDetector
             $name = $key;
             foreach ($folderPaths as $folder) {
                 foreach ($phars[$key] as $phar) {
-                    $warnings[] = "Plugin {$name} is present as folder {$folder} and PHAR {$phar}. DevTools prefers the development folder; verify the server startup log because Axolotl-PM's public loader API does not expose a way to reorder its built-in PHAR loader.";
+                    $warnings[] = "Plugin {$name} is present as folder {$folder} and PHAR {$phar}. DevTools prefers the development folder. Check the server startup log because Axolotl-PM's public loader API cannot reorder its built-in PHAR loader.";
                 }
             }
         }

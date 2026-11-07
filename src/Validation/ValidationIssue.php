@@ -18,7 +18,7 @@ final class ValidationIssue
     {
         $text = ucfirst($this->severity->value) . " [{$this->code}] {$this->message}";
         if ($this->path !== null) {
-            $text .= "\nFile: {$this->path}";
+            $text .= "\nThe related file is {$this->path}.";
         }
         if ($this->suggestion !== null) {
             $text .= "\n{$this->suggestion}";

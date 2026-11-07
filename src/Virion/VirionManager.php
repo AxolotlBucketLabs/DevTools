@@ -222,7 +222,7 @@ final class VirionManager
                 $directory,
                 null,
                 VirionStatus::FAILED,
-                "Required virion {$first->name} is missing. Requested: "
+                "Required virion {$first->name} is missing. The project requests "
                 . $this->selector->describeRequirements($missingRequirements)
                 . ". Add a compatible package to {$directory}.",
             ));
@@ -619,7 +619,7 @@ final class VirionManager
                 } catch (\ReflectionException) {
                 }
                 throw new VirionException(
-                    "Cannot load {$project->manifest->name}: function {$function} is already loaded from {$origin}; refusing to register a second implementation.",
+                    "Cannot load {$project->manifest->name}. Function {$function} is already loaded from {$origin}. Refusing to register a second implementation.",
                 );
             }
             $existing = $this->registry->findByFunction($function);
@@ -630,7 +630,7 @@ final class VirionManager
         foreach ($symbols->constants as $constant) {
             if (defined($constant)) {
                 throw new VirionException(
-                    "Cannot load {$project->manifest->name}: constant {$constant} is already defined; refusing to register a second implementation.",
+                    "Cannot load {$project->manifest->name}. Constant {$constant} is already defined. Refusing to register a second implementation.",
                 );
             }
             $existing = $this->registry->findByConstant($constant);
@@ -759,7 +759,7 @@ final class VirionManager
         }
 
         throw new VirionException(
-            "Cannot load {$virionName}: class {$class} is already loaded from {$origin}; refusing to register a second implementation.",
+            "Cannot load {$virionName}. Class {$class} is already loaded from {$origin}. Refusing to register a second implementation.",
         );
     }
 

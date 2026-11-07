@@ -27,7 +27,7 @@ final class PluginProjectValidator
     {
         $result = new ValidationResult();
         if (!is_dir($projectRoot)) {
-            $result->error('project.missing', "The plugin folder does not exist: {$projectRoot}", $projectRoot, 'Choose a folder under plugins/.');
+            $result->error('project.missing', "The plugin folder {$projectRoot} does not exist.", $projectRoot, 'Choose a folder under plugins/.');
 
             return $result;
         }
