@@ -75,7 +75,7 @@ The reusable workflow supports push and pull-request builds. Use the [step-level
 
 ## Ecosystem
 
-DevTools is currently verified in 78 public repositories across several plugin
+DevTools is currently verified in 142 public repositories across several plugin
 and virion ecosystems. See the [ecosystem inventory](docs/ecosystem.md) for the
 full project list, snapshot date and detection method.
 

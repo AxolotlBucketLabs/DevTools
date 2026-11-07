@@ -5,14 +5,17 @@ GitHub Actions workflow.
 
 ## Snapshot
 
-- Checked on 2026-11-06.
-- 78 repositories were verified across five organizations.
+- Checked on 2026-11-07.
+- 142 repositories were verified across five organizations.
+- The audit inspected 178 non-archived repositories and 208 default-branch
+  workflow files across the five organizations.
 - A repository is counted when its public default-branch workflow references
   DevTools or one of DevTools' reusable workflows.
-- At the time of the snapshot, all 78 repositories resolved to stable
-  `v3.0.0`. Of the workflow references, 75 used the maintained `@v3` channel,
-  while 10 pinned the `04fd726101109739bf1fd629dbe8499d3e2864bb` release commit
-  directly.
+- All 142 repositories now resolve to stable `v3.0.0` through the maintained
+  `@v3` channel or the exact release commit
+  `04fd726101109739bf1fd629dbe8499d3e2864bb`.
+- The inventory includes the 64 projects migrated from v2 or pre-v3 builder
+  commits during this audit.
 - The transferred ScoreHud and await-generator repositories are not counted
   because their default-branch workflows do not currently reference DevTools.
 - This is a documentation snapshot, not telemetry. The list can become stale
@@ -23,11 +26,11 @@ GitHub Actions workflow.
 | Organization | Verified repositories |
 | --- | ---: |
 | [AxolotlBucketLabs](https://github.com/AxolotlBucketLabs) | 7 |
-| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 42 |
-| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 4 |
-| [thebigcrafter](https://github.com/thebigcrafter) | 17 |
-| [ReinfyTeam](https://github.com/ReinfyTeam) | 8 |
-| **Total** | **78** |
+| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 94 |
+| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 6 |
+| [thebigcrafter](https://github.com/thebigcrafter) | 23 |
+| [ReinfyTeam](https://github.com/ReinfyTeam) | 12 |
+| **Total** | **142** |
 
 ## AxolotlBucketLabs
 
@@ -121,6 +124,88 @@ GitHub Actions workflow.
 - [SlapperCooldown](https://github.com/ReinfyTeam/SlapperCooldown)
 - [SlapperParticles](https://github.com/ReinfyTeam/SlapperParticles)
 - [SlapperRotation](https://github.com/ReinfyTeam/SlapperRotation)
+
+## Projects migrated during the 2026-11-07 audit
+
+These projects were already using DevTools but still referenced the v2 channel
+or a pre-v3 checkout. Their default-branch workflows now use the AxolotlBucketLabs
+v3 workflow or the exact `v3.0.0` release commit.
+
+### NhanAZ-Plugins
+
+- [aBuyParticles](https://github.com/NhanAZ-Plugins/aBuyParticles)
+- [Alias](https://github.com/NhanAZ-Plugins/Alias)
+- [AntiExplosions](https://github.com/NhanAZ-Plugins/AntiExplosions)
+- [AntiFallDamage](https://github.com/NhanAZ-Plugins/AntiFallDamage)
+- [AntiFurry](https://github.com/NhanAZ-Plugins/AntiFurry)
+- [AntiToolBox](https://github.com/NhanAZ-Plugins/AntiToolBox)
+- [ArcoLife](https://github.com/NhanAZ-Plugins/ArcoLife)
+- [AutoClearLagg](https://github.com/NhanAZ-Plugins/AutoClearLagg)
+- [BuyFix](https://github.com/NhanAZ-Plugins/BuyFix)
+- [CoinAPI](https://github.com/NhanAZ-Plugins/CoinAPI)
+- [Coordinates](https://github.com/NhanAZ-Plugins/Coordinates)
+- [CopyPasteBuildDP](https://github.com/NhanAZ-Plugins/CopyPasteBuildDP)
+- [CustomToastExample](https://github.com/NhanAZ-Plugins/CustomToastExample)
+- [DebugStick](https://github.com/NhanAZ-Plugins/DebugStick)
+- [DevilMode](https://github.com/NhanAZ-Plugins/DevilMode)
+- [Disable_TNT](https://github.com/NhanAZ-Plugins/Disable_TNT)
+- [EcoAPIScore](https://github.com/NhanAZ-Plugins/EcoAPIScore)
+- [EffectBlock-HiroTeam](https://github.com/NhanAZ-Plugins/EffectBlock-HiroTeam)
+- [FaceLogin](https://github.com/NhanAZ-Plugins/FaceLogin)
+- [Farms](https://github.com/NhanAZ-Plugins/Farms)
+- [Fly](https://github.com/NhanAZ-Plugins/Fly)
+- [FrameKeeper](https://github.com/NhanAZ-Plugins/FrameKeeper)
+- [GolemAgent](https://github.com/NhanAZ-Plugins/GolemAgent)
+- [GuardianJoin](https://github.com/NhanAZ-Plugins/GuardianJoin)
+- [HealBar](https://github.com/NhanAZ-Plugins/HealBar)
+- [IDItem](https://github.com/NhanAZ-Plugins/IDItem)
+- [isEvenOrOdd](https://github.com/NhanAZ-Plugins/isEvenOrOdd)
+- [ItemDropText](https://github.com/NhanAZ-Plugins/ItemDropText)
+- [ItemEffect](https://github.com/NhanAZ-Plugins/ItemEffect)
+- [ItemSender](https://github.com/NhanAZ-Plugins/ItemSender)
+- [KeepInventory](https://github.com/NhanAZ-Plugins/KeepInventory)
+- [KeepItems](https://github.com/NhanAZ-Plugins/KeepItems)
+- [Mask](https://github.com/NhanAZ-Plugins/Mask)
+- [NoCraftItem](https://github.com/NhanAZ-Plugins/NoCraftItem)
+- [OpList](https://github.com/NhanAZ-Plugins/OpList)
+- [Particles_Shape](https://github.com/NhanAZ-Plugins/Particles_Shape)
+- [Pets](https://github.com/NhanAZ-Plugins/Pets)
+- [PlayerVaults](https://github.com/NhanAZ-Plugins/PlayerVaults)
+- [PocketMine-Plugin-Template](https://github.com/NhanAZ-Plugins/PocketMine-Plugin-Template)
+- [RedSkyBlockX](https://github.com/NhanAZ-Plugins/RedSkyBlockX)
+- [RegionProtect](https://github.com/NhanAZ-Plugins/RegionProtect)
+- [Sell](https://github.com/NhanAZ-Plugins/Sell)
+- [SimpleEconomyExample](https://github.com/NhanAZ-Plugins/SimpleEconomyExample)
+- [SlapperParticle](https://github.com/NhanAZ-Plugins/SlapperParticle)
+- [Spawner](https://github.com/NhanAZ-Plugins/Spawner)
+- [SpawnParticles](https://github.com/NhanAZ-Plugins/SpawnParticles)
+- [StealSkin](https://github.com/NhanAZ-Plugins/StealSkin)
+- [TopIS](https://github.com/NhanAZ-Plugins/TopIS)
+- [Uncensor](https://github.com/NhanAZ-Plugins/Uncensor)
+- [Wings](https://github.com/NhanAZ-Plugins/Wings)
+- [WorldsLoader](https://github.com/NhanAZ-Plugins/WorldsLoader)
+- [XYZ](https://github.com/NhanAZ-Plugins/XYZ)
+
+### NhanAZ-Libraries
+
+- [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast)
+- [EcoAPI](https://github.com/NhanAZ-Libraries/EcoAPI)
+
+### ReinfyTeam
+
+- [libpf](https://github.com/ReinfyTeam/libpf)
+- [libpmform](https://github.com/ReinfyTeam/libpmform)
+- [LibVapmPMMP](https://github.com/ReinfyTeam/LibVapmPMMP)
+- [Slapper](https://github.com/ReinfyTeam/Slapper)
+
+### thebigcrafter
+
+- [Commando](https://github.com/thebigcrafter/Commando)
+- [Hydrogen](https://github.com/thebigcrafter/Hydrogen)
+- [ktpmpl-cfs](https://github.com/thebigcrafter/ktpmpl-cfs)
+- [pmforms](https://github.com/thebigcrafter/pmforms)
+- [promise](https://github.com/thebigcrafter/promise)
+- [TrashCan](https://github.com/thebigcrafter/TrashCan)
 
 ## Platform integrations
 
