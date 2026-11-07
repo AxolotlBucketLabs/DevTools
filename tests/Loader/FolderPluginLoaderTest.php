@@ -140,6 +140,7 @@ final class FolderPluginLoaderTest extends TestCase
         self::assertCount(1, $warnings);
         self::assertStringContainsString('development folder', $warnings[0]);
         self::assertStringContainsString('PHAR', $warnings[0]);
+        self::assertSame([], (new PluginSourceConflictDetector($reader))->detect($plugins, $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin'));
     }
 
     public function test_plugin_cannot_shadow_a_loaded_shared_virion(): void

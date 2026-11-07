@@ -58,7 +58,7 @@ final class DevTools extends PluginBase
         $buildDirectory = $server->getDataPath() . 'build';
         $filesystem->ensureDirectory($virionsDirectory);
         $filesystem->ensureDirectory($buildDirectory);
-        foreach ($sourceConflictDetector->detect($pluginsDirectory) as $warning) {
+        foreach ($sourceConflictDetector->detect($pluginsDirectory, $ownSourceProject) as $warning) {
             $this->getLogger()->warning($warning);
         }
 

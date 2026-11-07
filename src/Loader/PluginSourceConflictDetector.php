@@ -38,7 +38,7 @@ final class PluginSourceConflictDetector
     }
 
     /** @return list<string> */
-    public function detect(string $pluginsDirectory): array
+    public function detect(string $pluginsDirectory, ?string $excludedFolder = null): array
     {
         if (!is_dir($pluginsDirectory)) {
             return [];
@@ -55,6 +55,9 @@ final class PluginSourceConflictDetector
             }
             $path = $entry->getPathname();
             try {
+                if ($entry->isDir() && $this->isExcludedFolder($path, $excludedFolder)) {
+                    continue;
+                }
                 if ($entry->isDir() && is_file($path . DIRECTORY_SEPARATOR . 'plugin.yml')) {
                     $name = $this->manifestReader->read($path . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
                     $folders[strtolower($name)][] = $path;
@@ -82,6 +85,22 @@ final class PluginSourceConflictDetector
         }
 
         return $warnings;
+    }
+
+    private function isExcludedFolder(string $path, ?string $excludedFolder): bool
+    {
+        if ($excludedFolder === null) {
+            return false;
+        }
+
+        $path = str_replace('\\', '/', realpath($path) ?: $path);
+        $excludedFolder = str_replace('\\', '/', realpath($excludedFolder) ?: $excludedFolder);
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $path = strtolower($path);
+            $excludedFolder = strtolower($excludedFolder);
+        }
+
+        return rtrim($path, '/') === rtrim($excludedFolder, '/');
     }
 
     /**
