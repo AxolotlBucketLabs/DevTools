@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
@@ -236,6 +237,27 @@ final class VirionManagerTest extends TestCase
         require_once __DIR__ . '/../Fixtures/PluginB/UseVirion.php';
         self::assertSame('shared', \Fixture\PluginA\UseVirion::message());
         self::assertSame('shared', \Fixture\PluginB\UseVirion::message());
+    }
+
+    public function test_loaded_message_is_concise_and_loader_details_are_debugged(): void
+    {
+        $registry = new VirionRegistry();
+        $debugMessages = [];
+        $debug = new DebugLogger(static function (string $message) use (&$debugMessages): void {
+            $debugMessages[] = $message;
+        });
+
+        $this->copyFixture('SharedVirion', 'virions/SharedVirion');
+        $this->manager(new FakeClassLoaderRegistrar(), $registry, $debug)->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+        self::assertSame(
+            'Loaded SharedVirion 1.0.0 (Shared\\Virion).',
+            $registry->loaded()[0]->message,
+        );
+        self::assertTrue(array_filter(
+            $debugMessages,
+            static fn(string $message): bool => str_contains($message, 'test thread-safe loader'),
+        ) !== []);
     }
 
     public function test_duplicate_namespace_is_rejected_as_conflict(): void
@@ -797,7 +819,7 @@ PHP,
         self::assertStringContainsString('No version of virion SharedVirion satisfies', $registry->entries()[0]->message);
     }
 
-    private function manager(ClassLoaderRegistrar $registrar, VirionRegistry $registry): VirionManager
+    private function manager(ClassLoaderRegistrar $registrar, VirionRegistry $registry, ?DebugLogger $debug = null): VirionManager
     {
         $yaml = new YamlReader();
 
@@ -809,6 +831,7 @@ PHP,
             $registry,
             new VirionProjectSelector(),
             '5.44.0',
+            $debug,
         );
     }
 }

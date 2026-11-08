@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Tests\Loader;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginLoader;
 use AxolotlBucketLabs\DevTools\Loader\PluginSourceConflictDetector;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
 use pocketmine\plugin\PluginDescriptionParseException;
@@ -141,6 +142,36 @@ final class FolderPluginLoaderTest extends TestCase
         self::assertStringContainsString('development folder', $warnings[0]);
         self::assertStringContainsString('PHAR', $warnings[0]);
         self::assertSame([], (new PluginSourceConflictDetector($reader))->detect($plugins, $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin'));
+    }
+
+    public function test_duplicate_plugin_sources_are_grouped_and_paths_are_debugged(): void
+    {
+        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+        $this->filesystem->ensureDirectory($plugins);
+        $this->copyFixture('ValidPlugin', 'plugins/ValidPluginOne');
+        $this->copyFixture('ValidPlugin', 'plugins/ValidPluginTwo');
+        $source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
+        $path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
+        $phar = new Phar($path);
+        $phar->buildFromDirectory($source);
+        $phar->setStub("<?php __HALT_COMPILER();\n");
+        unset($phar);
+        [$reader] = $this->validationServices();
+        $debugMessages = [];
+
+        $warnings = (new PluginSourceConflictDetector(
+            $reader,
+            null,
+            new DebugLogger(static function (string $message) use (&$debugMessages): void {
+                $debugMessages[] = $message;
+            }),
+        ))->detect($plugins);
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('FixturePlugin', $warnings[0]);
+        self::assertStringContainsString('ValidPluginOne', $debugMessages[0]);
+        self::assertStringContainsString('ValidPluginTwo', $debugMessages[0]);
+        self::assertStringContainsString('ValidPlugin.phar', $debugMessages[0]);
     }
 
     public function test_plugin_cannot_shadow_a_loaded_shared_virion(): void

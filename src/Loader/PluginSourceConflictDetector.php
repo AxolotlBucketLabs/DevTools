@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Loader;
 use function array_unique;
 use function array_values;
 
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -33,6 +34,7 @@ final class PluginSourceConflictDetector
     public function __construct(
         private readonly PluginManifestReader $manifestReader,
         ?PhpSourceInspector $sourceInspector = null,
+        private readonly ?DebugLogger $debug = null,
     ) {
         $this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
     }
@@ -48,6 +50,8 @@ final class PluginSourceConflictDetector
         $folders = [];
         /** @var array<string, list<string>> $phars */
         $phars = [];
+        /** @var array<string, string> $names */
+        $names = [];
         $iterator = new FilesystemIterator($pluginsDirectory, FilesystemIterator::SKIP_DOTS | FilesystemIterator::CURRENT_AS_FILEINFO);
         foreach ($iterator as $entry) {
             if (!$entry instanceof SplFileInfo || Filesystem::isLink($entry->getPathname())) {
@@ -60,14 +64,18 @@ final class PluginSourceConflictDetector
                 }
                 if ($entry->isDir() && is_file($path . DIRECTORY_SEPARATOR . 'plugin.yml')) {
                     $name = $this->manifestReader->read($path . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
-                    $folders[strtolower($name)][] = $path;
+                    $key = strtolower($name);
+                    $names[$key] = $name;
+                    $folders[$key][] = $path;
                 } elseif ($entry->isFile() && strtolower($entry->getExtension()) === 'phar') {
                     $phar = new Phar($path);
                     if (!isset($phar['plugin.yml'])) {
                         continue;
                     }
                     $name = $this->manifestReader->read('phar://' . str_replace('\\', '/', realpath($path) ?: $path) . '/plugin.yml')->description->getName();
-                    $phars[strtolower($name)][] = $path;
+                    $key = strtolower($name);
+                    $names[$key] = $name;
+                    $phars[$key][] = $path;
                 }
             } catch (Throwable) {
                 // Invalid entries are diagnosed by the registered loader.
@@ -76,12 +84,13 @@ final class PluginSourceConflictDetector
 
         $warnings = [];
         foreach (array_intersect_key($folders, $phars) as $key => $folderPaths) {
-            $name = $key;
-            foreach ($folderPaths as $folder) {
-                foreach ($phars[$key] as $phar) {
-                    $warnings[] = "Plugin {$name} is present as folder {$folder} and PHAR {$phar}. DevTools prefers the development folder. Check the server startup log because Axolotl-PM's public loader API cannot reorder its built-in PHAR loader.";
-                }
-            }
+            $name = $names[$key] ?? $key;
+            $pharPaths = $phars[$key];
+            $warnings[] = "Plugin {$name} has both a development folder and a PHAR. DevTools prefers the development folder, but Axolotl-PM's built-in PHAR loader order cannot be changed.";
+            $this->debug?->debug(
+                "Plugin {$name} duplicate sources. Development folders: " . implode(', ', $folderPaths)
+                . '; PHARs: ' . implode(', ', $pharPaths) . '.',
+            );
         }
 
         return $warnings;

@@ -29,6 +29,7 @@ use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
+use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
@@ -56,7 +57,7 @@ final class DevTools extends PluginBase
         $manifestReader = new PluginManifestReader($yaml);
         $validator = new PluginProjectValidator($manifestReader, $sourceInspector);
         $pluginDiscovery = new FolderPluginDiscovery();
-        $sourceConflictDetector = new PluginSourceConflictDetector($manifestReader);
+        $sourceConflictDetector = new PluginSourceConflictDetector($manifestReader, null, $debug);
 
         $server = $this->getServer();
         $pluginsDirectory = $server->getPluginPath();
@@ -173,11 +174,14 @@ final class DevTools extends PluginBase
             $debug,
         );
 
-        foreach ($registry->entries() as $entry) {
-            if ($entry->status->value === 'loaded') {
-                $this->getLogger()->info($entry->message);
+        foreach ((new VirionStartupReporter())->messages($registry) as $message) {
+            if ($message['level'] === 'info') {
+                $this->getLogger()->info($message['message']);
             } else {
-                $this->getLogger()->warning($entry->message);
+                $this->getLogger()->warning($message['message']);
+            }
+            foreach ($message['details'] as $detail) {
+                $debug->debug($detail);
             }
         }
         $debug->debug('DevTools runtime initialization completed.');

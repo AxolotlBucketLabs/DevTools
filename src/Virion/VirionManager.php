@@ -730,7 +730,10 @@ final class VirionManager
 
             $this->registrar->register($manifest->antigen, $project->sourceRoot);
             $async = $this->registrar->supportsAsyncWorkers();
-            $message = "Loaded {$manifest->name} {$manifest->version} ({$manifest->antigen}). " . $this->registrar->asyncSupportDescription();
+            $this->debug?->debug(
+                "Virion {$manifest->name} registered on the shared class loader. " . $this->registrar->asyncSupportDescription(),
+            );
+            $message = "Loaded {$manifest->name} {$manifest->version} ({$manifest->antigen}).";
             $entry = new VirionRegistryEntry(
                 $location,
                 $manifest,
