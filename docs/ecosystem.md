@@ -4,9 +4,9 @@ This page gives a short human-readable summary of public projects using DevTools
 
 ## Inventory
 
-The inventory records 143 public repositories across five organizations, based on the latest audit on 2026-11-08.
+The inventory lists 143 public repositories across five organizations.
 
-The audit inspected 178 non-archived repositories and 208 default-branch workflow files. At audit time, counted repositories used the maintained `@v3` channel or the exact release commit `d3e81dcb5bc0c0d14378279beb689c7ee56ced45`. The `v3` and `latest` channels now point to `v3.3.0` at commit `0fd73cc2c82d03d0d47f6c7ce119859deda042e3`; full-SHA references remain pinned to their selected commit. The repository count has not been re-audited as part of this release.
+The last audit inspected 178 non-archived repositories and 208 default-branch workflow files. At that time, counted repositories referenced the maintained `@v3` channel or the exact `v3.2.0` release commit `d3e81dcb5bc0c0d14378279beb689c7ee56ced45`. The `v3` and `latest` tags now point to `v3.3.0` at commit `0fd73cc2c82d03d0d47f6c7ce119859deda042e3`. Full-SHA references remain pinned to their selected commits. The repository count was not checked again for this release.
 
 | Organization | Repositories |
 | --- | ---: |

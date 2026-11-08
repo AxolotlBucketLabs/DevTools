@@ -2,7 +2,7 @@
   "$schema": "./ecosystem.schema.json",
   "schema_version": 2,
   "scope": {
-    "description": "An inventory snapshot audited on 2026-11-08 of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
+    "description": "An inventory of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
     "organizations": [
       "AxolotlBucketLabs",
       "NhanAZ-Plugins",
