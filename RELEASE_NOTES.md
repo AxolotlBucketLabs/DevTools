@@ -1,18 +1,18 @@
-# DevTools 3.1.0
+# DevTools 3.2.0
 
-DevTools 3.1.0 adds opt-in DEBUG diagnostics for development loading and build workflows.
+DevTools 3.2.0 adds multilingual human-facing output for server commands and the CLI.
 
 ## Highlights
 
-- Enable server diagnostics with `logging.debug: true` in DevTools' `config.yml`.
-- Add `--debug` to CLI commands for lifecycle, discovery, dependency-selection and artifact diagnostics.
-- Keep DEBUG disabled by default and keep CLI JSON output on stdout without diagnostic noise.
-- Add diagnostics across folder plugin discovery, shared virion resolution, PHAR builds, extraction and background worker jobs.
-- Refresh the locked Symfony Filesystem dependency to `v6.4.50` to include its upstream security fix.
+- Include translated catalogs for 14 Axolotl-PM locales: `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`.
+- Follow the server language with `language: auto`, or select a locale explicitly in `config.yml`.
+- Select a CLI language with `--lang=CODE` or the `DEVTOOLS_LANG` environment variable.
+- Localize lifecycle messages, command summaries, common build and extraction results and CLI help.
+- Keep detailed validator and builder diagnostics in English so paths, package names and error details remain exact.
 
 ## Compatibility and upgrade notes
 
 - This is an additive, backward-compatible release for the existing v3 workflow channel.
-- Existing server configurations continue to run with DEBUG disabled.
-- The CLI JSON schema and normal server command output are unchanged.
+- Existing server configurations continue to use automatic server-language selection unless `language` is changed.
+- The CLI JSON schema and build, extraction and dependency behavior are unchanged.
 - PHAR creation still requires PHP to run with `phar.readonly=0`. Loading an existing PHAR does not.

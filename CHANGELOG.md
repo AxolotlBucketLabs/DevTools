@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.2.0 - 2026-11-08
+
+- Add bundled translations for 14 Axolotl-PM locales and let server output follow the selected server language by default.
+- Add explicit server configuration, CLI `--lang` and `DEVTOOLS_LANG` support for choosing the human-facing language.
+- Localize lifecycle messages, command summaries, common build and extraction results and CLI help while keeping detailed technical diagnostics in English.
+- Package the translation catalogs in the PHAR and verify locale coverage through the test suite and runtime smoke checks.
+- Keep the existing v3 workflow contract, dependency resolution and build behavior unchanged when no language override is configured.
+
 ## 3.1.0 - 2026-11-08
 
 - Add opt-in DEBUG diagnostics for server startup, folder plugin discovery, shared virion resolution and loading, PHAR building, extraction, and background jobs.
