@@ -2,7 +2,7 @@
   "$schema": "./ecosystem.schema.json",
   "schema_version": 2,
   "scope": {
-    "description": "An inventory of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
+    "description": "An inventory snapshot audited on 2026-11-08 of public projects whose default-branch GitHub Actions workflow references DevTools or one of its reusable workflows.",
     "organizations": [
       "AxolotlBucketLabs",
       "NhanAZ-Plugins",
@@ -34,8 +34,8 @@
     ]
   },
   "devtools": {
-    "stable_version": "v3.2.0",
-    "stable_commit": "d3e81dcb5bc0c0d14378279beb689c7ee56ced45",
+    "stable_version": "v3.3.0",
+    "stable_commit": "0fd73cc2c82d03d0d47f6c7ce119859deda042e3",
     "reference_policy": "@v3 or the exact release commit"
   },
   "summary": {
