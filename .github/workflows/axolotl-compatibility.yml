@@ -84,7 +84,14 @@ jobs:
           INPUT_PHP-VERSION: "8.4"
           INPUT_PM-VERSION-MAJOR: "5"
           INPUT_INSTALL-PATH: ./.php-bin
-        run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
+          PHP_VERSION: "8.4"
+          PM_VERSION_MAJOR: "5"
+          INSTALL_PATH: ./.php-bin
+        run: |
+          if node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"; then
+            exit 0
+          fi
+          bash .github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
 
       - name: Validate DevTools-owned compatibility fixture
         if: steps.release.outputs.candidate == 'true'

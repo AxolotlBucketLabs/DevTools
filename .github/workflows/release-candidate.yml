@@ -51,7 +51,14 @@ jobs:
           INPUT_PHP-VERSION: "8.4"
           INPUT_PM-VERSION-MAJOR: "5"
           INPUT_INSTALL-PATH: ./.php-bin
-        run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
+          PHP_VERSION: "8.4"
+          PM_VERSION_MAJOR: "5"
+          INSTALL_PATH: ./.php-bin
+        run: |
+          if node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"; then
+            exit 0
+          fi
+          bash .github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
 
       - name: Restore Composer download cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

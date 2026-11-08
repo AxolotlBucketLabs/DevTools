@@ -161,6 +161,14 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
+      - name: Check out the selected DevTools revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ steps.workflow-identity.outputs.repository }}
+          ref: ${{ steps.workflow-identity.outputs.sha }}
+          path: .devtools-dependencies/tool
+          persist-credentials: false
+
       - name: Check out Axolotl-PM PHP setup helper
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -175,15 +183,14 @@ jobs:
           INPUT_PHP-VERSION: ${{ inputs.php-version }}
           INPUT_PM-VERSION-MAJOR: ${{ inputs.pm-version-major }}
           INPUT_INSTALL-PATH: ./.php-bin
-        run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
-
-      - name: Check out the selected DevTools revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ${{ steps.workflow-identity.outputs.repository }}
-          ref: ${{ steps.workflow-identity.outputs.sha }}
-          path: .devtools-dependencies/tool
-          persist-credentials: false
+          PHP_VERSION: ${{ inputs.php-version }}
+          PM_VERSION_MAJOR: ${{ inputs.pm-version-major }}
+          INSTALL_PATH: ./.php-bin
+        run: |
+          if node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"; then
+            exit 0
+          fi
+          bash .devtools-dependencies/tool/.github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
 
       - name: Verify checked-out builder identity and CLI contract
         shell: bash
