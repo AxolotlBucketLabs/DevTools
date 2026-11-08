@@ -2,9 +2,17 @@
 
 DevTools creates a server-local `config.yml` on first startup. During server startup and normal local build resolution, DevTools does not download source, follow symlinks, overwrite output without permission or hot-reload PHP.
 
+## `language`
+
+Set `language` to `auto` to follow the language selected by Axolotl-PM. Set an explicit locale to keep DevTools language independent from the server setting. The supported Axolotl-PM locale codes are `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`.
+
+DevTools ships translated lifecycle messages, command summaries and common build results for these locales. Detailed validator and builder diagnostics keep their technical English text so paths, package names and error details remain exact. Missing translated entries fall back to English.
+
 The server configuration controls only the potentially expensive administrative commands. Folder plugin loading, shared virion loading, the `status` command and the `virions` command remain available when these commands are disabled.
 
 ```yaml
+language: auto
+
 commands:
   doctor: true
   build: true

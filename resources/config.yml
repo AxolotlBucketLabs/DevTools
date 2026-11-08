@@ -1,3 +1,7 @@
+# Use auto to follow Axolotl-PM's selected language, or set one of the locale
+# codes documented in docs/configuration.md.
+language: auto
+
 # Server-side operations that can scan, transform or write project files.
 # Disable these on production servers that only need folder loading and shared virions.
 commands:

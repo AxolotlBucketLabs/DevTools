@@ -34,6 +34,6 @@ They can escape trusted roots, change during staging, or behave differently on W
 
 Yes. DevTools uses filesystem APIs rather than shell-built commands. Portable archive names and exact case are still required.
 
-## Is there Vietnamese UI support?
+## Which languages does DevTools support?
 
-No. DevTools uses English messages and documentation as the single supported language.
+DevTools follows Axolotl-PM's selected language by default and supports `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`. Set `language` in the server `config.yml` to override `auto`, or use `--lang=CODE` with the CLI. Technical diagnostics fall back to English when an exact translation is not available.

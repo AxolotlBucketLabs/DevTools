@@ -18,6 +18,7 @@ use AxolotlBucketLabs\DevTools\Cli\Application;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -74,6 +75,7 @@ try {
             new ArtifactSetInstaller(),
         ),
         $debug,
+        Translator::fromResources(),
     );
     exit($application->run(array_slice($argv ?? [], 1)));
 } catch (Throwable $error) {

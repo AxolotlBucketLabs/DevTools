@@ -9,6 +9,7 @@ use function array_shift;
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 
 use function count;
@@ -35,6 +36,7 @@ final class DevToolsCommandHandler
         /** @var array<string, bool> */
         private readonly array $enabledCommands = [],
         private readonly ?DebugLogger $debug = null,
+        private readonly ?Translator $translator = null,
     ) {}
 
     /** @param list<string> $arguments */
@@ -54,12 +56,12 @@ final class DevToolsCommandHandler
             if ($subcommand !== 'help'
                 && !$sender->hasPermission("devtools.command.{$subcommand}")
                 && !$sender->hasPermission('devtools.command')) {
-                $sender->sendMessage("You do not have permission to use /devtools {$subcommand}.");
+                $sender->sendMessage($this->translate('command.permission', ['command' => $subcommand]));
 
                 return true;
             }
             if (in_array($subcommand, ['doctor', 'build', 'extract'], true) && !($this->enabledCommands[$subcommand] ?? true)) {
-                $sender->sendMessage("The /devtools {$subcommand} command is disabled by configuration.");
+                $sender->sendMessage($this->translate('command.disabled', ['command' => $subcommand]));
 
                 return true;
             }
@@ -72,7 +74,7 @@ final class DevToolsCommandHandler
                 default => $this->help($sender),
             };
         } catch (Throwable $error) {
-            $sender->sendMessage("DevTools could not complete the command.\n{$error->getMessage()}");
+            $sender->sendMessage($this->translate('command.failed', ['error' => $error->getMessage()]));
 
             return true;
         }
@@ -86,38 +88,38 @@ final class DevToolsCommandHandler
                 array_shift($arguments);
             }
             if ($arguments === [] || str_starts_with($arguments[0], '--')) {
-                throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
             }
             $seen = [];
             foreach (array_slice($arguments, 1) as $argument) {
                 if ($argument === '--overwrite') {
                     if (isset($seen['overwrite'])) {
-                        throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                        throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
                     }
                     $seen['overwrite'] = true;
                     continue;
                 }
                 if ($command === 'extract' && preg_match('/^--(format|type)=(folder|zip|auto|plugin|virion|both)$/D', $argument, $match) === 1) {
                     if (isset($seen[$match[1]])) {
-                        throw new BuildException('Use /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion]. Unknown or duplicate arguments are not accepted.');
+                        throw new BuildException($this->translate('command.usage.extract'));
                     }
                     if ($match[1] === 'format' && !in_array($match[2], ['folder', 'zip'], true)) {
-                        throw new BuildException('Use /devtools extract <phar> [--format=folder|zip].');
+                        throw new BuildException($this->translate('command.usage.extract_format'));
                     }
                     if ($match[1] === 'type' && !in_array($match[2], ['auto', 'plugin', 'virion'], true)) {
-                        throw new BuildException('Use /devtools extract <phar> [--type=auto|plugin|virion].');
+                        throw new BuildException($this->translate('command.usage.extract_type'));
                     }
                     $seen[$match[1]] = true;
                     continue;
                 }
-                throw new BuildException("Use /devtools {$command} <selection> [options]. Unknown or duplicate arguments are not accepted.");
+                throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
             }
         } elseif ($command === 'doctor') {
             if (count($arguments) > 1 || (isset($arguments[0]) && str_starts_with($arguments[0], '--'))) {
-                throw new BuildException('Use /devtools doctor [plugin]. Extra arguments are not accepted.');
+                throw new BuildException($this->translate('command.usage.doctor'));
             }
         } elseif (in_array($command, ['status', 'virions', 'help'], true) && $arguments !== []) {
-            throw new BuildException("Use /devtools {$command}. This command takes no arguments.");
+            throw new BuildException($this->translate('command.usage.no_arguments', ['command' => $command]));
         }
     }
 
@@ -126,14 +128,14 @@ final class DevToolsCommandHandler
         $projects = $this->pluginDiscovery->discover($this->pluginsDirectory);
         $loaded = $this->virions->loaded();
         $async = $loaded === [] ? 'not needed yet' : ($loaded[0]->asyncSupported ? 'available' : 'not registered');
-        $sender->sendMessage(
-            "DevTools {$this->plugin->getDescription()->getVersion()}\n"
-            . 'Development plugin folders: ' . count($projects) . "\n"
-            . 'Shared virions loaded: ' . count($loaded) . "\n"
-            . "Async worker class loading: {$async}\n"
-            . "Background job: {$this->jobs->status()}\n"
-            . "Build output: {$this->buildDirectory}",
-        );
+        $sender->sendMessage($this->translate('status.summary', [
+            'version' => $this->plugin->getDescription()->getVersion(),
+            'projects' => count($projects),
+            'virions' => count($loaded),
+            'async' => $async,
+            'job' => $this->jobs->status(),
+            'output' => $this->buildDirectory,
+        ]));
 
         return true;
     }
@@ -154,7 +156,7 @@ final class DevToolsCommandHandler
         }
         $selection = array_shift($arguments);
         if ($selection === null) {
-            $sender->sendMessage('Use /devtools build [plugin|virion|both] <project> [--overwrite].');
+            $sender->sendMessage($this->translate('command.build_missing'));
 
             return true;
         }
@@ -171,7 +173,7 @@ final class DevToolsCommandHandler
     {
         $selection = array_shift($arguments);
         if ($selection === null) {
-            $sender->sendMessage('Use /devtools extract <phar> [--overwrite].');
+            $sender->sendMessage($this->translate('command.extract_missing'));
 
             return true;
         }
@@ -197,7 +199,7 @@ final class DevToolsCommandHandler
     {
         $entries = $this->virions->entries();
         if ($entries === []) {
-            $sender->sendMessage("No virions were found in {$this->virionsDirectory}.");
+            $sender->sendMessage($this->translate('virions.none', ['directory' => $this->virionsDirectory]));
 
             return true;
         }
@@ -211,14 +213,7 @@ final class DevToolsCommandHandler
 
     private function help(CommandSender $sender): bool
     {
-        $sender->sendMessage(
-            "DevTools commands:\n"
-            . "/devtools status\n"
-            . "/devtools doctor [plugin]\n"
-            . "/devtools build [plugin|virion|both] <project> [--overwrite]\n"
-            . "/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n"
-            . '/devtools virions',
-        );
+        $sender->sendMessage($this->translate('command.help'));
 
         return true;
     }
@@ -230,11 +225,11 @@ final class DevToolsCommandHandler
     {
         if ($this->jobs->isBusy()) {
             $this->debug?->debug("Rejected {$operation} command because another background job is running.");
-            $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
+            $sender->sendMessage($this->translate('queue.busy'));
 
             return true;
         }
-        $sender->sendMessage("Queued DevTools {$description}.");
+        $sender->sendMessage($this->translate('queue.queued', ['description' => $description]));
         $this->debug?->debug("Submitting {$operation} command for {$description}.");
         $debug = $this->debug;
         if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug): void {
@@ -246,9 +241,15 @@ final class DevToolsCommandHandler
             }
         })) {
             $this->debug?->debug("Failed to queue {$operation} command for {$description}.");
-            $sender->sendMessage('A DevTools background job is already running. Please wait for it to finish.');
+            $sender->sendMessage($this->translate('queue.busy'));
         }
 
         return true;
+    }
+
+    /** @param array<string, int|string> $parameters */
+    private function translate(string $key, array $parameters = []): string
+    {
+        return ($this->translator ?? Translator::fromResources())->translate($key, $parameters);
     }
 }

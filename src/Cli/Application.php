@@ -20,6 +20,7 @@ use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
@@ -44,6 +45,7 @@ final class Application
         private readonly ProjectRoleDetector $roleDetector,
         private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
         private readonly ?DebugLogger $debug = null,
+        private readonly ?Translator $translator = null,
     ) {}
 
     /** @param list<string> $arguments */
@@ -56,13 +58,15 @@ final class Application
         $diagnostics = [];
         $data = [];
         $exit = 0;
+        $translator = $this->translator ?? Translator::fromResources();
         try {
             [$command, $options] = $this->parse($arguments, $command);
+            $translator = $translator->withLocale($options['lang'] ?? (getenv('DEVTOOLS_LANG') ?: 'eng'));
             $this->debug?->debug("CLI command {$command} selected.");
             if ($command === 'help') {
-                $data = ['help' => self::help()];
+                $data = ['help' => self::help($translator)];
             } elseif ($command === 'version') {
-                $data = ['version' => $this->version];
+                $data = ['version' => $this->version, 'locale' => $translator->locale()];
             } else {
                 $cwd = getcwd();
                 if ($cwd === false) {
@@ -123,7 +127,7 @@ final class Application
                         $checks['structure'] = 'failed';
                         $role = $this->roleDetector->detect($project);
                         if ($role !== ProjectRole::DUAL) {
-                            throw new BuildException("Build type both requires a project containing both plugin.yml and virion.yml. The selected project is {$project}.");
+                            throw new BuildException("Building both roles requires a project containing both plugin.yml and virion.yml. The selected project is {$project}.");
                         }
                         $pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
                         $virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
@@ -188,7 +192,9 @@ final class Application
             $diagnostics[] = [
                 'code' => $exit === 2 ? 'cli.usage' : 'operation.' . $command . '_failed',
                 'severity' => 'error', 'message' => $error->getMessage(), 'file' => null, 'line' => null,
-                'suggestion' => $exit === 2 ? 'Run --help for supported commands and options.' : 'Correct the reported input or environment problem and retry. No runtime validation is implied.',
+                'suggestion' => $exit === 2
+                    ? $translator->translate('cli.usage_suggestion')
+                    : $translator->translate('cli.failure_suggestion'),
             ];
         }
 
@@ -204,9 +210,13 @@ final class Application
                 }
             }
             if ($exit === 0) {
-                fwrite(STDOUT, $command === 'help' ? self::help() : ($command === 'version' ? "DevTools {$this->version}\n" : json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n"));
+                fwrite(STDOUT, $command === 'help'
+                    ? self::help($translator)
+                    : ($command === 'version'
+                        ? $translator->translate('cli.version', ['version' => $this->version]) . "\n"
+                        : json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n"));
                 if (!in_array($command, ['help', 'version'], true)) {
-                    fwrite(STDOUT, "Static analysis and Axolotl-PM runtime tests were not run.\n");
+                    fwrite(STDOUT, $translator->translate('cli.static_notice') . "\n");
                 }
             }
         }
@@ -233,7 +243,7 @@ final class Application
                 $options['overwrite'] = 'true';
                 continue;
             }
-            if (preg_match('/^--(project|virions|out|artifact|type|format)=(.+)$/Ds', $argument, $match) === 1) {
+            if (preg_match('/^--(project|virions|out|artifact|type|format|lang)=(.+)$/Ds', $argument, $match) === 1) {
                 if (isset($options[$match[1]]) || str_contains($match[2], "\0") || preg_match('/[\r\n]/', $match[2]) === 1) {
                     throw new InvalidArgumentException("Path option {$match[1]} is duplicate or invalid.");
                 }
@@ -248,19 +258,19 @@ final class Application
             throw new InvalidArgumentException("Unknown command or argument {$argument}.");
         }
         if (isset($options['help']) || $arguments === [] || array_diff($arguments, ['--json', '--debug']) === []) {
-            return ['help', []];
+            return ['help', $options];
         }
         if (isset($options['version'])) {
-            return ['version', []];
+            return ['version', $options];
         }
         if ($command === null) {
             throw new InvalidArgumentException('Specify a command.');
         }
         $allowed = match ($command) {
-            'build' => ['project', 'virions', 'out', 'overwrite', 'type'],
-            'doctor', 'prepare' => ['project', 'virions'],
-            'inspect' => ['project', 'artifact'],
-            'extract' => ['project', 'artifact', 'out', 'overwrite', 'format', 'type'],
+            'build' => ['project', 'virions', 'out', 'overwrite', 'type', 'lang'],
+            'doctor', 'prepare' => ['project', 'virions', 'lang'],
+            'inspect' => ['project', 'artifact', 'lang'],
+            'extract' => ['project', 'artifact', 'out', 'overwrite', 'format', 'type', 'lang'],
         };
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
@@ -315,26 +325,8 @@ final class Application
         return $base . DIRECTORY_SEPARATOR . $path;
     }
 
-    private static function help(): string
+    private static function help(Translator $translator): string
     {
-        return <<<'HELP'
-DevTools for Axolotl-PM plugin development
-Usage: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]
-  build    --project=PATH [--type=plugin|virion|both] [--virions=PATH] [--out=PATH] [--overwrite]
-  doctor   --project=PATH [--virions=PATH]
-  prepare  --project=PATH [--virions=PATH]
-  inspect  --artifact=PATH [--project=PATH]
-  extract  --artifact=PATH --out=PATH [--type=auto|plugin|virion] [--format=folder|zip] [--project=PATH] [--overwrite]
-  --help | --version
---json writes one schema_version=1 result to stdout. Logs and PHP diagnostics use stderr.
---debug writes detailed diagnostic logs to stderr. It is disabled by default.
-The project defaults to the current directory. Virions use PROJECT/virions. Builds use PROJECT/build.
-Other relative paths resolve from project. Commands do not prompt. Replacement requires --overwrite.
-prepare imports supported locked Composer virions after composer install --no-dev --no-scripts --no-plugins.
-doctor checks structure and dependency selection, not full shading, static analysis or runtime.
-inspect checks the PHAR signature, manifest, main entry and hash without executing plugin code.
-Exit codes are 0 for success, 1 for operation or validation failure, and 2 for invalid usage.
-
-HELP;
+        return $translator->translate('cli.help');
     }
 }

@@ -34,6 +34,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
         private readonly string $virionsDirectory,
         private readonly string $buildDirectory,
         private readonly ?DebugLogger $debug = null,
+        private readonly string $locale = 'eng',
     ) {
         $this->tickSleeper = $server->getTickSleeper();
         $requests = new ThreadSafeArray();
@@ -62,6 +63,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
             'pluginsDirectory' => $this->pluginsDirectory,
             'virionsDirectory' => $this->virionsDirectory,
             'buildDirectory' => $this->buildDirectory,
+            'locale' => $this->locale,
         ]);
         $this->activeJobId = $jobId;
         $this->callbacks[$jobId] = $onComplete;

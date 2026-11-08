@@ -1,0 +1,22 @@
+{
+    "runtime.ready": "La carga de plugins desde carpetas, los virions compartidos y la creación de PHAR independientes están listos.",
+    "runtime.not_started": "DevTools no terminó de iniciar. Revisa el error de inicio en el registro del servidor.",
+    "command.permission": "No tienes permiso para usar /devtools {command}.",
+    "command.disabled": "El comando /devtools {command} está desactivado en la configuración.",
+    "command.failed": "DevTools no pudo completar el comando.\n{error}",
+    "command.help": "Comandos de DevTools\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "queue.busy": "Ya hay una tarea de DevTools ejecutándose. Espera a que termine.",
+    "queue.queued": "DevTools {description} se añadió a la cola.",
+    "status.summary": "DevTools {version}\nCarpetas de plugins de desarrollo: {projects}\nVirions compartidos cargados: {virions}\nCarga de clases del worker asíncrono: {async}\nTarea en segundo plano: {job}\nSalida de compilación: {output}",
+    "build.plugin": "El plugin {name} se compiló correctamente.",
+    "build.virion": "El virion {name} se compiló correctamente.",
+    "build.dual": "El proyecto de doble rol se compiló correctamente.",
+    "extract.archived": "Se archivaron {count} archivos en {path}.",
+    "extract.extracted": "Se extrajeron {count} archivos en {path}.",
+    "cli.help": "DevTools para el desarrollo de plugins de Axolotl-PM\nUso: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]\nComandos: build, doctor, prepare, inspect y extract. Usa --help para ver la sintaxis completa.\n--json escribe un resultado con schema_version=1 en stdout. Los registros y diagnósticos de PHP se escriben en stderr.\n--debug escribe diagnósticos detallados en stderr y está desactivado de forma predeterminada.\nEl proyecto predeterminado es la carpeta actual. Los virions usan PROJECT/virions y las compilaciones usan PROJECT/build.\nprepare importa virions de Composer compatibles y bloqueados. doctor comprueba la estructura y la selección de dependencias. inspect comprueba el PHAR sin ejecutar código del plugin.\nLos códigos de salida son 0 si tiene éxito, 1 si falla una operación o validación y 2 si el uso no es válido.",
+    "cli.version": "DevTools {version}",
+    "cli.static_notice": "No se ejecutaron el análisis estático ni las pruebas de ejecución de Axolotl-PM.",
+    "doctor.none": "No se encontraron carpetas de plugins de desarrollo en {directory}.",
+    "doctor.checking": "Comprobando {project}",
+    "doctor.passed": "La estructura del proyecto y la selección de dependencias son válidas ({count} virions). No se ejecutaron el sombreado, el análisis estático ni las pruebas de ejecución. Consulta /devtools virions para el registro compartido del servidor."
+}

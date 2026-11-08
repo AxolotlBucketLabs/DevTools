@@ -33,6 +33,7 @@ Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to 
 - Extracts plugin or virion PHARs to a folder or ZIP through the server command and CLI.
 - Offers optional PHPStan analysis in GitHub Actions against an explicitly selected server source.
 - Validates PHAR entries before extraction and stages replacement with a backup of existing output.
+- Localizes lifecycle messages, command summaries and common build results to Axolotl-PM's supported languages.
 
 Server startup and ordinary builds use local dependencies. DevTools does not replace Composer or provide hot reload.
 

@@ -13,7 +13,7 @@ Build this Axolotl-PM plugin with AxolotlBucketLabs/DevTools.
 5. Build using the same CLI with --json and phar.readonly=0. Do not enable overwrite unless replacing that output is intended.
 6. Consume data.artifact and compare the file's SHA-256 with data.sha256. Run inspect. Do not infer the artifact filename.
 7. Keep project-required checks. PHPStan is otherwise opt-in. Report structure, dependency and packaging checks separately from static analysis and a real clean Axolotl-PM runtime test.
-8. For GitHub automation, use the workflow and inputs documented in the exact revision. Pin the reusable workflow to a tested commit; it checks out its own builder from that commit. Upload the generated artifact and metadata.
+8. For GitHub automation, use the workflow and inputs documented in the exact revision. Pin the reusable workflow to a tested commit. It checks out its own builder from that commit. Upload the generated artifact and metadata.
 9. Configure release or nightly publication only when requested. Publication uses the checked bytes from the build job, not a second build. Do not actually publish, push or merge without authorization.
 10. Report exact artifact path and hash, tool version and revision, selected dependency provenance, checks run, failures and skipped checks and runtime checks not performed. A successful build is not evidence of server boot.
 ```

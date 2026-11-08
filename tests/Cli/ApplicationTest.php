@@ -25,6 +25,14 @@ final class ApplicationTest extends TestCase
         self::assertSame('build', $invalid['command']);
     }
 
+    public function test_cli_accepts_an_axolotl_locale(): void
+    {
+        [$code, $result] = $this->cli(['--version', '--lang=vie']);
+
+        self::assertSame(0, $code);
+        self::assertSame('vie', $result['data']['locale']);
+    }
+
     public function test_version_does_not_leave_isolated_parser_directories(): void
     {
         $pattern = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-*';

@@ -1,0 +1,22 @@
+{
+    "runtime.ready": "Mapju spraudņu ielāde, koplietojamie virioni un patstāvīgu PHAR veidošana ir gatava.",
+    "runtime.not_started": "DevTools nebeidza startēšanu. Pārbaudiet startēšanas kļūdu servera žurnālā.",
+    "command.permission": "Jums nav atļaujas izmantot /devtools {command}.",
+    "command.disabled": "Komanda /devtools {command} konfigurācijā ir atspējota.",
+    "command.failed": "DevTools nevarēja pabeigt komandu.\n{error}",
+    "command.help": "DevTools komandas\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "queue.busy": "DevTools fona uzdevums jau darbojas. Lūdzu, pagaidiet, līdz tas beidzas.",
+    "queue.queued": "DevTools {description} ir ievietots rindā.",
+    "status.summary": "DevTools {version}\nIzstrādes spraudņu mapes: {projects}\nIelādētie koplietojamie virioni: {virions}\nAsinhronā darba procesa klašu ielāde: {async}\nFona uzdevums: {job}\nVeidošanas izvade: {output}",
+    "build.plugin": "Spraudnis {name} ir veiksmīgi izveidots.",
+    "build.virion": "Virions {name} ir veiksmīgi izveidots.",
+    "build.dual": "Divu lomu projekts ir veiksmīgi izveidots.",
+    "extract.archived": "{count} faili arhivēti mapē {path}.",
+    "extract.extracted": "{count} faili izvilkti mapē {path}.",
+    "cli.help": "DevTools Axolotl-PM spraudņu izstrādei\nLietojums: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]\nKomandas: build, doctor, prepare, inspect un extract. Pilno sintaksi skatiet ar --help.\n--json raksta vienu schema_version=1 rezultātu stdout. Žurnāli un PHP diagnostika tiek rakstīti stderr.\n--debug raksta detalizētu diagnostiku stderr un pēc noklusējuma ir izslēgts.\nPēc noklusējuma projekts ir pašreizējā mape. Virioni izmanto PROJECT/virions, bet būves izmanto PROJECT/build.\nprepare importē atbalstītus bloķētus Composer virionus. doctor pārbauda struktūru un atkarību izvēli. inspect pārbauda PHAR, neizpildot spraudņa kodu.\nIzvades kodi: 0 veiksmes gadījumā, 1 darbības vai pārbaudes kļūdas gadījumā un 2 nederīga lietojuma gadījumā.",
+    "cli.version": "DevTools {version}",
+    "cli.static_notice": "Statiskā analīze un Axolotl-PM izpildlaika testi netika veikti.",
+    "doctor.none": "Mapē {directory} netika atrastas izstrādes spraudņu mapes.",
+    "doctor.checking": "Pārbauda {project}",
+    "doctor.passed": "Projekta struktūra un atkarību izvēle ir derīga ({count} virioni). Ēnošana, statiskā analīze un izpildlaika testi netika veikti. Koplietojamo servera reģistru skatiet ar /devtools virions."
+}

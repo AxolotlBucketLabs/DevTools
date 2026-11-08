@@ -13,7 +13,7 @@ DevTools has three core workflows. It loads folder plugins, loads shared develop
 | `src/Validation/` | Read plugin manifests and produce reusable diagnostics | Support and Axolotl-PM manifest types | `tests/Validation/` |
 | `src/Command/` | Handle server command arguments and report results | Public services from the modules above | `tests/Command/` |
 | `src/Cli/` | Handle CLI arguments and report readable or versioned JSON results | Build and Validation public services | `tests/Cli/` |
-| `src/Support/` | Provide filesystem, path, YAML and PHP source utilities | PHP and required extensions | Tests in the owning modules |
+| `src/Support/` | Provide filesystem, path, YAML, PHP source and message localization utilities | PHP and required extensions | Tests in the owning modules |
 
 Build code works without a running server. Commands orchestrate services rather than duplicating their algorithms. Support does not depend on business modules.
 
@@ -40,6 +40,7 @@ Build code works without a running server. Commands orchestrate services rather 
 | `devtools.yml` | Files included when building DevTools itself |
 | `docs/ecosystem.json` | Canonical repository inventory and audit counts |
 | `docs/ecosystem.schema.json` | JSON Schema for the ecosystem inventory |
+| `resources/lang/*.json` | Human-facing message catalogs for the supported Axolotl-PM locales |
 | `composer.json` and quality configuration files | Locked dependency and QA toolchain |
 | `examples/` | Dedicated plugin and library examples, a build workflow and a coding agent template |
 | `tests/Fixtures/` | Projects maintained by DevTools for behavior and failure-path tests |

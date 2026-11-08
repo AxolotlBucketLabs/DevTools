@@ -16,6 +16,7 @@ use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -30,6 +31,9 @@ use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
 use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
+
+use function is_string;
+
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
@@ -39,6 +43,7 @@ final class DevTools extends PluginBase
 {
     private ?DevToolsCommandHandler $commandHandler = null;
     private ?BuildJobRunner $jobRunner = null;
+    private ?Translator $translator = null;
 
     protected function onLoad(): void
     {
@@ -60,6 +65,16 @@ final class DevTools extends PluginBase
         $sourceConflictDetector = new PluginSourceConflictDetector($manifestReader, null, $debug);
 
         $server = $this->getServer();
+        $configuredLocale = $this->getConfig()->get('language', 'auto');
+        try {
+            $this->translator = Translator::fromResources(Translator::resolve(
+                is_string($configuredLocale) ? $configuredLocale : 'auto',
+                $server->getLanguage()->getLang(),
+            ));
+        } catch (Throwable $error) {
+            $this->getLogger()->warning("Cannot use configured DevTools language. {$error->getMessage()} Falling back to English.");
+            $this->translator = Translator::fromResources();
+        }
         $pluginsDirectory = $server->getPluginPath();
         $ownSourceProject = Path::join($pluginsDirectory, $this->getDescription()->getName());
         $virionsDirectory = $server->getDataPath() . 'virions';
@@ -157,7 +172,7 @@ final class DevTools extends PluginBase
             ),
         );
 
-        $this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory, $debug);
+        $this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory, $debug, $this->translator->locale());
         $this->commandHandler = new DevToolsCommandHandler(
             $this,
             $pluginDiscovery,
@@ -172,6 +187,7 @@ final class DevTools extends PluginBase
                 'extract' => (bool) $this->getConfig()->getNested('commands.extract', true),
             ],
             $debug,
+            $this->translator,
         );
 
         foreach ((new VirionStartupReporter())->messages($registry) as $message) {
@@ -189,7 +205,7 @@ final class DevTools extends PluginBase
 
     protected function onEnable(): void
     {
-        $this->getLogger()->info('Folder plugin loading, shared virions, and standalone PHAR building are ready.');
+        $this->getLogger()->info($this->translator?->translate('runtime.ready') ?? 'Folder plugin loading, shared virions, and standalone PHAR building are ready.');
     }
 
     protected function onDisable(): void
@@ -202,7 +218,7 @@ final class DevTools extends PluginBase
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
     {
         if ($this->commandHandler === null) {
-            $sender->sendMessage('DevTools did not finish starting. Check the server log for the startup error.');
+            $sender->sendMessage($this->translator?->translate('runtime.not_started') ?? 'DevTools did not finish starting. Check the server log for the startup error.');
 
             return true;
         }

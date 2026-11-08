@@ -1,0 +1,22 @@
+{
+    "runtime.ready": "Le chargement des plugins depuis des dossiers, des virions partagés et la construction de PHAR autonomes sont prêts.",
+    "runtime.not_started": "DevTools n'a pas terminé son démarrage. Consultez l'erreur de démarrage dans le journal du serveur.",
+    "command.permission": "Vous n'avez pas la permission d'utiliser /devtools {command}.",
+    "command.disabled": "La commande /devtools {command} est désactivée dans la configuration.",
+    "command.failed": "DevTools n'a pas pu terminer la commande.\n{error}",
+    "command.help": "Commandes DevTools\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "queue.busy": "Une tâche DevTools est déjà en cours. Attendez sa fin.",
+    "queue.queued": "La tâche DevTools {description} a été mise en file d'attente.",
+    "status.summary": "DevTools {version}\nDossiers de plugins de développement : {projects}\nVirions partagés chargés : {virions}\nChargement des classes du worker asynchrone : {async}\nTâche en arrière-plan : {job}\nSortie de construction : {output}",
+    "build.plugin": "Le plugin {name} a été construit avec succès.",
+    "build.virion": "Le virion {name} a été construit avec succès.",
+    "build.dual": "Le projet à double rôle a été construit avec succès.",
+    "extract.archived": "{count} fichiers ont été archivés dans {path}.",
+    "extract.extracted": "{count} fichiers ont été extraits dans {path}.",
+    "cli.help": "DevTools pour le développement de plugins Axolotl-PM\nUtilisation : php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]\nCommandes : build, doctor, prepare, inspect et extract. Utilisez --help pour la syntaxe complète.\n--json écrit un résultat schema_version=1 sur stdout. Les journaux et diagnostics PHP sont écrits sur stderr.\n--debug écrit des diagnostics détaillés sur stderr et est désactivé par défaut.\nLe projet est le dossier courant par défaut. Les virions utilisent PROJECT/virions et les builds utilisent PROJECT/build.\nprepare importe les virions Composer verrouillés pris en charge. doctor vérifie la structure et la sélection des dépendances. inspect vérifie le PHAR sans exécuter le code du plugin.\nLes codes de sortie sont 0 en cas de succès, 1 en cas d'échec d'opération ou de validation et 2 en cas d'utilisation invalide.",
+    "cli.version": "DevTools {version}",
+    "cli.static_notice": "L'analyse statique et les tests d'exécution Axolotl-PM n'ont pas été exécutés.",
+    "doctor.none": "Aucun dossier de plugin de développement n'a été trouvé dans {directory}.",
+    "doctor.checking": "Vérification de {project}",
+    "doctor.passed": "La structure du projet et la sélection des dépendances sont valides ({count} virions). Le shading, l'analyse statique et les tests d'exécution n'ont pas été effectués. Consultez /devtools virions pour le registre partagé du serveur."
+}

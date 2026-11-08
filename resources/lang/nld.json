@@ -1,0 +1,22 @@
+{
+    "runtime.ready": "Het laden van plugins uit mappen, gedeelde virions en het bouwen van zelfstandige PHAR's is klaar.",
+    "runtime.not_started": "DevTools is niet volledig gestart. Controleer de startfout in het serverlogboek.",
+    "command.permission": "Je hebt geen toestemming om /devtools {command} te gebruiken.",
+    "command.disabled": "Het commando /devtools {command} is uitgeschakeld in de configuratie.",
+    "command.failed": "DevTools kon het commando niet voltooien.\n{error}",
+    "command.help": "DevTools-commando's\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "queue.busy": "Er draait al een DevTools-achtergrondtaak. Wacht tot deze klaar is.",
+    "queue.queued": "DevTools {description} is in de wachtrij geplaatst.",
+    "status.summary": "DevTools {version}\nMappen met ontwikkelplugins: {projects}\nGeladen gedeelde virions: {virions}\nKlassen laden in de asynchrone worker: {async}\nAchtergrondtaak: {job}\nBuild-uitvoer: {output}",
+    "build.plugin": "Plugin {name} is succesvol gebouwd.",
+    "build.virion": "Virion {name} is succesvol gebouwd.",
+    "build.dual": "Het project met twee rollen is succesvol gebouwd.",
+    "extract.archived": "{count} bestanden gearchiveerd naar {path}.",
+    "extract.extracted": "{count} bestanden uitgepakt naar {path}.",
+    "cli.help": "DevTools voor Axolotl-PM-pluginontwikkeling\nGebruik: php [-d phar.readonly=0] bin/devtools.php COMMAND [OPTIONS]\nCommando's: build, doctor, prepare, inspect en extract. Gebruik --help voor de volledige syntaxis.\n--json schrijft één resultaat met schema_version=1 naar stdout. Logboeken en PHP-diagnostiek worden naar stderr geschreven.\n--debug schrijft uitgebreide diagnostiek naar stderr en staat standaard uit.\nHet project is standaard de huidige map. Virions gebruiken PROJECT/virions en builds gebruiken PROJECT/build.\nprepare importeert ondersteunde vergrendelde Composer-virions. doctor controleert structuur en afhankelijkheidsselectie. inspect controleert het PHAR zonder plugin-code uit te voeren.\nExitcodes zijn 0 bij succes, 1 bij een operationele of validatiefout en 2 bij ongeldig gebruik.",
+    "cli.version": "DevTools {version}",
+    "cli.static_notice": "Statische analyse en Axolotl-PM-runtime-tests zijn niet uitgevoerd.",
+    "doctor.none": "Geen mappen met ontwikkelplugins gevonden in {directory}.",
+    "doctor.checking": "{project} controleren",
+    "doctor.passed": "Projectstructuur en afhankelijkheidsselectie zijn geslaagd ({count} virions). Shading, statische analyse en runtime-tests zijn niet uitgevoerd. Bekijk /devtools virions voor het gedeelde serverregister."
+}

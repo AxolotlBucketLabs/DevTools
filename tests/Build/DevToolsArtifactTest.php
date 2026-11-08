@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
 
@@ -15,6 +16,11 @@ final class DevToolsArtifactTest extends TestCase
         $result = $this->builder()->build($root, $this->temporaryDirectory . '/virions', $this->temporaryDirectory);
         [$exit, $output] = $this->validate($result->outputPath);
         self::assertSame(0, $exit, $output);
+
+        $phar = new Phar($result->outputPath);
+        foreach (Translator::supportedLocales() as $locale) {
+            self::assertTrue(isset($phar["resources/lang/{$locale}.json"]));
+        }
 
         foreach (['vendor/phpunit/phpunit/src/Runner.php', 'vendor/axolotl-pm/pocketmine-mp/src/Server.php', 'vendor/composer/autoload_real.php'] as $extra) {
             $copy = $this->temporaryDirectory . '/extra-' . md5($extra) . '.phar';

@@ -24,6 +24,7 @@ use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -61,6 +62,7 @@ final class BuildWorkerApplication
     public static function run(string $operation, array $payload): array
     {
         $debugMessages = [];
+        $translator = null;
         $debug = new DebugLogger(($payload['debug'] ?? false) === true
             ? static function (string $message) use (&$debugMessages): void {
                 $debugMessages[] = $message;
@@ -68,11 +70,12 @@ final class BuildWorkerApplication
             : null);
         $debug->debug("Worker operation {$operation} started.");
         try {
+            $translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : 'eng');
             $messages = match ($operation) {
-                'doctor' => self::doctor($payload, $debug),
-                'build' => self::build($payload, $debug),
-                'extract' => self::extract($payload, $debug),
-                default => throw new BuildException("Unknown background operation {$operation}."),
+                'doctor' => self::doctor($payload, $debug, $translator),
+                'build' => self::build($payload, $debug, $translator),
+                'extract' => self::extract($payload, $debug, $translator),
+                default => throw new BuildException($translator->translate('worker.unknown_operation', ['operation' => $operation])),
             };
             $debug->debug("Worker operation {$operation} completed successfully.");
 
@@ -82,7 +85,7 @@ final class BuildWorkerApplication
 
             return [
                 'success' => false,
-                'messages' => ["DevTools could not complete the command.\n{$error->getMessage()}"],
+                'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', ['error' => $error->getMessage()])],
                 'debug' => $debugMessages,
             ];
         }
@@ -92,24 +95,24 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function doctor(array $payload, DebugLogger $debug): array
+    private static function doctor(array $payload, DebugLogger $debug, Translator $translator): array
     {
         $services = self::services($payload, $debug);
         $selection = $payload['selection'] ?? null;
         if ($selection !== null && !is_string($selection)) {
-            throw new BuildException('The doctor selection must be a string.');
+            throw new BuildException($translator->translate('doctor.invalid_selection'));
         }
         $projects = $selection === null
             ? $services['pluginDiscovery']->discover($services['pluginsDirectory'])
             : [$services['projectLocator']->locate($selection, $services['pluginsDirectory'])];
         if ($projects === []) {
-            return ["No development plugin folders were found in {$services['pluginsDirectory']}."];
+            return [$translator->translate('doctor.none', ['directory' => $services['pluginsDirectory']])];
         }
 
         $messages = [];
         foreach ($projects as $project) {
             $result = $services['validator']->validate($project);
-            $messages[] = "Checking {$project}";
+            $messages[] = $translator->translate('doctor.checking', ['project' => $project]);
             foreach ($result->issues() as $issue) {
                 $messages[] = $issue->format();
             }
@@ -120,9 +123,9 @@ final class BuildWorkerApplication
                 $manifest = $services['manifestReader']->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
                 $config = $services['configResolver']->resolve($project, $manifest->description->getName());
                 $resolved = $services['resolver']->resolve($config->virions, $services['virionsDirectory']);
-                $messages[] = 'Project structure and dependency selection passed (' . count($resolved) . ' virions). Shading, static analysis and runtime tests were not run. Check /devtools virions for the shared server registry.';
+                $messages[] = $translator->translate('doctor.passed', ['count' => count($resolved)]);
             } catch (\Throwable $error) {
-                $messages[] = "Dependency check failed for {$project}. {$error->getMessage()}";
+                $messages[] = $translator->translate('doctor.failed', ['project' => $project, 'error' => $error->getMessage()]);
             }
         }
 
@@ -133,14 +136,14 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function build(array $payload, DebugLogger $debug): array
+    private static function build(array $payload, DebugLogger $debug, Translator $translator): array
     {
         $services = self::services($payload, $debug);
         $target = $payload['target'] ?? 'plugin';
         $selection = $payload['selection'] ?? null;
         $overwrite = $payload['overwrite'] ?? false;
         if (!is_string($target) || !is_string($selection) || !is_bool($overwrite)) {
-            throw new BuildException('Invalid background build payload.');
+            throw new BuildException($translator->translate('worker.invalid_build_payload'));
         }
 
         if ($target === 'virion') {
@@ -148,16 +151,16 @@ final class BuildWorkerApplication
             $result = $services['virionBuilder']->build($project, $services['buildDirectory'], $overwrite);
 
             return [
-                "Built virion {$result->manifest->name} successfully.",
-                "Files: {$result->fileCount}",
-                "Output: {$result->outputPath}",
+                $translator->translate('build.virion', ['name' => $result->manifest->name]),
+                $translator->translate('summary.files', ['count' => $result->fileCount]),
+                $translator->translate('summary.output', ['path' => $result->outputPath]),
             ];
         }
 
         $project = $services['projectLocator']->locate($selection, $services['pluginsDirectory']);
         if ($target === 'both') {
             if ($services['roleDetector']->detect($project) !== ProjectRole::DUAL) {
-                throw new BuildException("Build type both requires {$project} to contain both plugin.yml and virion.yml.");
+                throw new BuildException($translator->translate('build.both_required', ['project' => $project]));
             }
             $pluginName = $services['manifestReader']->read($project . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
             $virionName = $services['virionManifestReader']->read($project . DIRECTORY_SEPARATOR . 'virion.yml')->name;
@@ -171,19 +174,19 @@ final class BuildWorkerApplication
             );
 
             return [
-                'Built dual-role project successfully.',
-                "Plugin output: {$artifacts['plugin']}",
-                "Virion output: {$artifacts['virion']}",
+                $translator->translate('build.dual'),
+                $translator->translate('summary.plugin_output', ['path' => $artifacts['plugin']]),
+                $translator->translate('summary.virion_output', ['path' => $artifacts['virion']]),
             ];
         }
 
         $result = $services['builder']->build($project, $services['virionsDirectory'], $services['buildDirectory'], $overwrite);
 
         return [
-            "Built {$result->pluginName} successfully.",
-            "Files: {$result->fileCount}",
-            'Shaded virions: ' . count($result->shadedVirions),
-            "Output: {$result->outputPath}",
+            $translator->translate('build.plugin', ['name' => $result->pluginName]),
+            $translator->translate('summary.files', ['count' => $result->fileCount]),
+            $translator->translate('summary.shaded', ['count' => count($result->shadedVirions)]),
+            $translator->translate('summary.output', ['path' => $result->outputPath]),
         ];
     }
 
@@ -191,7 +194,7 @@ final class BuildWorkerApplication
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    private static function extract(array $payload, DebugLogger $debug): array
+    private static function extract(array $payload, DebugLogger $debug, Translator $translator): array
     {
         $services = self::services($payload, $debug);
         $selection = $payload['selection'] ?? null;
@@ -199,25 +202,25 @@ final class BuildWorkerApplication
         $type = $payload['type'] ?? 'auto';
         $overwrite = $payload['overwrite'] ?? false;
         if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
-            throw new BuildException('Invalid background extract payload.');
+            throw new BuildException($translator->translate('worker.invalid_extract_payload'));
         }
 
         $path = self::locatePhar($selection, $services['pluginsDirectory'], $services['virionsDirectory'], $services['buildDirectory']);
         $detectedType = $services['artifactInspector']->inspect($path)['type'];
         if (!is_string($detectedType)) {
-            throw new BuildException('Artifact type could not be detected.');
+            throw new BuildException($translator->translate('extract.artifact_type'));
         }
         if ($type === 'auto') {
             $type = $detectedType;
         }
         if ($type === 'both') {
-            throw new BuildException('A dual-role artifact requires --type=plugin or --type=virion for extraction.');
+            throw new BuildException($translator->translate('extract.dual'));
         }
         if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
-            throw new BuildException('Use /devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite].');
+            throw new BuildException($translator->translate('extract.usage'));
         }
         if (!ArtifactInspector::roleMatches($detectedType, $type)) {
-            throw new BuildException("Artifact type {$detectedType} does not match requested type {$type}.");
+            throw new BuildException($translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $type]));
         }
 
         $name = basename($path);
@@ -225,7 +228,7 @@ final class BuildWorkerApplication
             $name = substr($name, 0, -5);
         }
         if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
-            throw new BuildException("Cannot derive a safe plugin folder name from {$path}.");
+            throw new BuildException($translator->translate('extract.safe_name', ['path' => $path]));
         }
         Path::normalizeRelative($name);
 
@@ -233,21 +236,21 @@ final class BuildWorkerApplication
             $destination = Path::join(realpath($services['buildDirectory']) ?: $services['buildDirectory'], $name . '.zip');
             $count = $services['zipWriter']->write(new PharArchiveReader($path), $destination, $overwrite);
 
-            return ["Archived {$count} files to {$destination}."];
+            return [$translator->translate('extract.archived', ['count' => $count, 'path' => $destination])];
         }
 
         $baseDirectory = $type === 'virion' ? $services['virionsDirectory'] : $services['pluginsDirectory'];
         $base = realpath($baseDirectory);
         if ($base === false) {
-            throw new BuildException("Cannot resolve {$type} directory {$baseDirectory}.");
+            throw new BuildException($translator->translate('extract.directory', ['type' => $type, 'directory' => $baseDirectory]));
         }
         $destination = Path::join($base, $name);
         if (dirname($destination) !== $base) {
-            throw new BuildException("Refusing extraction destination outside {$base}.");
+            throw new BuildException($translator->translate('extract.outside', ['path' => $base]));
         }
         $count = $services['extractor']->extract(new PharArchiveReader($path), $destination, $overwrite);
 
-        return ["Extracted {$count} files to {$destination}."];
+        return [$translator->translate('extract.extracted', ['count' => $count, 'path' => $destination])];
     }
 
     /**
