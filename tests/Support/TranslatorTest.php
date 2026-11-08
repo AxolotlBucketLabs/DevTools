@@ -18,7 +18,7 @@ final class TranslatorTest extends TestCase
 
             self::assertSame($locale, $translator->locale());
             self::assertNotSame('runtime.ready', $translator->translate('runtime.ready'));
-            self::assertStringContainsString('DevTools', $translator->translate('cli.version', ['version' => '3.2.0']));
+            self::assertStringContainsString('DevTools', $translator->translate('cli.version', ['version' => '3.3.0']));
             if ($locale !== 'eng') {
                 self::assertNotSame($englishHelp, $translator->translate('cli.help'));
             }

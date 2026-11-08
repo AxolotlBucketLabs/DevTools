@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.0 - 2026-11-09
 
 - Accept matching local Composer virion source folders during shared server development, including dependencies whose Composer and manifest names differ.
 - Preserve exact locked versions, shared conflicts and prepared-package verification, including mixed local and prepared dependency graphs.

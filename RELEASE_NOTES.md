@@ -1,18 +1,19 @@
-# DevTools 3.2.0
+# DevTools 3.3.0
 
-DevTools 3.2.0 adds multilingual human-facing output for server commands and the CLI.
+DevTools 3.3.0 makes Composer dependencies easier to use during local plugin development while preserving strict, reproducible PHAR builds.
 
 ## Highlights
 
-- Include translated catalogs for 14 Axolotl-PM locales: `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`.
-- Follow the server language with `language: auto`, or select a locale explicitly in `config.yml`.
-- Select a CLI language with `--lang=CODE` or the `DEVTOOLS_LANG` environment variable.
-- Localize lifecycle messages, command summaries, common build and extraction results and CLI help.
-- Keep detailed validator and builder diagnostics in English so paths, package names and error details remain exact.
+- Load a matching local virion source folder from `virions/` when a plugin's `composer.lock` declares that Composer package.
+- Prefer a verified Composer-prepared package when one is available, while supporting mixed prepared and local dependency graphs.
+- Keep version constraints and shared dependency conflicts strict. Local package metadata, autoloading, antigen, source layout and PHP compatibility must match the lock.
+- Add `virions.allow-local-composer` to disable local Composer source folders and require prepared packages at server startup.
+- Keep PHAR builds and `doctor` checks strict: dependencies must still be prepared with verified provenance.
+- Translate local Composer-source diagnostics and shared-virion loading summaries across all 14 supported Axolotl-PM locales.
 
 ## Compatibility and upgrade notes
 
-- This is an additive, backward-compatible release for the existing v3 workflow channel.
-- Existing server configurations continue to use automatic server-language selection unless `language` is changed.
-- The CLI JSON schema and build, extraction and dependency behavior are unchanged.
-- PHAR creation still requires PHP to run with `phar.readonly=0`. Loading an existing PHAR does not.
+- This is an additive release for the existing v3 workflow channel. Existing non-Composer local virions continue to work.
+- Local Composer source loading is enabled by default for server development. Set `virions.allow-local-composer: false` to require prepared packages.
+- No dependency is downloaded during server startup. CI and release builds continue to use prepared, lock-verified dependencies.
+- The CLI JSON schema and PHAR build or extraction formats are unchanged.
