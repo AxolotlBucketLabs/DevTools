@@ -54,8 +54,12 @@ final class VirionManager
         private readonly ?DebugLogger $debug = null,
     ) {}
 
-    /** @param list<VirionRequirement> $requirements */
-    public function discoverAndLoad(string $directory, array $requirements = []): VirionRegistry
+    /**
+     * @param list<VirionRequirement> $requirements
+     * @param array<string, string> $requirementAliases
+     * @param array<string, string> $skippedLocations
+     */
+    public function discoverAndLoad(string $directory, array $requirements = [], array $requirementAliases = [], array $skippedLocations = []): VirionRegistry
     {
         $this->debug?->debug('Loading shared virions from ' . $directory . ' with ' . count($requirements) . ' project requirement(s).');
         /** @var array<string, list<VirionRequirement>> $requirementsByName */
@@ -75,6 +79,32 @@ final class VirionManager
         foreach ($locations as $location) {
             try {
                 $project = $this->projectFactory->open($location);
+                if (isset($skippedLocations[$project->location])) {
+                    $this->recordUnloaded($location, $project, VirionStatus::SKIPPED, $skippedLocations[$project->location]);
+                    continue;
+                }
+                if ($requirementAliases !== [] && $project->manifest->requirements !== []) {
+                    $manifest = $project->manifest;
+                    $mappedRequirements = array_map(
+                        static fn(VirionRequirement $requirement): VirionRequirement => new VirionRequirement(
+                            $requirementAliases[VirionName::key($requirement->name)] ?? $requirement->name,
+                            $requirement->constraint->expression,
+                            $requirement->source,
+                            $requirement->composerPackageSha256,
+                        ),
+                        $manifest->requirements,
+                    );
+                    $project = new VirionProject($project->location, $project->sourceRoot, new VirionManifest(
+                        $manifest->name,
+                        $manifest->version,
+                        $manifest->antigen,
+                        $manifest->api,
+                        $manifest->php,
+                        $manifest->raw,
+                        $manifest->path,
+                        $mappedRequirements,
+                    ), $project->phar, $project->packageRoot);
+                }
                 $projectsByName[VirionName::key($project->manifest->name)][] = [$location, $project];
             } catch (Throwable $error) {
                 $name = $this->projectFactory->readFolderManifestName($location);
@@ -125,7 +155,7 @@ final class VirionManager
                 }
             }
         }
-        if ($hasTransitive || $hasComposerRequirements) {
+        if ($hasTransitive || $hasComposerRequirements || $requirementAliases !== []) {
             $graphRequirements = $requirements;
             foreach ($available as $nameKey => $projects) {
                 if (!isset($requirementsByName[$nameKey])) {

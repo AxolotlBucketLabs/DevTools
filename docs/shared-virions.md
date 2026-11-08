@@ -39,6 +39,23 @@ At startup, DevTools gathers folder-plugin requirements, prefers a source folder
 
 The same resolver is used during standalone builds. A missing package or version mismatch fails the build before an artifact is written.
 
+## Local Composer sources
+
+Composer is the recommended dependency source for new projects. Server development can also use a source folder placed directly in `virions/` when the plugin has a valid `composer.lock`. The folder needs `virion.yml`, `composer.json` and autoloadable source. Its directory and manifest name may differ from the Composer package name.
+
+DevTools checks the Composer package identity, `autoload`, `require` and `extra` metadata against the lock. The manifest antigen and effective source directory must match Composer, and the manifest version must satisfy the exact locked version and all other plugin requirements. A shared namespace still has one version for the entire server. Conflicting versions, duplicate sources and inconsistent metadata prevent loading.
+
+Prepared packages take precedence over matching local alternatives. Their manifest and source hashes remain checked, and a changed prepared package fails without falling back. Development branches pinned to commits still require preparation. Local metadata and version checks do not prove that source bytes match the locked upstream commit.
+
+This option is enabled by default for server development. To require prepared Composer dependencies at startup, set the following in DevTools' server configuration.
+
+```yaml
+virions:
+  allow-local-composer: false
+```
+
+This setting only affects shared runtime loading. CLI and server `build` and `doctor` checks continue to require Composer preparation and provenance for locked packages. No dependencies are downloaded during server startup. Restart after changing source packages.
+
 ## Debugging
 
 Run `/devtools virions`. Every discovered package is shown as loaded, skipped, failed or conflicting, with its version, location and reason. `/devtools status` reports the loaded count and async-worker class-loader state.

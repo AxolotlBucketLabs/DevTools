@@ -10,7 +10,7 @@ additional boundary.
 - Axolotl-PM **5.51.1**, commit
   **`e881fc1bc1c401545baf6bd1f824e41ff3f57bd1`**, the development dependency in
   DevTools' `composer.lock`.
-- Windows x64, **PHP 8.4.24 ZTS** with Axolotl-PM's required extensions, including
+- Windows x64, **PHP 8.4.27 ZTS** with Axolotl-PM's required extensions, including
   `pmmpthread`. PHP 8.4 is the source compatibility baseline. The complete CI
 quality gate also runs on PHP 8.5. This runtime result does not claim an
 executed PHP 8.5 server test.
@@ -66,6 +66,9 @@ scenario passes.
 | --- | --- | --- |
 | `shared-folder` | DevTools PHAR, three fixture plugin folders and one virion folder | Plain plugin loading, dependency order, library calls, resources, shared types and static state, async calls |
 | `shared-phar` | DevTools PHAR, the same fixture plugins and a virion PHAR | The same checks through the PHAR virion loader |
+| `shared-composer-folder` | Composer-locked fixture plugins and a matching local source folder without preparation | Shared runtime and async calls through a Composer package mapped to its local manifest name |
+| `shared-composer-mixed` | A prepared Composer parent and a local source dependency | Transitive alias resolution and parent-to-child calls on the main thread and async workers |
+| `shared-composer-local-parent` | A local parent and its prepared Composer dependency | Local-to-prepared dependency edges and the same runtime assertions |
 | `private-phar` | Three built fixture PHARs without DevTools, source or development virions | Plugin loading and dependency order, two private library versions, resources, separate types and static state, async calls |
 
 The first two consumers deliberately use the same library antigen. In shared

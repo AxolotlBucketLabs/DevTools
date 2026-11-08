@@ -8,17 +8,35 @@ use AxolotlBucketLabs\DevTools\Command\BuildJobRunner;
 use AxolotlBucketLabs\DevTools\Command\BuildWorkerApplication;
 use AxolotlBucketLabs\DevTools\Command\DevToolsCommandHandler;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifest;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistryEntry;
+use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 
 final class DevToolsCommandHandlerTest extends TestCase
 {
+    public function test_virion_list_uses_localized_status_and_loading_summary(): void
+    {
+        $registry = new VirionRegistry();
+        $manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
+        $registry->record(new VirionRegistryEntry('source', $manifest, VirionStatus::LOADED, 'Loaded ExampleVirion 1.2.3 (Example\\Library).'));
+        $registry->record(new VirionRegistryEntry('broken', $manifest, VirionStatus::FAILED, 'Technical validator detail'));
+
+        $messages = $this->command(['virions'], registry: $registry, translator: Translator::fromResources('vie'));
+
+        self::assertStringContainsString('Đã nạp ExampleVirion. Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages);
+        self::assertStringContainsString('Thất bại ExampleVirion. Technical validator detail', $messages);
+        self::assertStringNotContainsString('Loaded ExampleVirion', $messages);
+    }
+
     public function test_server_doctor_reports_missing_declared_dependency(): void
     {
         $this->copyFixture('BuildPlugin', 'plugins/Source');
@@ -152,7 +170,7 @@ final class DevToolsCommandHandlerTest extends TestCase
      * @param list<string> $arguments
      * @param array<string, bool> $enabledCommands
      */
-    private function command(array $arguments, string $label = 'devtools', array $enabledCommands = []): string
+    private function command(array $arguments, string $label = 'devtools', array $enabledCommands = [], ?VirionRegistry $registry = null, ?Translator $translator = null): string
     {
         [$reader, $validator] = $this->validationServices();
         $discovery = new FolderPluginDiscovery();
@@ -163,7 +181,7 @@ final class DevToolsCommandHandlerTest extends TestCase
         $handler = new DevToolsCommandHandler(
             $this->createMock(Plugin::class),
             $discovery,
-            new VirionRegistry(),
+            $registry ?? new VirionRegistry(),
             $this->temporaryDirectory . '/plugins',
             $this->temporaryDirectory . '/virions',
             $this->temporaryDirectory . '/build',
@@ -202,6 +220,7 @@ final class DevToolsCommandHandlerTest extends TestCase
                 public function shutdown(): void {}
             },
             $enabledCommands,
+            translator: $translator,
         );
         $messages = [];
         $sender = $this->createMock(CommandSender::class);

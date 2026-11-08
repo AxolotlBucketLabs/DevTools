@@ -7,6 +7,9 @@
          failOnWarning="true"
          failOnRisky="true">
     <testsuites>
+        <testsuite name="support">
+            <directory>tests/Support</directory>
+        </testsuite>
         <testsuite name="loader">
             <directory>tests/Loader</directory>
             <directory>tests/Validation</directory>

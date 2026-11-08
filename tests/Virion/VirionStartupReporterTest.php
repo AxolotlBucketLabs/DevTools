@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifest;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistryEntry;
@@ -38,5 +39,18 @@ final class VirionStartupReporterTest extends TestCase
             VirionStatus::SKIPPED,
             $message,
         );
+    }
+
+    public function test_loaded_and_skipped_summaries_follow_the_runtime_language(): void
+    {
+        $registry = new VirionRegistry();
+        $manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
+        $registry->record(new VirionRegistryEntry('source', $manifest, VirionStatus::LOADED, 'Loaded ExampleVirion 1.2.3 (Example\\Library).'));
+        $registry->record($this->entry('1.0.0', 'Technical selection detail'));
+        $messages = (new VirionStartupReporter(Translator::fromResources('vie')))->messages($registry);
+
+        self::assertSame('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages[0]['message']);
+        self::assertSame('Đã bỏ qua một bản SharedVirion (1.0.0). Xem /devtools virions để biết chi tiết lựa chọn.', $messages[1]['message']);
+        self::assertSame(['Technical selection detail'], $messages[1]['details']);
     }
 }

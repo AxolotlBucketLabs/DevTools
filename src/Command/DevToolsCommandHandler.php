@@ -11,6 +11,7 @@ use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 
 use function count;
 
@@ -205,7 +206,12 @@ final class DevToolsCommandHandler
         }
         foreach ($entries as $entry) {
             $name = $entry->manifest === null ? basename($entry->location) : $entry->manifest->name;
-            $sender->sendMessage(ucfirst($entry->status->value) . " {$name}. {$entry->message}");
+            $status = $this->translate('virions.status.' . $entry->status->value);
+            $message = $entry->message;
+            if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
+                $message = $this->translate('virions.loaded', ['name' => $name, 'version' => $entry->manifest->version, 'antigen' => $entry->manifest->antigen]);
+            }
+            $sender->sendMessage("{$status} {$name}. {$message}");
         }
 
         return true;

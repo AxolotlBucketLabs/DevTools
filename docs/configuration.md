@@ -6,7 +6,7 @@ DevTools creates a server-local `config.yml` on first startup. During server sta
 
 Set `language` to `auto` to follow the language selected by Axolotl-PM. Set an explicit locale to keep DevTools language independent from the server setting. The supported Axolotl-PM locale codes are `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`.
 
-DevTools ships translated lifecycle messages, command summaries and common build results for these locales. Detailed validator and builder diagnostics keep their technical English text so paths, package names and error details remain exact. Missing translated entries fall back to English.
+DevTools ships translated lifecycle messages, command summaries, shared-virion loading summaries, local Composer-source diagnostics and common build results for these locales. Detailed validator and builder diagnostics keep their technical English text so paths, package names and error details remain exact. Missing translated entries fall back to English.
 
 The server configuration controls only the potentially expensive administrative commands. Folder plugin loading, shared virion loading, the `status` command and the `virions` command remain available when these commands are disabled.
 
@@ -77,4 +77,4 @@ Set this optional boolean to `false` when a project keeps legacy `.poggit.yml` d
 
 Composer `extra.devtools.virions` and local `.poggit.yml` `libs` remain supported for migration. `devtools.yml` is the clearest format for new non-Composer projects.
 
-For the bounded Composer v3 workflow, root `require` and `composer.lock` are the source of dependency selection. Do not repeat those packages in `devtools.yml`. Run the explicit [preparation step](dependencies.md), then point build and doctor at the prepared directory. Runtime server loading uses server-root `virions/`. A virion can itself declare the same `virions` list in `virion.yml` for local transitive requirements.
+For the bounded Composer v3 workflow, root `require` and `composer.lock` are the source of dependency selection. Do not repeat those packages in `devtools.yml`. Run the explicit [preparation step](dependencies.md), then point build and doctor at the prepared directory. Runtime server loading uses server-root `virions/`. The server setting `virions.allow-local-composer` defaults to `true` and accepts matching [local Composer sources](shared-virions.md#local-composer-sources) during development. Set it to `false` to require prepared Composer packages at startup. Build and doctor verification remain strict. A virion can itself declare the same `virions` list in `virion.yml` for local transitive requirements.

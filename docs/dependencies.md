@@ -4,6 +4,8 @@ DevTools supports local folder and PHAR virions and an explicit, bounded import 
 
 ## Local packages
 
+Composer is the recommended source for new project dependencies. The action and BedrockNexus build path use the same explicit preparation and provenance checks. Existing local packages remain supported for compatibility and development.
+
 Keep existing `virion.yml` packages in the selected virions directory. A plugin declares direct requirements in `devtools.yml`, `composer.json` `extra.devtools.virions`, or matching legacy `.poggit.yml` project libraries. No additional configuration is needed for a plugin without dependencies.
 
 ```yaml
@@ -58,7 +60,9 @@ The existing DevTools self-build explicitly packages its PHP parser source and l
 
 The Composer content hash must match the current root configuration. Installed package version, source and distribution metadata, autoload, requirements and virion metadata must agree with the lock. A locked `dev-` branch receives the internal virion version `0.0.0-commit.<full SHA>` so two commits are distinct during selection. This identifies a source revision, not an upstream semantic release or a compatibility claim. Preparation records the original Composer version, source and distribution references, complete lock SHA-256, canonical package metadata SHA-256, generated manifest SHA-256, and a deterministic hash of prepared source paths and bytes in `devtools-provenance.json`.
 
-Build selection and Composer-bound shared loading check the **package** metadata fingerprint, prepared manifest and source hashes. Two plugins with different lockfiles may share the same prepared package when that package's locked metadata is identical. Changing a tag's revision, prepared manifest or prepared source requires preparation again. Prepared packages from an older version without `manifestSha256` must be prepared again into a new directory. Provenance also accompanies the PHAR under `META-INF/virions/`. Dependency metadata appears in the build JSON result. These checks detect drift against reviewed local Composer inputs. They are not independent cryptographic authentication of upstream source.
+Build selection and shared loading of prepared Composer packages check the **package** metadata fingerprint, prepared manifest and source hashes. Two plugins with different lockfiles may share the same prepared package when that package's locked metadata is identical. Changing a tag's revision, prepared manifest or prepared source requires preparation again. Prepared packages from an older version without `manifestSha256` must be prepared again into a new directory. Provenance also accompanies the PHAR under `META-INF/virions/`. Dependency metadata appears in the build JSON result. These checks detect drift against reviewed local Composer inputs. They are not independent cryptographic authentication of upstream source.
+
+During server development, matching [local Composer sources](shared-virions.md#local-composer-sources) can satisfy semantic locked versions without provenance. This runtime option checks metadata and compatibility rather than upstream source identity. It does not apply to build or doctor verification.
 
 Source input is not modified. Symlinks in package paths or staged content are rejected. A failed build preserves any previously successful output. Keep the package's license and notice obligations when distributing the result. Standard license and notice files are copied into the artifact.
 

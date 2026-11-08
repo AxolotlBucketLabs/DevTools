@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Accept matching local Composer virion source folders during shared server development, including dependencies whose Composer and manifest names differ.
+- Preserve exact locked versions, shared conflicts and prepared-package verification, including mixed local and prepared dependency graphs.
+- Add `virions.allow-local-composer` to require prepared packages at startup when disabled. Build and doctor verification continue to require preparation.
+- Recommend Composer for new projects while retaining existing local virion workflows.
+- Translate local Composer-source diagnostics and shared-virion loading summaries into all 14 supported languages, and include translation tests in the default QA suite.
+
 ## 3.2.0 - 2026-11-08
 
 - Add bundled translations for 14 Axolotl-PM locales and let server output follow the selected server language by default.

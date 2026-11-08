@@ -62,7 +62,9 @@ flowchart TB
     Extractor --> Extracted
 ```
 
-The server path registers folder plugins and shared virions with Axolotl-PM. The build path uses local project inputs and prepared virions, shades declared virions into plugin-private namespaces when needed, and verifies the resulting PHAR. Dependency source preparation remains outside DevTools. Normal loading and building do not download external code.
+The server path registers folder plugins and shared virions with Axolotl-PM. The build path uses local project inputs and prepared virions, shades declared virions into plugin-private namespaces when needed, and verifies the resulting PHAR. Composer installs dependencies before DevTools prepares their local build inputs. Normal loading and building do not download external code.
+
+`SharedVirionConfigResolver` adapts locked Composer requirements for server development. It validates local source metadata and maps package identities to local manifest names before shared graph selection. Prepared dependencies retain their provenance checks. The manager applies the same aliases to transitive edges in memory. Build and doctor continue to use `BuildConfigResolver` directly and require prepared Composer packages.
 
 ## Folder loading at startup
 

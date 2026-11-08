@@ -69,6 +69,70 @@ function smokeVirion(string $root, string $version): void
     smokeWrite($root . '/src/Value.php', strtr(smokeRead(dirname(__DIR__) . '/tests/Fixtures/RuntimeSmoke/Value.php.tpl'), ['{{VERSION}}' => $version]));
 }
 
+function smokeComposerPlugin(string $root, bool $transitive): void
+{
+    unlink($root . '/devtools.yml');
+    $composer = ['name' => 'smoke/plugin', 'require' => ['smoke/library' => '^1.0']];
+    smokeWrite($root . '/composer.json', json_encode($composer, JSON_THROW_ON_ERROR));
+    ksort($composer);
+    smokeWrite($root . '/composer.lock', json_encode([
+        'content-hash' => md5(json_encode($composer, JSON_THROW_ON_ERROR)),
+        'packages' => array_values(smokeComposerPackages($transitive)),
+    ], JSON_THROW_ON_ERROR));
+}
+
+/** @return array<string, array<string, mixed>> */
+function smokeComposerPackages(bool $transitive): array
+{
+    $packages = ['smoke/library' => [
+        'name' => 'smoke/library', 'version' => '1.0.0',
+        'autoload' => ['psr-4' => ['RuntimeSmoke\\Library\\' => 'src/']],
+        'require' => $transitive ? ['smoke/helper' => '^1.0'] : [],
+        'extra' => ['virion' => ['spec' => '3.0', 'namespace-root' => 'RuntimeSmoke\\Library']],
+    ]];
+    if ($transitive) {
+        $packages['smoke/helper'] = [
+            'name' => 'smoke/helper', 'version' => '1.0.0',
+            'autoload' => ['psr-4' => ['RuntimeSmoke\\Helper\\' => 'src/']],
+            'extra' => ['virion' => ['spec' => '3.0', 'namespace-root' => 'RuntimeSmoke\\Helper']],
+        ];
+    }
+    return $packages;
+}
+
+function smokeComposerVirions(string $data, string $mode): void
+{
+    $mixed = $mode !== 'shared-composer-folder';
+    $library = $data . '/virions/SmokeLibrary';
+    smokeVirion($library, '1');
+    $packages = smokeComposerPackages($mixed);
+    smokeWrite($library . '/composer.json', json_encode($packages['smoke/library'], JSON_THROW_ON_ERROR));
+    if (!$mixed) {
+        return;
+    }
+    smokeWrite($library . '/virion.yml', smokeRead($library . '/virion.yml') . "virions: [{name: smoke.helper, version: '1.0.0'}]\n");
+    smokeWrite($library . '/src/Value.php', str_replace("return '1';", 'return \\RuntimeSmoke\\Helper\\Value::version();', smokeRead($library . '/src/Value.php')));
+    $helper = $data . '/virions/SmokeHelper';
+    smokeWrite($helper . '/virion.yml', "name: SmokeHelper\nversion: 1.0.0\nantigen: RuntimeSmoke\\Helper\napi: 5.0.0\n");
+    smokeWrite($helper . '/src/Value.php', "<?php namespace RuntimeSmoke\\Helper; final class Value { public static function version(): string { return '1'; } }\n");
+    smokeWrite($helper . '/composer.json', json_encode($packages['smoke/helper'], JSON_THROW_ON_ERROR));
+    $project = $data . '/plugins/SmokeA';
+    $filesystem = new AxolotlBucketLabs\DevTools\Support\Filesystem();
+    foreach (['smoke/library' => $library, 'smoke/helper' => $helper] as $name => $source) {
+        $filesystem->copyTree($source, $project . '/vendor/' . $name);
+    }
+    smokeWrite($project . '/vendor/composer/installed.json', json_encode(['packages' => array_values($packages)], JSON_THROW_ON_ERROR));
+    (new AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer($filesystem))->prepare($project, $data . '/prepared');
+    $preparedName = $mode === 'shared-composer-mixed' ? 'smoke.library' : 'smoke.helper';
+    $source = $mode === 'shared-composer-mixed' ? $library : $helper;
+    if ($mode === 'shared-composer-local-parent') {
+        smokeWrite($library . '/virion.yml', str_replace('name: smoke.helper', 'name: SmokeHelper', smokeRead($library . '/virion.yml')));
+    } else {
+        $filesystem->removeTree($source);
+    }
+    $filesystem->copyTree($data . '/prepared/' . $preparedName, $data . '/virions/' . $preparedName);
+}
+
 try {
     $root = dirname(__DIR__);
     $server = null;
@@ -140,7 +204,7 @@ try {
     smokeWrite($run . '/target.json', json_encode(['axolotl' => $reference, 'php' => PHP_VERSION, 'pmmpthread' => phpversion('pmmpthread')], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     smokeProcess([PHP_BINARY, '-d', 'phar.readonly=0', $root . '/bin/devtools-build.php', '--project=' . $root, '--out=' . $run . '/tools'], $root, $run . '/build-devtools.log', 60);
     $passed = [];
-    foreach (['shared-folder', 'shared-phar', 'private-phar'] as $mode) {
+    foreach (['shared-folder', 'shared-phar', 'shared-composer-folder', 'shared-composer-mixed', 'shared-composer-local-parent', 'private-phar'] as $mode) {
         $data = $run . '/' . $mode;
         smokeWrite($data . '/server.properties', "language=eng\nserver-ip=127.0.0.1\nserver-port=0\nenable-ipv6=off\nenable-query=off\nxbox-auth=off\nlevel-type=FLAT\nview-distance=2\nmax-players=1\n");
         smokeWrite($data . '/pocketmine.yml', "settings:\n  async-workers: 2\n  enable-dev-builds: true\n  send-usage: false\nauto-report:\n  enabled: false\nauto-updater:\n  enabled: false\nnetwork:\n  upnp-forwarding: false\ntransport:\n  name: raknet\n");
@@ -164,6 +228,9 @@ PHP);
             $version = $private && $name === 'SmokeB' ? '2' : '1';
             $project = $private ? $run . '/inputs/' . $name : $data . '/plugins/' . $name;
             smokePlugin($project, $name, $other, $version);
+            if (str_starts_with($mode, 'shared-composer-')) {
+                smokeComposerPlugin($project, $mode !== 'shared-composer-folder');
+            }
             if ($private) {
                 $virions = $run . '/inputs/virions-' . $version;
                 smokeVirion($virions . '/SmokeLibrary', $version);
@@ -172,7 +239,9 @@ PHP);
         }
         if (!$private) {
             copy($run . '/tools/DevTools.phar', $data . '/plugins/DevTools.phar');
-            if ($mode === 'shared-folder') {
+            if (str_starts_with($mode, 'shared-composer-')) {
+                smokeComposerVirions($data, $mode);
+            } elseif ($mode === 'shared-folder') {
                 smokeVirion($data . '/virions/SmokeLibrary', '1');
             } else {
                 smokeVirion($run . '/inputs/virion-phar', '1');

@@ -2,6 +2,11 @@
 # codes documented in docs/configuration.md.
 language: auto
 
+# Allow matching source folders from virions/ during server development.
+# Composer preparation remains required for builds and doctor checks.
+virions:
+  allow-local-composer: true
+
 # Server-side operations that can scan, transform or write project files.
 # Disable these on production servers that only need folder loading and shared virions.
 commands:

@@ -37,6 +37,8 @@ Copy the [short build workflow](docs/github-actions.md#short-build-workflow) to 
 
 Server startup and ordinary builds use local dependencies. DevTools does not replace Composer or provide hot reload.
 
+For new projects, declare libraries in `composer.json` and commit `composer.lock`. The [Composer workflow](docs/dependencies.md#composer-preparation) prepares locked dependencies for standalone PHAR builds. Existing local virion projects remain supported. During server development, matching source folders in `virions/` can satisfy locked Composer dependencies without preparation. See [local Composer sources](docs/shared-virions.md#local-composer-sources) for the checks and configuration.
+
 For troubleshooting, set `logging.debug: true` in the server `config.yml`, or add `--debug` to a CLI command. DEBUG is off by default and reports lifecycle, discovery, dependency-selection and artifact summaries without printing source contents or credentials.
 
 ## Requirements

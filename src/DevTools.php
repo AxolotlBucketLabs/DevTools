@@ -6,6 +6,7 @@ namespace AxolotlBucketLabs\DevTools;
 
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
 use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
+use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
 use AxolotlBucketLabs\DevTools\Command\BuildJobRunner;
 use AxolotlBucketLabs\DevTools\Command\DevToolsCommandHandler;
 use AxolotlBucketLabs\DevTools\Command\ThreadBuildJobRunner;
@@ -92,6 +93,14 @@ final class DevTools extends PluginBase
         $registry = new VirionRegistry();
         $selector = new VirionProjectSelector();
         $configResolver = new BuildConfigResolver($yaml);
+        $sharedConfigResolver = new SharedVirionConfigResolver(
+            $configResolver,
+            $virionDiscovery,
+            $virionFactory,
+            (bool) $this->getConfig()->getNested('virions.allow-local-composer', true),
+            $debug,
+            $this->translator,
+        );
         $requirements = [];
         /** @var array<string, list<VirionRequirement>> $requirementsByProject */
         $requirementsByProject = [];
@@ -116,13 +125,13 @@ final class DevTools extends PluginBase
                 continue;
             }
             try {
-                $projectRequirements = $configResolver->resolve($project, $manifest->description->getName())->virions;
+                $projectRequirements = $sharedConfigResolver->resolve($project, $manifest->description->getName(), $virionsDirectory);
                 $requirementsByProject[$normalizeProjectPath($project)] = $projectRequirements;
                 $requirements = array_merge($requirements, $projectRequirements);
             } catch (Throwable $error) {
                 $configurationFailures[$normalizeProjectPath($project)] = $error->getMessage();
                 $this->getLogger()->warning(
-                    "Cannot read shared-virion requirements for {$project}. {$error->getMessage()}",
+                    $this->translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]),
                 );
             }
         }
@@ -136,7 +145,7 @@ final class DevTools extends PluginBase
             $server->getApiVersion(),
             $debug,
         );
-        $manager->discoverAndLoad($virionsDirectory, $requirements);
+        $manager->discoverAndLoad($virionsDirectory, $requirements, $sharedConfigResolver->aliases(), $sharedConfigResolver->skippedLocations());
 
         $sharedVirionAntigens = [];
         $sharedVirionClasses = [];
@@ -190,7 +199,7 @@ final class DevTools extends PluginBase
             $this->translator,
         );
 
-        foreach ((new VirionStartupReporter())->messages($registry) as $message) {
+        foreach ((new VirionStartupReporter($this->translator))->messages($registry) as $message) {
             if ($message['level'] === 'info') {
                 $this->getLogger()->info($message['message']);
             } else {
