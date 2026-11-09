@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.3.1 - 2026-11-10
+
+- Complete the 14 locale catalogs and localize the remaining user-facing CLI and runtime messages.
+- Clarify the runtime startup phases without changing the v3 build workflow or dependency contract.
+- Align the CLI, ecosystem and GitHub Actions documentation with the current v3 interfaces and placeholder syntax.
+- Align PHP formatting with PocketMine-MP conventions and add a dedicated code style workflow.
+
 ## 3.3.0 - 2026-11-09
 
 - Accept matching local Composer virion source folders during shared server development, including dependencies whose Composer and manifest names differ.
