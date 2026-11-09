@@ -1,0 +1,63 @@
+name: PHP code style
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: code-style-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-cs-fixer:
+    name: PHP-CS-Fixer
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out Axolotl-PM PHP setup helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: axolotl-pm/setup-php-action
+          ref: b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e
+          path: .devtools-dependencies/setup-php-action
+          persist-credentials: false
+
+      - name: Set up Axolotl-PM PHP 8.4 on Node.js 24
+        shell: bash
+        env:
+          INPUT_PHP-VERSION: '8.4'
+          INPUT_PM-VERSION-MAJOR: '5'
+          INPUT_INSTALL-PATH: ./.php-bin
+          PHP_VERSION: '8.4'
+          PM_VERSION_MAJOR: '5'
+          INSTALL_PATH: ./.php-bin
+        run: |
+          if node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"; then
+            exit 0
+          fi
+          bash .github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
+
+      - name: Restore Composer download cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/composer/files
+            ~/.cache/composer/vcs
+          key: composer-v2-${{ runner.os }}-php-8.4-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-v2-${{ runner.os }}-php-8.4-
+
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
+
+      - name: Check PHP code style
+        run: composer lint
