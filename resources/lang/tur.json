@@ -19,7 +19,7 @@
     "command.permission": "/devtools {command} komutunu kullanma izniniz yok.",
     "command.disabled": "/devtools {command} komutu yapılandırmada devre dışı bırakıldı.",
     "command.failed": "DevTools komutu tamamlayamadı.\n{error}",
-    "command.help": "DevTools komutları\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools komutları\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Bir DevTools arka plan görevi zaten çalışıyor. Tamamlanmasını bekleyin.",
     "queue.queued": "DevTools {description} kuyruğa eklendi.",
     "status.summary": "DevTools {version}\nGeliştirme eklentisi klasörleri: {projects}\nYüklenen paylaşılan virion'lar: {virions}\nEşzamansız çalışan sınıf yüklemesi: {async}\nArka plan görevi: {job}\nDerleme çıktısı: {output}",

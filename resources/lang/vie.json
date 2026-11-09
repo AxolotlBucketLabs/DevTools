@@ -19,7 +19,7 @@
     "command.permission": "Bạn không có quyền sử dụng /devtools {command}.",
     "command.disabled": "Lệnh /devtools {command} đã bị tắt trong cấu hình.",
     "command.failed": "DevTools không thể hoàn tất lệnh.\n{error}",
-    "command.help": "Các lệnh DevTools\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "Các lệnh DevTools\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Một tác vụ nền của DevTools đang chạy. Vui lòng chờ tác vụ hoàn tất.",
     "queue.queued": "Đã xếp hàng tác vụ DevTools {description}.",
     "status.summary": "DevTools {version}\nThư mục plugin phát triển: {projects}\nVirion dùng chung đã tải: {virions}\nNạp class trên worker bất đồng bộ: {async}\nTác vụ nền: {job}\nĐầu ra build: {output}",

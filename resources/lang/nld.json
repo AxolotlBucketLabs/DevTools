@@ -19,7 +19,7 @@
     "command.permission": "Je hebt geen toestemming om /devtools {command} te gebruiken.",
     "command.disabled": "Het commando /devtools {command} is uitgeschakeld in de configuratie.",
     "command.failed": "DevTools kon het commando niet voltooien.\n{error}",
-    "command.help": "DevTools-commando's\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools-commando's\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Er draait al een DevTools-achtergrondtaak. Wacht tot deze klaar is.",
     "queue.queued": "DevTools {description} is in de wachtrij geplaatst.",
     "status.summary": "DevTools {version}\nMappen met ontwikkelplugins: {projects}\nGeladen gedeelde virions: {virions}\nKlassen laden in de asynchrone worker: {async}\nAchtergrondtaak: {job}\nBuild-uitvoer: {output}",

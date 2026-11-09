@@ -19,7 +19,7 @@
     "command.permission": "Du hast keine Berechtigung für /devtools {command}.",
     "command.disabled": "Der Befehl /devtools {command} ist in der Konfiguration deaktiviert.",
     "command.failed": "DevTools konnte den Befehl nicht abschließen.\n{error}",
-    "command.help": "DevTools-Befehle:\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools-Befehle:\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Ein DevTools-Hintergrundauftrag läuft bereits. Warte, bis er abgeschlossen ist.",
     "queue.queued": "DevTools {description} wurde in die Warteschlange eingereiht.",
     "status.summary": "DevTools {version}\nPlugin-Ordner für die Entwicklung: {projects}\nGeladene gemeinsame Virions: {virions}\nKlassenladen im asynchronen Worker: {async}\nHintergrundauftrag: {job}\nBuild-Ausgabe: {output}",

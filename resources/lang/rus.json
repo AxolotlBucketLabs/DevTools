@@ -19,7 +19,7 @@
     "command.permission": "У вас нет разрешения использовать /devtools {command}.",
     "command.disabled": "Команда /devtools {command} отключена в конфигурации.",
     "command.failed": "DevTools не удалось выполнить команду.\n{error}",
-    "command.help": "Команды DevTools\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "Команды DevTools\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Фоновая задача DevTools уже выполняется. Дождитесь её завершения.",
     "queue.queued": "Задача DevTools {description} добавлена в очередь.",
     "status.summary": "DevTools {version}\nПапки плагинов для разработки: {projects}\nЗагружено общих virion: {virions}\nЗагрузка классов асинхронным обработчиком: {async}\nФоновая задача: {job}\nРезультат сборки: {output}",

@@ -19,7 +19,7 @@
     "command.permission": "Нямате право да използвате /devtools {command}.",
     "command.disabled": "Командата /devtools {command} е изключена от конфигурацията.",
     "command.failed": "DevTools не можа да изпълни командата.\n{error}",
-    "command.help": "Команди на DevTools:\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "Команди на DevTools:\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Вече се изпълнява фонова задача на DevTools. Изчакайте да завърши.",
     "queue.queued": "Задачата на DevTools е поставена на опашка: {description}.",
     "status.summary": "DevTools {version}\nПапки с плъгини за разработка: {projects}\nЗаредени споделени virion-и: {virions}\nЗареждане на класове от асинхронен работник: {async}\nФонова задача: {job}\nИзходна папка за изграждане: {output}",

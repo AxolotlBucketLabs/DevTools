@@ -19,7 +19,7 @@
     "command.permission": "Jums nav atļaujas izmantot /devtools {command}.",
     "command.disabled": "Komanda /devtools {command} konfigurācijā ir atspējota.",
     "command.failed": "DevTools nevarēja pabeigt komandu.\n{error}",
-    "command.help": "DevTools komandas\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools komandas\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "DevTools fona uzdevums jau darbojas. Lūdzu, pagaidiet, līdz tas beidzas.",
     "queue.queued": "DevTools {description} ir ievietots rindā.",
     "status.summary": "DevTools {version}\nIzstrādes spraudņu mapes: {projects}\nIelādētie koplietojamie virioni: {virions}\nAsinhronā darba procesa klašu ielāde: {async}\nFona uzdevums: {job}\nVeidošanas izvade: {output}",

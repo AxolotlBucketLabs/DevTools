@@ -19,7 +19,7 @@
     "command.permission": "No tienes permiso para usar /devtools {command}.",
     "command.disabled": "El comando /devtools {command} está desactivado en la configuración.",
     "command.failed": "DevTools no pudo completar el comando.\n{error}",
-    "command.help": "Comandos de DevTools\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "Comandos de DevTools\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "Ya hay una tarea de DevTools ejecutándose. Espera a que termine.",
     "queue.queued": "DevTools {description} se añadió a la cola.",
     "status.summary": "DevTools {version}\nCarpetas de plugins de desarrollo: {projects}\nVirions compartidos cargados: {virions}\nCarga de clases del worker asíncrono: {async}\nTarea en segundo plano: {job}\nSalida de compilación: {output}",

@@ -96,7 +96,7 @@ The command keeps the legacy `devtools.command` permission for compatibility. It
 
 ```text
 /devtools status
-/devtools doctor [plugin]
+/devtools doctor [PLUGIN]
 /devtools virions
 /devtools build [plugin|virion|both] PROJECT [--overwrite]
 /devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]

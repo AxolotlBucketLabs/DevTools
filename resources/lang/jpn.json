@@ -19,7 +19,7 @@
     "command.permission": "/devtools {command} を使用する権限がありません。",
     "command.disabled": "/devtools {command} は設定で無効になっています。",
     "command.failed": "DevTools はコマンドを完了できませんでした。\n{error}",
-    "command.help": "DevTools コマンド\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools コマンド\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "DevTools のバックグラウンド処理がすでに実行中です。完了するまでお待ちください。",
     "queue.queued": "DevTools {description} をキューに追加しました。",
     "status.summary": "DevTools {version}\n開発用プラグインフォルダー：{projects}\n読み込まれた共有 virion：{virions}\n非同期ワーカーのクラス読み込み：{async}\nバックグラウンド処理：{job}\nビルド出力：{output}",

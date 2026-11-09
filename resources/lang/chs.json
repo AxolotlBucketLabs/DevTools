@@ -19,7 +19,7 @@
     "command.permission": "你没有权限使用 /devtools {command}。",
     "command.disabled": "/devtools {command} 命令已在配置中禁用。",
     "command.failed": "DevTools 无法完成该命令。\n{error}",
-    "command.help": "DevTools 命令\n/devtools status\n/devtools doctor [plugin]\n/devtools build [plugin|virion|both] <project> [--overwrite]\n/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
+    "command.help": "DevTools 命令\n/devtools status\n/devtools doctor [PLUGIN]\n/devtools build [plugin|virion|both] PROJECT [--overwrite]\n/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]\n/devtools virions",
     "queue.busy": "DevTools 后台任务正在运行。请等待它完成。",
     "queue.queued": "已排队执行 DevTools {description}。",
     "status.summary": "DevTools {version}\n开发插件文件夹：{projects}\n已加载的共享 virion：{virions}\n异步工作线程类加载：{async}\n后台任务：{job}\n构建输出：{output}",
