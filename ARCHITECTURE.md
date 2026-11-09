@@ -86,6 +86,8 @@ For each virion, a deterministic plugin-private namespace is derived from plugin
 
 The builder writes a temporary SHA-256 PHAR, reopens it, verifies the manifest, main class path, shaded roots, and signature, then installs it. Existing output moves to a temporary backup only when overwrite was explicit and is restored if installation fails.
 
+For dual-role builds, `DualArtifactBuilder::prepare()` verifies that both manifests exist and parses their identities into a `DualArtifactProject`. The CLI and server worker pass that value to `build()`. The module owns the `-plugin` and `-virion` output names, staging and paired installation. The CLI performs dependency checks between preparation and building so malformed manifests remain structure failures, missing dependencies remain dependency failures and build errors remain artifact failures in JSON output.
+
 The GitHub Action has a separate opt-in pre-build gate. With no `phpstan` input it performs no analysis. When enabled, `PhpStanConfigGenerator` creates an isolated configuration that analyzes only the plugin source and discovers types from an explicitly checked-out server plus declared virions. The action does not select or download a server itself. Composer plugins and scripts are disabled while installing the selected server's production dependencies.
 
 ## Extraction

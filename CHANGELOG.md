@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Move dual-role project validation and artifact naming into `DualArtifactBuilder`. Direct PHP callers must prepare a `DualArtifactProject` before building and update the builder and CLI constructors. See [migration](docs/migration.md#direct-php-integrations).
+- Keep CLI failure phases, paired artifact installation and the existing command and workflow syntax.
+- Use one translated dual-role rejection message for CLI and server commands across all 14 locales.
+
 ## 3.3.1 - 2026-11-10
 
 - Complete the 14 locale catalogs and localize the remaining user-facing CLI and runtime messages.

@@ -35,6 +35,23 @@ Shared source plugins need one compatible library version. Each built PHAR has p
 
 Unsupported Composer package layouts and dynamic class references fail explicitly. Adapt the package to the documented subset or retain a compatible packaging tool for that project.
 
+## Direct PHP integrations
+
+The dual artifact PHP interface has changed. CLI commands, server commands and GitHub workflow inputs keep their existing syntax.
+
+`DualArtifactBuilder` now requires `PluginManifestReader`, `VirionManifestReader` and `ProjectRoleDetector` after its existing constructor dependencies. Call `prepare()` with the project root, then pass the returned `DualArtifactProject` to `build()` instead of a root string and two output names.
+
+```php
+$project = $dualArtifactBuilder->prepare($projectRoot);
+$artifacts = $dualArtifactBuilder->build($project, $virionsDirectory, $outputDirectory, $overwrite);
+```
+
+The builder derives `<plugin-name>-plugin.phar` and `<virion-name>-virion.phar` from the manifests. For custom pair names, build both artifacts into a private staging directory with `PharBuilder` and `VirionBuilder`, then install them together with `ArtifactSetInstaller::install()`.
+
+For `Cli\Application` construction, remove the `ProjectRoleDetector` argument and supply a `DualArtifactBuilder` as the required argument after `VirionManifestReader`. The optional fallback builder has been removed.
+
+The CLI uses `build.both_required` for dual-role rejection, matching the server worker. Custom translation catalogs can remove the unused `cli.both_roles_required` entry.
+
 ## Publication
 
 A tag such as `v1.2.3-rc.1` must match `plugin.yml` version `1.2.3-rc.1` exactly. Nightlies use `nightly-<full commit SHA>` tags. The reusable publication workflow does not replace existing releases or move published tags. See [GitHub Actions](github-actions.md#tag-release) for configuration.
