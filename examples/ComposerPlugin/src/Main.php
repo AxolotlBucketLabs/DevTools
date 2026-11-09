@@ -9,8 +9,8 @@ use pocketmine\plugin\PluginBase;
 
 final class Main extends PluginBase
 {
-    public function onEnable(): void
-    {
-        $this->getLogger()->info(Greeting::message());
-    }
+	public function onEnable() : void
+	{
+		$this->getLogger()->info(Greeting::message());
+	}
 }

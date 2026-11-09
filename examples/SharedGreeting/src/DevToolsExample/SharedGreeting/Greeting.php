@@ -6,8 +6,8 @@ namespace DevToolsExample\SharedGreeting;
 
 final class Greeting
 {
-    public static function message(): string
-    {
-        return 'Hello from one shared development virion.';
-    }
+	public static function message() : string
+	{
+		return 'Hello from one shared development virion.';
+	}
 }
