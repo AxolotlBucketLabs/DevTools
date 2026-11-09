@@ -63,5 +63,26 @@
     "extract.directory": "Kan de {type}-map {directory} niet bepalen.",
     "extract.outside": "Extractie buiten {path} wordt geweigerd.",
     "cli.usage_suggestion": "Voer --help uit voor ondersteunde opdrachten en opties.",
-    "cli.failure_suggestion": "Corrigeer de gemelde invoer of omgevingsfout en probeer opnieuw. Dit betekent niet dat runtime-validatie is uitgevoerd."
+    "cli.failure_suggestion": "Corrigeer de gemelde invoer of omgevingsfout en probeer opnieuw. Dit betekent niet dat runtime-validatie is uitgevoerd.",
+
+    "runtime.language_fallback": "De geconfigureerde DevTools-taal kan niet worden gebruikt. {error} Er wordt teruggevallen op Engels.",
+    "runtime.plugin_manifest_failed": "Het pluginmanifest voor {project} kan niet worden gelezen. {error}",
+    "runtime.duplicate_sources": "Plugin {name} heeft zowel een ontwikkelmap als een PHAR. DevTools geeft de voorkeur aan de ontwikkelmap, maar de volgorde van de ingebouwde PHAR-lader van Axolotl-PM kan niet worden gewijzigd.",
+    "cli.cwd_unavailable": "De werkmap kan niet worden bepaald.",
+    "cli.project_missing": "De projectmap {project} bestaat niet.",
+    "cli.artifact_type_missing": "Het artifacttype kon niet worden bepaald.",
+    "cli.dual_artifact_type_required": "Een artifact met twee rollen vereist --type=plugin of --type=virion voor extractie.",
+    "cli.both_roles_required": "Voor het bouwen van beide rollen is een project met plugin.yml en virion.yml nodig. Het geselecteerde project is {project}.",
+    "cli.path_option_invalid": "De padoptie {option} is dubbel of ongeldig.",
+    "cli.unknown_argument": "Onbekende opdracht of argument {argument}.",
+    "cli.command_required": "Geef een opdracht op.",
+    "cli.option_unsupported": "De optie --{option} wordt niet ondersteund voor {command}.",
+    "cli.build_type_invalid": "De optie --type voor build moet plugin, virion of both zijn.",
+    "cli.extract_type_invalid": "De optie --type voor extract moet auto, plugin of virion zijn.",
+    "cli.format_invalid": "De optie --format moet folder of zip zijn.",
+    "cli.option_required": "Geef de vereiste optie --{option}=<path> op.",
+    "cli.artifact_type_mismatch": "Artifacttype {detected} komt niet overeen met het gevraagde type {type}.",
+    "cli.local_path_only": "CLI-paden moeten lokale bestandssysteempaden zijn en geen stream-URL's.",
+    "worker.path_missing": "Workerpad {key} ontbreekt.",
+    "extract.phar_not_found": "PHAR {selection} is niet gevonden. Controleer het pad of de map build/."
 }

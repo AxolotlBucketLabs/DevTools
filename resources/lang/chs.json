@@ -63,5 +63,26 @@
     "extract.directory": "无法解析 {type} 目录 {directory}。",
     "extract.outside": "拒绝将内容提取到 {path} 之外。",
     "cli.usage_suggestion": "运行 --help 查看支持的命令和选项。",
-    "cli.failure_suggestion": "修正报告的输入或环境问题后重试。此操作不表示已执行运行时验证。"
+    "cli.failure_suggestion": "修正报告的输入或环境问题后重试。此操作不表示已执行运行时验证。",
+
+    "runtime.language_fallback": "无法使用配置的 DevTools 语言。{error} 将回退到英语。",
+    "runtime.plugin_manifest_failed": "无法读取 {project} 的插件清单。{error}",
+    "runtime.duplicate_sources": "插件 {name} 同时存在开发文件夹和 PHAR。DevTools 优先使用开发文件夹，但无法改变 Axolotl-PM 内置 PHAR 加载器的顺序。",
+    "cli.cwd_unavailable": "无法确定工作目录。",
+    "cli.project_missing": "项目目录 {project} 不存在。",
+    "cli.artifact_type_missing": "无法检测工件类型。",
+    "cli.dual_artifact_type_required": "双角色工件必须使用 --type=plugin 或 --type=virion 才能提取。",
+    "cli.both_roles_required": "构建两个角色时，项目必须同时包含 plugin.yml 和 virion.yml。当前项目为 {project}。",
+    "cli.path_option_invalid": "路径选项 {option} 重复或无效。",
+    "cli.unknown_argument": "未知的命令或参数 {argument}。",
+    "cli.command_required": "请指定一个命令。",
+    "cli.option_unsupported": "命令 {command} 不支持选项 --{option}。",
+    "cli.build_type_invalid": "build 的 --type 选项必须是 plugin、virion 或 both。",
+    "cli.extract_type_invalid": "extract 的 --type 选项必须是 auto、plugin 或 virion。",
+    "cli.format_invalid": "--format 选项必须是 folder 或 zip。",
+    "cli.option_required": "请提供必需的选项 --{option}=<path>。",
+    "cli.artifact_type_mismatch": "工件类型 {detected} 与请求的类型 {type} 不匹配。",
+    "cli.local_path_only": "CLI 路径必须是本地文件系统路径，不能是流 URL。",
+    "worker.path_missing": "缺少 worker 路径 {key}。",
+    "extract.phar_not_found": "找不到 PHAR {selection}。请检查路径或 build/ 目录。"
 }

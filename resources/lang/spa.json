@@ -63,5 +63,26 @@
     "extract.directory": "No se puede resolver el directorio {type} {directory}.",
     "extract.outside": "Se rechaza la extracción fuera de {path}.",
     "cli.usage_suggestion": "Ejecuta --help para ver los comandos y opciones compatibles.",
-    "cli.failure_suggestion": "Corrige la entrada o el problema del entorno indicado y vuelve a intentarlo. Esto no implica que se haya validado el tiempo de ejecución."
+    "cli.failure_suggestion": "Corrige la entrada o el problema del entorno indicado y vuelve a intentarlo. Esto no implica que se haya validado el tiempo de ejecución.",
+
+    "runtime.language_fallback": "No se puede usar el idioma de DevTools configurado. {error} Se volverá al inglés.",
+    "runtime.plugin_manifest_failed": "No se puede leer el manifiesto del plugin para {project}. {error}",
+    "runtime.duplicate_sources": "El plugin {name} tiene una carpeta de desarrollo y un PHAR. DevTools prefiere la carpeta de desarrollo, pero no se puede cambiar el orden del cargador PHAR integrado de Axolotl-PM.",
+    "cli.cwd_unavailable": "No se puede determinar el directorio de trabajo.",
+    "cli.project_missing": "El directorio del proyecto {project} no existe.",
+    "cli.artifact_type_missing": "No se pudo detectar el tipo de artefacto.",
+    "cli.dual_artifact_type_required": "Un artefacto con dos roles requiere --type=plugin o --type=virion para extraerse.",
+    "cli.both_roles_required": "Para compilar ambos roles se necesita un proyecto con plugin.yml y virion.yml. El proyecto seleccionado es {project}.",
+    "cli.path_option_invalid": "La opción de ruta {option} está duplicada o no es válida.",
+    "cli.unknown_argument": "Comando o argumento desconocido: {argument}.",
+    "cli.command_required": "Especifica un comando.",
+    "cli.option_unsupported": "La opción --{option} no es compatible con {command}.",
+    "cli.build_type_invalid": "La opción --type de build debe ser plugin, virion o both.",
+    "cli.extract_type_invalid": "La opción --type de extract debe ser auto, plugin o virion.",
+    "cli.format_invalid": "La opción --format debe ser folder o zip.",
+    "cli.option_required": "Proporciona la opción obligatoria --{option}=<path>.",
+    "cli.artifact_type_mismatch": "El tipo de artefacto {detected} no coincide con el tipo solicitado {type}.",
+    "cli.local_path_only": "Las rutas CLI deben ser rutas locales del sistema de archivos, no URL de flujo.",
+    "worker.path_missing": "Falta la ruta del worker {key}.",
+    "extract.phar_not_found": "No se encontró el PHAR {selection}. Comprueba la ruta o el directorio build/."
 }

@@ -74,7 +74,7 @@ final class DevTools extends PluginBase
         $buildDirectory = $server->getDataPath() . 'build';
         $filesystem->ensureDirectory($virionsDirectory);
         $filesystem->ensureDirectory($buildDirectory);
-        foreach ($sourceConflictDetector->detect($pluginsDirectory, $ownSourceProject) as $warning) {
+        foreach ($sourceConflictDetector->detect($pluginsDirectory, $ownSourceProject, $this->translator) as $warning) {
             $this->getLogger()->warning($warning);
         }
 
@@ -190,7 +190,7 @@ final class DevTools extends PluginBase
                 $server->getLanguage()->getLang(),
             ));
         } catch (Throwable $error) {
-            $this->getLogger()->warning("Cannot use configured DevTools language. {$error->getMessage()} Falling back to English.");
+            $this->getLogger()->warning(Translator::fromResources()->translate('runtime.language_fallback', ['error' => $error->getMessage()]));
 
             return Translator::fromResources();
         }
@@ -222,7 +222,7 @@ final class DevTools extends PluginBase
                 $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
             } catch (Throwable $error) {
                 $this->getLogger()->warning(
-                    "Cannot read plugin manifest for {$project}. {$error->getMessage()}",
+                    $translator->translate('runtime.plugin_manifest_failed', ['project' => $project, 'error' => $error->getMessage()]),
                 );
 
                 continue;
@@ -286,7 +286,7 @@ final class DevTools extends PluginBase
 
     protected function onEnable(): void
     {
-        $this->getLogger()->info($this->translator?->translate('runtime.ready') ?? 'Folder plugin loading, shared virions, and standalone PHAR building are ready.');
+        $this->getLogger()->info(($this->translator ?? Translator::fromResources())->translate('runtime.ready'));
     }
 
     protected function onDisable(): void
@@ -299,7 +299,7 @@ final class DevTools extends PluginBase
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
     {
         if ($this->commandHandler === null) {
-            $sender->sendMessage($this->translator?->translate('runtime.not_started') ?? 'DevTools did not finish starting. Check the server log for the startup error.');
+            $sender->sendMessage(($this->translator ?? Translator::fromResources())->translate('runtime.not_started'));
 
             return true;
         }

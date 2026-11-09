@@ -62,5 +62,26 @@
     "cli.version": "DevTools {version}",
     "cli.static_notice": "Static analysis and Axolotl-PM runtime tests were not run.",
     "cli.usage_suggestion": "Run --help for supported commands and options.",
-    "cli.failure_suggestion": "Correct the reported input or environment problem and retry. No runtime validation is implied."
+    "cli.failure_suggestion": "Correct the reported input or environment problem and retry. No runtime validation is implied.",
+
+    "runtime.language_fallback": "Cannot use configured DevTools language. {error} Falling back to English.",
+    "runtime.plugin_manifest_failed": "Cannot read plugin manifest for {project}. {error}",
+    "runtime.duplicate_sources": "Plugin {name} has both a development folder and a PHAR. DevTools prefers the development folder, but Axolotl-PM's built-in PHAR loader order cannot be changed.",
+    "cli.cwd_unavailable": "Cannot determine the working directory.",
+    "cli.project_missing": "Project directory {project} does not exist.",
+    "cli.artifact_type_missing": "Artifact type could not be detected.",
+    "cli.dual_artifact_type_required": "A dual-role artifact requires --type=plugin or --type=virion for extraction.",
+    "cli.both_roles_required": "Building both roles requires a project containing both plugin.yml and virion.yml. The selected project is {project}.",
+    "cli.path_option_invalid": "Path option {option} is duplicate or invalid.",
+    "cli.unknown_argument": "Unknown command or argument {argument}.",
+    "cli.command_required": "Specify a command.",
+    "cli.option_unsupported": "Option --{option} is not supported for {command}.",
+    "cli.build_type_invalid": "Option --type for build must be plugin, virion or both.",
+    "cli.extract_type_invalid": "Option --type for extract must be auto, plugin or virion.",
+    "cli.format_invalid": "Option --format must be folder or zip.",
+    "cli.option_required": "Provide the required option --{option}=<path>.",
+    "cli.artifact_type_mismatch": "Artifact type {detected} does not match requested type {type}.",
+    "cli.local_path_only": "CLI paths must be local filesystem paths, not stream URLs.",
+    "worker.path_missing": "Missing worker path {key}.",
+    "extract.phar_not_found": "Cannot find PHAR {selection}. Check the path or the build/ directory."
 }

@@ -63,5 +63,26 @@
     "extract.directory": "Không thể resolve thư mục {type} {directory}.",
     "extract.outside": "Từ chối giải nén ra ngoài {path}.",
     "cli.usage_suggestion": "Chạy --help để xem các lệnh và tùy chọn được hỗ trợ.",
-    "cli.failure_suggestion": "Sửa input hoặc vấn đề môi trường được báo cáo rồi thử lại. Điều này không có nghĩa runtime đã được kiểm tra."
+    "cli.failure_suggestion": "Sửa input hoặc vấn đề môi trường được báo cáo rồi thử lại. Điều này không có nghĩa runtime đã được kiểm tra.",
+
+    "runtime.language_fallback": "Không thể dùng ngôn ngữ DevTools đã cấu hình. {error} Sẽ chuyển về tiếng Anh.",
+    "runtime.plugin_manifest_failed": "Không thể đọc manifest plugin của {project}. {error}",
+    "runtime.duplicate_sources": "Plugin {name} có cả thư mục phát triển và PHAR. DevTools ưu tiên thư mục phát triển, nhưng không thể thay đổi thứ tự loader PHAR tích hợp của Axolotl-PM.",
+    "cli.cwd_unavailable": "Không thể xác định thư mục làm việc.",
+    "cli.project_missing": "Thư mục project {project} không tồn tại.",
+    "cli.artifact_type_missing": "Không thể xác định loại artifact.",
+    "cli.dual_artifact_type_required": "Artifact hai vai trò yêu cầu --type=plugin hoặc --type=virion để giải nén.",
+    "cli.both_roles_required": "Build cả hai vai trò yêu cầu project có plugin.yml và virion.yml. Project được chọn là {project}.",
+    "cli.path_option_invalid": "Tùy chọn path {option} bị trùng hoặc không hợp lệ.",
+    "cli.unknown_argument": "Không xác định được command hoặc tham số {argument}.",
+    "cli.command_required": "Hãy chỉ định command.",
+    "cli.option_unsupported": "Tùy chọn --{option} không được hỗ trợ cho {command}.",
+    "cli.build_type_invalid": "Tùy chọn --type của build phải là plugin, virion hoặc both.",
+    "cli.extract_type_invalid": "Tùy chọn --type của extract phải là auto, plugin hoặc virion.",
+    "cli.format_invalid": "Tùy chọn --format phải là folder hoặc zip.",
+    "cli.option_required": "Hãy cung cấp tùy chọn bắt buộc --{option}=<path>.",
+    "cli.artifact_type_mismatch": "Loại artifact {detected} không khớp với loại được yêu cầu {type}.",
+    "cli.local_path_only": "CLI path phải là đường dẫn filesystem local, không phải stream URL.",
+    "worker.path_missing": "Thiếu worker path {key}.",
+    "extract.phar_not_found": "Không tìm thấy PHAR {selection}. Hãy kiểm tra path hoặc thư mục build/."
 }

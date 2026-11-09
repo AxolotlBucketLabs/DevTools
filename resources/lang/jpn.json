@@ -63,5 +63,26 @@
     "extract.directory": "{type} ディレクトリ {directory} を解決できません。",
     "extract.outside": "{path} の外部にある抽出先は拒否されます。",
     "cli.usage_suggestion": "対応しているコマンドとオプションを確認するには --help を実行してください。",
-    "cli.failure_suggestion": "報告された入力または環境の問題を修正して、もう一度試してください。これはランタイム検証が実行されたことを意味しません。"
+    "cli.failure_suggestion": "報告された入力または環境の問題を修正して、もう一度試してください。これはランタイム検証が実行されたことを意味しません。",
+
+    "runtime.language_fallback": "設定された DevTools の言語を使用できません。{error} 英語に戻します。",
+    "runtime.plugin_manifest_failed": "{project} のプラグインマニフェストを読み込めません。{error}",
+    "runtime.duplicate_sources": "プラグイン {name} には開発フォルダーと PHAR の両方があります。DevTools は開発フォルダーを優先しますが、Axolotl-PM 内蔵 PHAR ローダーの順序は変更できません。",
+    "cli.cwd_unavailable": "作業ディレクトリを特定できません。",
+    "cli.project_missing": "プロジェクトディレクトリ {project} は存在しません。",
+    "cli.artifact_type_missing": "アーティファクトの種類を判定できませんでした。",
+    "cli.dual_artifact_type_required": "2つのロールを持つアーティファクトを抽出するには、--type=plugin または --type=virion が必要です。",
+    "cli.both_roles_required": "両方のロールをビルドするには、plugin.yml と virion.yml を含むプロジェクトが必要です。選択されたプロジェクトは {project} です。",
+    "cli.path_option_invalid": "パスオプション {option} は重複しているか無効です。",
+    "cli.unknown_argument": "不明なコマンドまたは引数 {argument} です。",
+    "cli.command_required": "コマンドを指定してください。",
+    "cli.option_unsupported": "オプション --{option} は {command} では使用できません。",
+    "cli.build_type_invalid": "build の --type オプションは plugin、virion、または both である必要があります。",
+    "cli.extract_type_invalid": "extract の --type オプションは auto、plugin、または virion である必要があります。",
+    "cli.format_invalid": "--format オプションは folder または zip である必要があります。",
+    "cli.option_required": "必須オプション --{option}=<path> を指定してください。",
+    "cli.artifact_type_mismatch": "アーティファクトの種類 {detected} は要求された種類 {type} と一致しません。",
+    "cli.local_path_only": "CLI パスにはストリーム URL ではなくローカルファイルシステムのパスを指定してください。",
+    "worker.path_missing": "worker パス {key} がありません。",
+    "extract.phar_not_found": "PHAR {selection} が見つかりません。パスまたは build/ ディレクトリを確認してください。"
 }

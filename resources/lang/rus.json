@@ -63,5 +63,26 @@
     "extract.directory": "Невозможно определить каталог {type} {directory}.",
     "extract.outside": "Извлечение за пределы {path} запрещено.",
     "cli.usage_suggestion": "Запустите --help, чтобы увидеть поддерживаемые команды и параметры.",
-    "cli.failure_suggestion": "Исправьте указанные входные данные или проблему окружения и повторите попытку. Это не означает, что была выполнена проверка во время работы."
+    "cli.failure_suggestion": "Исправьте указанные входные данные или проблему окружения и повторите попытку. Это не означает, что была выполнена проверка во время работы.",
+
+    "runtime.language_fallback": "Не удалось использовать настроенный язык DevTools. {error} Возврат к английскому языку.",
+    "runtime.plugin_manifest_failed": "Не удалось прочитать манифест плагина для {project}. {error}",
+    "runtime.duplicate_sources": "У плагина {name} есть папка разработки и PHAR. DevTools предпочитает папку разработки, но порядок встроенного загрузчика PHAR Axolotl-PM изменить нельзя.",
+    "cli.cwd_unavailable": "Невозможно определить рабочий каталог.",
+    "cli.project_missing": "Каталог проекта {project} не существует.",
+    "cli.artifact_type_missing": "Не удалось определить тип артефакта.",
+    "cli.dual_artifact_type_required": "Для извлечения артефакта с двумя ролями требуется --type=plugin или --type=virion.",
+    "cli.both_roles_required": "Для сборки обеих ролей нужен проект с plugin.yml и virion.yml. Выбранный проект: {project}.",
+    "cli.path_option_invalid": "Параметр пути {option} указан повторно или недопустим.",
+    "cli.unknown_argument": "Неизвестная команда или аргумент {argument}.",
+    "cli.command_required": "Укажите команду.",
+    "cli.option_unsupported": "Параметр --{option} не поддерживается для команды {command}.",
+    "cli.build_type_invalid": "Для build параметр --type должен быть plugin, virion или both.",
+    "cli.extract_type_invalid": "Для extract параметр --type должен быть auto, plugin или virion.",
+    "cli.format_invalid": "Параметр --format должен быть folder или zip.",
+    "cli.option_required": "Укажите обязательный параметр --{option}=<path>.",
+    "cli.artifact_type_mismatch": "Тип артефакта {detected} не соответствует запрошенному типу {type}.",
+    "cli.local_path_only": "CLI-пути должны быть локальными путями файловой системы, а не URL потоков.",
+    "worker.path_missing": "Отсутствует путь worker {key}.",
+    "extract.phar_not_found": "PHAR {selection} не найден. Проверьте путь или каталог build/."
 }

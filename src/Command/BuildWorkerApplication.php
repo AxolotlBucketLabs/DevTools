@@ -22,6 +22,7 @@ use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\Translator;
@@ -85,7 +86,11 @@ final class BuildWorkerApplication
 
             return [
                 'success' => false,
-                'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', ['error' => $error->getMessage()])],
+                'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', [
+                    'error' => $error instanceof LocalizedException
+                        ? $error->render($translator ?? Translator::fromResources())
+                        : $error->getMessage(),
+                ])],
                 'debug' => $debugMessages,
             ];
         }
@@ -280,7 +285,7 @@ final class BuildWorkerApplication
     {
         foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
             if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
-                throw new BuildException("Missing worker path {$key}.");
+                throw new LocalizedException('worker.path_missing', ['key' => $key]);
             }
         }
 
@@ -359,6 +364,6 @@ final class BuildWorkerApplication
             }
         }
 
-        throw new BuildException("Cannot find PHAR {$selection}. Check the path or the build/ directory.");
+        throw new LocalizedException('extract.phar_not_found', ['selection' => $selection]);
     }
 }

@@ -33,6 +33,14 @@ final class ApplicationTest extends TestCase
         self::assertSame('vie', $result['data']['locale']);
     }
 
+    public function test_cli_localizes_usage_errors(): void
+    {
+        [$code, $result] = $this->cli(['build', '--type=invalid', '--lang=vie']);
+
+        self::assertSame(2, $code);
+        self::assertSame('Tùy chọn --type của build phải là plugin, virion hoặc both.', $result['diagnostics'][0]['message']);
+    }
+
     public function test_version_does_not_leave_isolated_parser_directories(): void
     {
         $pattern = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-*';

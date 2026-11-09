@@ -7,7 +7,6 @@ namespace AxolotlBucketLabs\DevTools\Cli;
 use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
 use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
-use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
 use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
@@ -20,6 +19,7 @@ use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -60,6 +60,12 @@ final class Application
         $exit = 0;
         $translator = $this->translator ?? Translator::fromResources();
         try {
+            foreach ($arguments as $argument) {
+                if (preg_match('/^--lang=(.+)$/D', $argument, $localeMatch) === 1) {
+                    $translator = $translator->withLocale($localeMatch[1]);
+                    break;
+                }
+            }
             [$command, $options] = $this->parse($arguments, $command);
             $translator = $translator->withLocale($options['lang'] ?? (getenv('DEVTOOLS_LANG') ?: 'eng'));
             $this->debug?->debug("CLI command {$command} selected.");
@@ -70,11 +76,11 @@ final class Application
             } else {
                 $cwd = getcwd();
                 if ($cwd === false) {
-                    throw new \RuntimeException('Cannot determine the working directory.');
+                    throw new LocalizedException('cli.cwd_unavailable');
                 }
                 $project = $this->absolute($options['project'] ?? '.', $cwd);
                 if (in_array($command, ['prepare', 'doctor', 'build'], true) && !is_dir($project)) {
-                    throw new \RuntimeException("Project directory {$project} does not exist.");
+                    throw new LocalizedException('cli.project_missing', ['project' => $project]);
                 }
                 $virions = $this->absolute($options['virions'] ?? 'virions', $project);
                 $overwrite = isset($options['overwrite']);
@@ -97,11 +103,11 @@ final class Application
                     $checks['artifact'] = 'passed';
                     $detected = $inspection['type'] ?? null;
                     if (!is_string($detected)) {
-                        throw new InvalidArgumentException('Artifact type could not be detected.');
+                        throw new LocalizedException('cli.artifact_type_missing', usageError: true);
                     }
                     if ($artifactType === 'auto') {
                         if ($detected === ProjectRole::DUAL->value) {
-                            throw new InvalidArgumentException('A dual-role artifact requires --type=plugin or --type=virion for extraction.');
+                            throw new LocalizedException('cli.dual_artifact_type_required', usageError: true);
                         }
                         $artifactType = $detected;
                     } else {
@@ -127,7 +133,7 @@ final class Application
                         $checks['structure'] = 'failed';
                         $role = $this->roleDetector->detect($project);
                         if ($role !== ProjectRole::DUAL) {
-                            throw new BuildException("Building both roles requires a project containing both plugin.yml and virion.yml. The selected project is {$project}.");
+                            throw new LocalizedException('cli.both_roles_required', ['project' => $project]);
                         }
                         $pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
                         $virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
@@ -188,10 +194,11 @@ final class Application
             }
         } catch (Throwable $error) {
             $this->debug?->debug('CLI operation failed: ' . $error->getMessage());
-            $exit = $error instanceof InvalidArgumentException ? 2 : 1;
+            $exit = $error instanceof InvalidArgumentException || ($error instanceof LocalizedException && $error->isUsageError()) ? 2 : 1;
+            $message = $error instanceof LocalizedException ? $error->render($translator) : $error->getMessage();
             $diagnostics[] = [
                 'code' => $exit === 2 ? 'cli.usage' : 'operation.' . $command . '_failed',
-                'severity' => 'error', 'message' => $error->getMessage(), 'file' => null, 'line' => null,
+                'severity' => 'error', 'message' => $message, 'file' => null, 'line' => null,
                 'suggestion' => $exit === 2
                     ? $translator->translate('cli.usage_suggestion')
                     : $translator->translate('cli.failure_suggestion'),
@@ -245,7 +252,7 @@ final class Application
             }
             if (preg_match('/^--(project|virions|out|artifact|type|format|lang)=(.+)$/Ds', $argument, $match) === 1) {
                 if (isset($options[$match[1]]) || str_contains($match[2], "\0") || preg_match('/[\r\n]/', $match[2]) === 1) {
-                    throw new InvalidArgumentException("Path option {$match[1]} is duplicate or invalid.");
+                    throw new LocalizedException('cli.path_option_invalid', ['option' => $match[1]], true);
                 }
                 $options[$match[1]] = $match[2];
                 continue;
@@ -255,7 +262,7 @@ final class Application
                 $reportedCommand = $command;
                 continue;
             }
-            throw new InvalidArgumentException("Unknown command or argument {$argument}.");
+            throw new LocalizedException('cli.unknown_argument', ['argument' => $argument], true);
         }
         if (isset($options['help']) || $arguments === [] || array_diff($arguments, ['--json', '--debug']) === []) {
             return ['help', $options];
@@ -264,7 +271,7 @@ final class Application
             return ['version', $options];
         }
         if ($command === null) {
-            throw new InvalidArgumentException('Specify a command.');
+            throw new LocalizedException('cli.command_required', usageError: true);
         }
         $allowed = match ($command) {
             'build' => ['project', 'virions', 'out', 'overwrite', 'type', 'lang'],
@@ -274,19 +281,17 @@ final class Application
         };
         foreach (array_keys($options) as $key) {
             if (!in_array($key, $allowed, true)) {
-                throw new InvalidArgumentException("Option --{$key} is not supported for {$command}.");
+                throw new LocalizedException('cli.option_unsupported', ['option' => $key, 'command' => $command], true);
             }
         }
         if (isset($options['type'])) {
             $allowedTypes = $command === 'build' ? ['plugin', 'virion', 'both'] : ['auto', 'plugin', 'virion'];
             if (!in_array($options['type'], $allowedTypes, true)) {
-                throw new InvalidArgumentException($command === 'build'
-                    ? 'Option --type for build must be plugin, virion or both.'
-                    : 'Option --type for extract must be auto, plugin or virion.');
+                throw new LocalizedException($command === 'build' ? 'cli.build_type_invalid' : 'cli.extract_type_invalid', usageError: true);
             }
         }
         if (isset($options['format']) && !in_array($options['format'], ['folder', 'zip'], true)) {
-            throw new InvalidArgumentException('Option --format must be folder or zip.');
+            throw new LocalizedException('cli.format_invalid', usageError: true);
         }
 
         return [$command, $options];
@@ -295,7 +300,7 @@ final class Application
     /** @param array<string, string> $options */
     private function required(array $options, string $key): string
     {
-        return $options[$key] ?? throw new InvalidArgumentException("Provide the required option --{$key}=PATH.");
+        return $options[$key] ?? throw new LocalizedException('cli.option_required', ['option' => $key], true);
     }
 
     /** @param array<string, mixed> $inspection */
@@ -306,17 +311,17 @@ final class Application
         }
         $detected = $inspection['type'] ?? null;
         if (!is_string($detected)) {
-            throw new InvalidArgumentException('Artifact type could not be detected.');
+            throw new LocalizedException('cli.artifact_type_missing', usageError: true);
         }
         if (!ArtifactInspector::roleMatches($detected, $type)) {
-            throw new InvalidArgumentException("Artifact type {$detected} does not match requested type {$type}.");
+            throw new LocalizedException('cli.artifact_type_mismatch', ['detected' => $detected, 'type' => $type], true);
         }
     }
 
     private function absolute(string $path, string $base): string
     {
         if (preg_match('~^[a-z][a-z0-9+.-]*://~i', $path) === 1) {
-            throw new InvalidArgumentException('CLI paths must be local filesystem paths, not stream URLs.');
+            throw new LocalizedException('cli.local_path_only', usageError: true);
         }
         if (str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:[\\\\\/]/', $path) === 1) {
             return $path;

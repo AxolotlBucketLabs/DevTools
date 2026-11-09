@@ -63,5 +63,26 @@
     "extract.directory": "Nevar atrisināt {type} direktoriju {directory}.",
     "extract.outside": "Izvilkšana ārpus {path} ir noraidīta.",
     "cli.usage_suggestion": "Palaidiet --help, lai skatītu atbalstītās komandas un opcijas.",
-    "cli.failure_suggestion": "Izlabojiet norādīto ievadi vai vides problēmu un mēģiniet vēlreiz. Tas nenozīmē, ka ir veikta izpildlaika pārbaude."
+    "cli.failure_suggestion": "Izlabojiet norādīto ievadi vai vides problēmu un mēģiniet vēlreiz. Tas nenozīmē, ka ir veikta izpildlaika pārbaude.",
+
+    "runtime.language_fallback": "Konfigurēto DevTools valodu nevar izmantot. {error} Tiek izmantota angļu valoda.",
+    "runtime.plugin_manifest_failed": "Nevar nolasīt spraudņa manifestu projektam {project}. {error}",
+    "runtime.duplicate_sources": "Spraudnim {name} ir gan izstrādes mape, gan PHAR. DevTools dod priekšroku izstrādes mapei, taču Axolotl-PM iebūvētā PHAR ielādētāja secību nevar mainīt.",
+    "cli.cwd_unavailable": "Nevar noteikt darba direktoriju.",
+    "cli.project_missing": "Projekta direktorija {project} nepastāv.",
+    "cli.artifact_type_missing": "Artefakta tipu nevarēja noteikt.",
+    "cli.dual_artifact_type_required": "Divu lomu artefakta izvilkšanai nepieciešams --type=plugin vai --type=virion.",
+    "cli.both_roles_required": "Abu lomu būvēšanai nepieciešams projekts ar plugin.yml un virion.yml. Izvēlētais projekts ir {project}.",
+    "cli.path_option_invalid": "Ceļa opcija {option} ir dublēta vai nederīga.",
+    "cli.unknown_argument": "Nezināma komanda vai arguments {argument}.",
+    "cli.command_required": "Norādiet komandu.",
+    "cli.option_unsupported": "Opcija --{option} nav atbalstīta komandai {command}.",
+    "cli.build_type_invalid": "build opcijai --type jābūt plugin, virion vai both.",
+    "cli.extract_type_invalid": "extract opcijai --type jābūt auto, plugin vai virion.",
+    "cli.format_invalid": "Opcijai --format jābūt folder vai zip.",
+    "cli.option_required": "Norādiet obligāto opciju --{option}=<path>.",
+    "cli.artifact_type_mismatch": "Artefakta tips {detected} neatbilst pieprasītajam tipam {type}.",
+    "cli.local_path_only": "CLI ceļiem jābūt lokāliem failu sistēmas ceļiem, nevis straumju URL.",
+    "worker.path_missing": "Trūkst worker ceļa {key}.",
+    "extract.phar_not_found": "PHAR {selection} nav atrasts. Pārbaudiet ceļu vai build/ direktoriju."
 }

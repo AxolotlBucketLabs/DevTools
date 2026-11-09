@@ -10,6 +10,7 @@ use function array_values;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use FilesystemIterator;
 
@@ -40,7 +41,7 @@ final class PluginSourceConflictDetector
     }
 
     /** @return list<string> */
-    public function detect(string $pluginsDirectory, ?string $excludedFolder = null): array
+    public function detect(string $pluginsDirectory, ?string $excludedFolder = null, ?Translator $translator = null): array
     {
         if (!is_dir($pluginsDirectory)) {
             return [];
@@ -83,10 +84,11 @@ final class PluginSourceConflictDetector
         }
 
         $warnings = [];
+        $translator ??= Translator::fromResources();
         foreach (array_intersect_key($folders, $phars) as $key => $folderPaths) {
             $name = $names[$key] ?? $key;
             $pharPaths = $phars[$key];
-            $warnings[] = "Plugin {$name} has both a development folder and a PHAR. DevTools prefers the development folder, but Axolotl-PM's built-in PHAR loader order cannot be changed.";
+            $warnings[] = $translator->translate('runtime.duplicate_sources', ['name' => $name]);
             $this->debug?->debug(
                 "Plugin {$name} duplicate sources. Development folders: " . implode(', ', $folderPaths)
                 . '; PHARs: ' . implode(', ', $pharPaths) . '.',
