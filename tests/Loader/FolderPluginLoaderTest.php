@@ -4,14 +4,27 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Loader;
 
+use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginLoader;
+use AxolotlBucketLabs\DevTools\Loader\PluginDependencyIndex;
 use AxolotlBucketLabs\DevTools\Loader\PluginSourceConflictDetector;
+use AxolotlBucketLabs\DevTools\Runtime\PluginDependencyCollector;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\Translator;
+use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
+use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
 use Phar;
 use pocketmine\plugin\PluginDescriptionParseException;
 use pocketmine\thread\ThreadSafeClassLoader;
+use function dirname;
 use function file_put_contents;
 use function str_replace;
 use const DIRECTORY_SEPARATOR;
@@ -74,7 +87,7 @@ final class FolderPluginLoaderTest extends TestCase
 			$validator,
 			null,
 			null,
-			static fn(string $root) : ?string => $root === '' ? null : 'include-paths must be a list',
+			$this->dependencies($project),
 		);
 
 		$this->expectException(PluginDescriptionParseException::class);
@@ -86,6 +99,7 @@ final class FolderPluginLoaderTest extends TestCase
 	public function test_missing_required_virion_is_rejected_before_plugin_discovery() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'plugins/MissingVirion');
+		file_put_contents($project . '/devtools.yml', "virions: [ExampleVirion]\n");
 		[$reader, $validator] = $this->validationServices();
 		$loader = new FolderPluginLoader(
 			new ThreadSafeClassLoader(),
@@ -93,14 +107,61 @@ final class FolderPluginLoaderTest extends TestCase
 			$validator,
 			null,
 			null,
-			null,
-			static fn(string $root) : string => 'Required virion ExampleVirion is missing. Add a compatible package to the selected virions directory.',
+			$this->dependencies($project),
 		);
 
 		$this->expectException(PluginDescriptionParseException::class);
 		$this->expectExceptionMessage('Required virion ExampleVirion is missing');
 
 		$loader->getPluginDescription($project);
+	}
+
+	public function test_direct_load_rejects_missing_dependencies_before_class_registration() : void
+	{
+		$project = $this->copyFixture('ValidPlugin');
+		file_put_contents($project . '/devtools.yml', "virions: [ExampleVirion]\n");
+		[$reader, $validator] = $this->validationServices();
+		$classLoader = new ThreadSafeClassLoader();
+		$loader = new FolderPluginLoader($classLoader, $reader, $validator, dependencies: $this->dependencies($project));
+		try {
+			$loader->loadPlugin($project);
+			self::fail('A plugin with a missing dependency must not register its source path.');
+		} catch (\RuntimeException $error) {
+			self::assertStringContainsString('Required virion ExampleVirion is missing', $error->getMessage());
+		}
+		self::assertNull($classLoader->findClass('Fixture\\Plugin\\Main'));
+	}
+
+	public function test_direct_load_rejects_configuration_errors_before_class_registration() : void
+	{
+		$project = $this->copyFixture('ValidPlugin');
+		file_put_contents($project . '/devtools.yml', "include-paths: LICENSE\n");
+		[$reader, $validator] = $this->validationServices();
+		$classLoader = new ThreadSafeClassLoader();
+		$loader = new FolderPluginLoader($classLoader, $reader, $validator, dependencies: $this->dependencies($project));
+		try {
+			$loader->loadPlugin($project);
+			self::fail('A plugin with invalid configuration must not register its source path.');
+		} catch (\RuntimeException $error) {
+			self::assertStringContainsString('configuration is invalid', $error->getMessage());
+		}
+		self::assertNull($classLoader->findClass('Fixture\\Plugin\\Main'));
+	}
+
+	private function dependencies(string $project) : PluginDependencyIndex
+	{
+		[$reader] = $this->validationServices();
+		$discovery = new VirionDiscovery($this->filesystem);
+		$factory = new VirionProjectFactory(new VirionManifestReader(new YamlReader()));
+		$collector = new PluginDependencyCollector(
+			new FolderPluginDiscovery(),
+			$reader,
+			new SharedVirionConfigResolver(new BuildConfigResolver(new YamlReader()), $discovery, $factory),
+			new VirionRequirementChecker(new VirionRegistry(), new VirionProjectSelector()),
+			static function (string $message) : void {},
+			Translator::fromResources(),
+		);
+		return $collector->collect(dirname($project), $this->temporaryDirectory . '/virions');
 	}
 
 	public function test_hidden_and_build_directories_are_skipped() : void

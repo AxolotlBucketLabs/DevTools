@@ -30,9 +30,7 @@ final class FolderPluginLoader implements PluginLoader
 	private array $registeredPaths = [];
 
 	/**
-	 * @param (Closure(string): list<string>)|null    $virionConflictChecker
-	 * @param ((Closure(string): (string|null))|null) $configurationFailureChecker
-	 * @param ((Closure(string): (string|null))|null) $dependencyFailureChecker
+	 * @param (Closure(string): list<string>)|null $virionConflictChecker
 	 */
 	public function __construct(
 		private readonly ThreadSafeClassLoader $classLoader,
@@ -40,8 +38,7 @@ final class FolderPluginLoader implements PluginLoader
 		private readonly PluginProjectValidator $validator,
 		?string $excludedProject = null,
 		private readonly ?Closure $virionConflictChecker = null,
-		private readonly ?Closure $configurationFailureChecker = null,
-		private readonly ?Closure $dependencyFailureChecker = null,
+		private readonly ?PluginDependencyIndex $dependencies = null,
 		private readonly ?DebugLogger $debug = null,
 	) {
 		$this->excludedProject = $excludedProject === null ? null : self::normalizePath($excludedProject);
@@ -73,7 +70,7 @@ final class FolderPluginLoader implements PluginLoader
 		if (isset($this->registeredPaths[$normalized])) {
 			return;
 		}
-		$configurationFailure = $this->configurationFailure($root);
+		$configurationFailure = $this->dependencies?->configurationFailure($root);
 		if ($configurationFailure !== null) {
 			throw new RuntimeException(
 				"Cannot load folder plugin at {$root}. DevTools configuration is invalid. {$configurationFailure}",
@@ -90,7 +87,7 @@ final class FolderPluginLoader implements PluginLoader
 			}
 			throw new RuntimeException("Cannot load folder plugin at {$root}.\n\n" . implode("\n\n", $messages));
 		}
-		$dependencyFailure = $this->dependencyFailure($root);
+		$dependencyFailure = $this->dependencies?->dependencyFailure($root);
 		if ($dependencyFailure !== null) {
 			throw new RuntimeException(
 				"Cannot load folder plugin at {$root}. {$dependencyFailure}",
@@ -126,7 +123,7 @@ final class FolderPluginLoader implements PluginLoader
 				. 'Create plugin.yml next with name, version, main, and api fields.',
 			);
 		}
-		$configurationFailure = $this->configurationFailure($file);
+		$configurationFailure = $this->dependencies?->configurationFailure($file);
 		if ($configurationFailure !== null) {
 			throw new PluginDescriptionParseException(
 				"DevTools configuration is invalid for this folder plugin. {$configurationFailure}",
@@ -142,7 +139,7 @@ final class FolderPluginLoader implements PluginLoader
 			}
 			throw new PluginDescriptionParseException(implode("\n\n", $messages));
 		}
-		$dependencyFailure = $this->dependencyFailure($file);
+		$dependencyFailure = $this->dependencies?->dependencyFailure($file);
 		if ($dependencyFailure !== null) {
 			throw new PluginDescriptionParseException($dependencyFailure);
 		}
@@ -164,24 +161,6 @@ final class FolderPluginLoader implements PluginLoader
 		$resolved = realpath($path);
 
 		return $resolved !== false && self::normalizePath($resolved) === $this->excludedProject;
-	}
-
-	private function configurationFailure(string $path) : ?string
-	{
-		if ($this->configurationFailureChecker === null) {
-			return null;
-		}
-
-		return ($this->configurationFailureChecker)($path);
-	}
-
-	private function dependencyFailure(string $path) : ?string
-	{
-		if ($this->dependencyFailureChecker === null) {
-			return null;
-		}
-
-		return ($this->dependencyFailureChecker)($path);
 	}
 
 	private static function normalizePath(string $path) : string

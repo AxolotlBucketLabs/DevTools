@@ -13,6 +13,7 @@ use AxolotlBucketLabs\DevTools\Command\ThreadBuildJobRunner;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginLoader;
 use AxolotlBucketLabs\DevTools\Loader\PluginSourceConflictDetector;
+use AxolotlBucketLabs\DevTools\Runtime\PluginDependencyCollector;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
@@ -29,7 +30,6 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
-use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
 use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
 use pocketmine\command\Command;
@@ -37,14 +37,8 @@ use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
 use Throwable;
-use function array_merge;
-use function count;
 use function dirname;
 use function is_string;
-use function realpath;
-use function str_replace;
-use function strtolower;
-use const DIRECTORY_SEPARATOR;
 
 final class DevTools extends PluginBase
 {
@@ -98,27 +92,29 @@ final class DevTools extends PluginBase
 			$debug,
 			$this->translator,
 		);
-		$pluginRequirements = $this->collectPluginRequirements(
+		$dependencyCollector = new PluginDependencyCollector(
 			$pluginDiscovery,
 			$manifestReader,
 			$sharedConfigResolver,
-			$pluginsDirectory,
-			$virionsDirectory,
-			$debug,
+			new VirionRequirementChecker($registry, $selector),
+			function (string $message) : void {
+				$this->getLogger()->warning($message);
+			},
 			$this->translator,
+			$debug,
 		);
-		$registry = $this->loadSharedVirions(
-			$server,
-			$virionsDirectory,
-			$pluginRequirements['requirements'],
-			$sharedConfigResolver,
+		$dependencies = $dependencyCollector->collect($pluginsDirectory, $virionsDirectory);
+		$manager = new VirionManager(
 			$virionDiscovery,
 			$virionFactory,
 			$virionScanner,
+			new PocketMineClassLoaderRegistrar($server->getLoader()),
 			$registry,
 			$selector,
+			$server->getApiVersion(),
 			$debug,
 		);
+		$manager->discoverAndLoad($virionsDirectory, $dependencies->requirements(), $sharedConfigResolver->aliases(), $sharedConfigResolver->skippedLocations());
 
 		$sharedVirionAntigens = [];
 		$sharedVirionClasses = [];
@@ -133,14 +129,6 @@ final class DevTools extends PluginBase
 		$virionConflictChecker = static function (string $root) use ($sourceConflictDetector, $sharedVirionAntigens, $sharedVirionClasses) : array {
 			return $sourceConflictDetector->detectVirionConflicts($root, $sharedVirionAntigens, $sharedVirionClasses);
 		};
-		$configurationFailures = $pluginRequirements['configurationFailures'];
-		$configurationFailureChecker = static function (string $root) use (&$configurationFailures) : ?string {
-			return $configurationFailures[DevTools::normalizeProjectPath($root)] ?? null;
-		};
-		$requirementChecker = new VirionRequirementChecker($registry, $selector);
-		$dependencyFailureChecker = static function (string $root) use ($pluginRequirements, $requirementChecker) : ?string {
-			return $requirementChecker->failure($pluginRequirements['requirementsByProject'][DevTools::normalizeProjectPath($root)] ?? []);
-		};
 
 		$server->getPluginManager()->registerInterface(
 			new FolderPluginLoader(
@@ -149,8 +137,7 @@ final class DevTools extends PluginBase
 				$validator,
 				$ownSourceProject,
 				$virionConflictChecker,
-				$configurationFailureChecker,
-				$dependencyFailureChecker,
+				$dependencies,
 				$debug,
 			),
 		);
@@ -199,94 +186,6 @@ final class DevTools extends PluginBase
 
 			return Translator::fromResources();
 		}
-	}
-
-	/**
-	 * @return array{
-	 *     requirements: list<VirionRequirement>,
-	 *     requirementsByProject: array<string, list<VirionRequirement>>,
-	 *     configurationFailures: array<string, string>
-	 * }
-	 */
-	private function collectPluginRequirements(
-		FolderPluginDiscovery $pluginDiscovery,
-		PluginManifestReader $manifestReader,
-		SharedVirionConfigResolver $sharedConfigResolver,
-		string $pluginsDirectory,
-		string $virionsDirectory,
-		DebugLogger $debug,
-		Translator $translator,
-	) : array {
-		$requirements = [];
-		$requirementsByProject = [];
-		$configurationFailures = [];
-		$pluginProjects = $pluginDiscovery->discover($pluginsDirectory);
-		$debug->debug('Discovered ' . count($pluginProjects) . ' development plugin folder(s).');
-		foreach ($pluginProjects as $project) {
-			try {
-				$manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
-			} catch (Throwable $error) {
-				$this->getLogger()->warning(
-					$translator->translate('runtime.plugin_manifest_failed', ['project' => $project, 'error' => $error->getMessage()]),
-				);
-
-				continue;
-			}
-			try {
-				$projectRequirements = $sharedConfigResolver->resolve($project, $manifest->description->getName(), $virionsDirectory);
-				$requirementsByProject[self::normalizeProjectPath($project)] = $projectRequirements;
-				$requirements = array_merge($requirements, $projectRequirements);
-			} catch (Throwable $error) {
-				$configurationFailures[self::normalizeProjectPath($project)] = $error->getMessage();
-				$this->getLogger()->warning(
-					$translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]),
-				);
-			}
-		}
-
-		return [
-			'requirements' => $requirements,
-			'requirementsByProject' => $requirementsByProject,
-			'configurationFailures' => $configurationFailures,
-		];
-	}
-
-	/**
-	 * @param list<VirionRequirement> $requirements
-	 */
-	private function loadSharedVirions(
-		Server $server,
-		string $virionsDirectory,
-		array $requirements,
-		SharedVirionConfigResolver $sharedConfigResolver,
-		VirionDiscovery $virionDiscovery,
-		VirionProjectFactory $virionFactory,
-		VirionClassScanner $virionScanner,
-		VirionRegistry $registry,
-		VirionProjectSelector $selector,
-		DebugLogger $debug,
-	) : VirionRegistry {
-		$manager = new VirionManager(
-			$virionDiscovery,
-			$virionFactory,
-			$virionScanner,
-			new PocketMineClassLoaderRegistrar($server->getLoader()),
-			$registry,
-			$selector,
-			$server->getApiVersion(),
-			$debug,
-		);
-		$manager->discoverAndLoad($virionsDirectory, $requirements, $sharedConfigResolver->aliases(), $sharedConfigResolver->skippedLocations());
-
-		return $registry;
-	}
-
-	private static function normalizeProjectPath(string $path) : string
-	{
-		$resolved = realpath($path) ?: $path;
-		$normalized = str_replace('\\', '/', $resolved);
-
-		return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
 	}
 
 	protected function onEnable() : void
