@@ -96,10 +96,10 @@ The command keeps the legacy `devtools.command` permission for compatibility. It
 
 ```text
 /devtools status
-/devtools doctor [PLUGIN]
+/devtools doctor [plugin]
 /devtools virions
-/devtools build [plugin|virion|both] PROJECT [--overwrite]
-/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]
+/devtools build [plugin|virion|both] <project> [--overwrite]
+/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]
 ```
 
 Migration aliases `/makeplugin` and `/extractplugin` are also available.

@@ -29,7 +29,7 @@ php bin/devtools.php doctor --project=/path/to/MyPlugin --lang=vie
 
 Add `--debug` to print detailed lifecycle and dependency diagnostics to stderr. It is disabled by default and never changes the JSON schema or command result. Debug output is intentionally separate from stdout so `--json` remains machine-readable.
 
-Use `--lang=CODE` to select one of the supported Axolotl-PM locale codes for human-facing output. The `DEVTOOLS_LANG` environment variable provides the default when `--lang` is not supplied. English is used when no language is selected. Technical diagnostics may remain in English so paths, package names and error details stay exact.
+Use `--lang=<code>` to select one of the supported Axolotl-PM locale codes for human-facing output. The `DEVTOOLS_LANG` environment variable provides the default when `--lang` is not supplied. English is used when no language is selected. Technical diagnostics may remain in English so paths, package names and error details stay exact.
 
 `build --type=plugin` is the default and requires `plugin.yml`. `build --type=virion` requires `virion.yml`. `build --type=both` requires both manifests and writes two role-specific artifacts. A plugin build injects declared virions by AST shading. It does not accept a plugin as a virion dependency. `extract --format=folder` is the default, and writes files directly under the resolved `--out` directory. It does not infer a `plugins/` or `virions/` destination for the CLI. That convention belongs to the server command. `extract --format=zip` writes a safe ZIP without executing archive code.
 

@@ -10,7 +10,7 @@ website: https://github.com/AxolotlBucketLabs/DevTools
 commands:
   devtools:
     description: Inspect and build development plugins and virions
-    usage: "/devtools COMMAND [OPTIONS]"
+    usage: "/devtools <status|doctor|build|extract|virions>"
     aliases: [makeplugin, extractplugin]
     permission: devtools.command
 permissions:

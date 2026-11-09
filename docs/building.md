@@ -56,7 +56,7 @@ Disable these commands in `config.yml` when the production server only needs fol
 
 The artifact is written to server-root `build/MyPlugin.phar`. Existing output is protected. Use `/devtools build MyPlugin --overwrite` only after confirming that replacement is intended.
 
-`build virion NAME_OR_FOLDER` writes `build/VIRION_NAME.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically. An explicit `--type` must match the artifact role, except that a dual-role archive may be extracted as either role. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`. It creates `PLUGIN_NAME-plugin.phar` and `VIRION_NAME-virion.phar` so each artifact has one unambiguous role.
+`build virion <name-or-folder>` writes `build/<VirionName>.phar` from a source folder containing `virion.yml` and `src/`. `extract` detects plugin and virion PHARs automatically. An explicit `--type` must match the artifact role, except that a dual-role archive may be extracted as either role. `--format=folder` extracts to `plugins/` or `virions/`, while `--format=zip` writes a ZIP under `build/`. A dual-role project must be built with `build both`. It creates `<PluginName>-plugin.phar` and `<VirionName>-virion.phar` so each artifact has one unambiguous role.
 
 Server `doctor` checks project structure, build declarations and that project's local dependency selection using the same resolver as the CLI. It does not prove that all installed plugins have compatible shared requirements or that a plugin enabled successfully. Use `/devtools virions` for the actual shared registry and the server log for enable failures. A doctor run does not perform shading, PHPStan or a runtime test.
 
@@ -99,7 +99,7 @@ composer build
 composer artifact
 ```
 
-The self-build is `build/DevTools.phar`. Official release automation renames it to `DevTools-VERSION.phar` and publishes `SHA256SUMS.txt` after all checks pass. Replace `VERSION` with the release version.
+The self-build is `build/DevTools.phar`. Official release automation renames it to `DevTools-<version>.phar` and publishes `SHA256SUMS.txt` after all checks pass.
 
 DevTools has no declared runtime virions. Its self-build therefore ignores unrelated virions found in the server's `virions/` directory, so an installed development virion cannot change the result of `composer check`. Normal plugin builds still reject unproven dynamic class references when local virions are available.
 
@@ -115,7 +115,7 @@ sha256sum -c SHA256SUMS.txt
 shasum -a 256 -c SHA256SUMS.txt
 
 # Windows PowerShell
-Get-FileHash .\DevTools-VERSION.phar -Algorithm SHA256
+Get-FileHash .\DevTools-<version>.phar -Algorithm SHA256
 ```
 
 For another plugin, test the generated PHAR on a clean compatible server without its source folder, DevTools, or shared virion directories. Exercise the plugin behavior that requires its bundled libraries and resources.

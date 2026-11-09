@@ -8,7 +8,7 @@ The automation interface is the [CLI contract](cli.md). Commands, path rules, di
 Build this Axolotl-PM plugin with AxolotlBucketLabs/DevTools.
 1. Read the project's instructions, plugin.yml, devtools.yml, Composer lockfile and metadata and existing workflows. Preserve unrelated changes.
 2. Read docs/cli.md, docs/dependencies.md and docs/github-actions.md from the exact DevTools checkout in use. Run --help --json and --version --json.
-3. Run `doctor --project=PROJECT_PATH --json`. Distinguish malformed project, missing prepared dependencies and unavailable environment. Replace `PROJECT_PATH` with the absolute project path.
+3. Run `doctor --project=<absolute path> --json`. Distinguish malformed project, missing prepared dependencies and unavailable environment.
 4. Use local declared virions when available. Never guess a repository from a package name. For supported Composer virions, use the reviewed composer.lock, install --no-dev --no-scripts --no-plugins, then explicitly prepare a new directory. Do not update versions without authorization.
 5. Build using the same CLI with --json and phar.readonly=0. Do not enable overwrite unless replacing that output is intended.
 6. Consume data.artifact and compare the file's SHA-256 with data.sha256. Run inspect. Do not infer the artifact filename.

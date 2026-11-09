@@ -23,7 +23,7 @@ Remove development-tool entries for DevTools or DEVirion from `depend`, `softdep
 
 ## Commands and paths
 
-`/makeplugin PLUGIN` and `/extractplugin PHAR` route to build and extract. They accept the documented optional `--overwrite`, not every option of the original tools. Unknown, duplicate or trailing arguments fail before writing output.
+`/makeplugin <plugin>` and `/extractplugin <phar>` route to build and extract. They accept the documented optional `--overwrite`, not every option of the original tools. Unknown, duplicate or trailing arguments fail before writing output.
 
 `/devtools doctor` checks project structure, declarations and project-local virion selection. If source folders share a manifest name, select an explicit folder path under `plugins/` rather than relying on discovery order.
 
@@ -37,4 +37,4 @@ Unsupported Composer package layouts and dynamic class references fail explicitl
 
 ## Publication
 
-A tag such as `v1.2.3-rc.1` must match `plugin.yml` version `1.2.3-rc.1` exactly. Nightlies use `nightly-FULL_COMMIT_SHA` tags. The reusable publication workflow does not replace existing releases or move published tags. See [GitHub Actions](github-actions.md#tag-release) for configuration.
+A tag such as `v1.2.3-rc.1` must match `plugin.yml` version `1.2.3-rc.1` exactly. Nightlies use `nightly-<full commit SHA>` tags. The reusable publication workflow does not replace existing releases or move published tags. See [GitHub Actions](github-actions.md#tag-release) for configuration.

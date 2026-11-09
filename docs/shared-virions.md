@@ -8,7 +8,7 @@ A shared virion is trusted local development code registered once on Axolotl-PM'
 | --- | --- |
 | `virion.yml` | Library manifest |
 | `src/Example/Virion/ClassName.php` | Class below the antigen namespace |
-| `src/ANTIGEN/...` | PHP source and resources colocated with that source |
+| `src/<Antigen>/...` | PHP source and resources colocated with that source |
 | `LICENSE` | Library license |
 
 Root-level `resources/` is not supported for virions. Resources must be colocated under the virion source directory so their paths remain stable after shading. Put a file such as `src/Example/Virion/resources/default.txt` beside the class that uses it and resolve it relative to that class with `__DIR__`.

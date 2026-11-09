@@ -168,7 +168,7 @@ jobs:
       mode: nightly
 ```
 
-Nightly runs use `nightly-FULL_COMMIT_SHA` tags, always prerelease and never the shared `latest` channel. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
+Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never the shared `latest` channel. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
 
 ## Select the builder revision
 
@@ -195,7 +195,7 @@ git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v3.3.
 ```
 
 ```yaml
-uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@FULL_COMMIT_SHA # v3.3.0
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v3.3.0
 ```
 
 The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v3 workflow contract no longer accepts the removed `devtools-ref` input. Remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com. These reusable workflows are not supported on GitHub Enterprise Server without that context.
@@ -206,7 +206,7 @@ Update the reusable workflow reference to `@v3` and remove legacy inputs that v3
 
 ```diff
  with:
--  devtools-ref: OLD_BUILDER_SHA
++  devtools-ref: <old-builder-sha>
 -  retention-days: 14
    php-version: '8.4'
 ```
