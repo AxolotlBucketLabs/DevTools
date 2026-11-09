@@ -34,8 +34,8 @@
     ]
   },
   "devtools": {
-    "stable_version": "v3.3.0",
-    "stable_commit": "0fd73cc2c82d03d0d47f6c7ce119859deda042e3",
+    "stable_version": "v3.3.1",
+    "stable_commit": "84c5ad18bef199f146364d114967d83be9668598",
     "reference_policy": "@v3 or the exact release commit"
   },
   "summary": {
