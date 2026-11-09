@@ -209,6 +209,34 @@ final class ApplicationTest extends TestCase
 		self::assertFileExists($project . '/build/DualLibrary-virion.phar');
 	}
 
+	public function test_dual_build_rejects_single_role_projects_before_creating_output() : void
+	{
+		foreach (['ValidPlugin', 'SharedVirion'] as $fixture) {
+			$project = $this->copyFixture($fixture);
+			[$code, $result] = $this->cli(['build', '--type=both', '--project=' . $project]);
+
+			self::assertSame(1, $code);
+			self::assertSame('failed', $result['checks']['structure']);
+			self::assertSame('not_run', $result['checks']['dependencies']);
+			self::assertSame('not_run', $result['checks']['artifact']);
+			self::assertDirectoryDoesNotExist($project . '/build');
+		}
+	}
+
+	public function test_dual_build_reports_missing_dependency_before_creating_artifacts() : void
+	{
+		$project = $this->copyFixture('BuildPlugin', 'dual-missing-dependency');
+		file_put_contents($project . '/virion.yml', "name: DualLibrary\nversion: 1.0.0\nantigen: Fixture\\Library\napi: 5.0.0\n");
+
+		[$code, $result] = $this->cli(['build', '--type=both', '--project=' . $project]);
+
+		self::assertSame(1, $code);
+		self::assertSame('passed', $result['checks']['structure']);
+		self::assertSame('failed', $result['checks']['dependencies']);
+		self::assertSame('not_run', $result['checks']['artifact']);
+		self::assertDirectoryDoesNotExist($project . '/build');
+	}
+
 	public function test_dual_build_reports_manifest_failure_as_structure_failure() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'invalid-dual');

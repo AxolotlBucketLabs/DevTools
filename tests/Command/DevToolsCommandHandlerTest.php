@@ -118,6 +118,16 @@ final class DevToolsCommandHandlerTest extends TestCase
 		self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.zip');
 	}
 
+	public function test_server_dual_build_rejects_a_plugin_only_project_before_writing_output() : void
+	{
+		$this->copyFixture('ValidPlugin', 'plugins/Source');
+
+		$messages = $this->command(['build', 'both', 'FixturePlugin']);
+
+		self::assertStringContainsString('contain both plugin.yml and virion.yml', $messages);
+		self::assertDirectoryDoesNotExist($this->temporaryDirectory . '/build');
+	}
+
 	public function test_server_dual_build_preserves_both_previous_artifacts_when_virion_build_fails() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'plugins/Dual');
