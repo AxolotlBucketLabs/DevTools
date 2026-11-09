@@ -6,8 +6,8 @@ namespace DevToolsFixture;
 
 final class Dependency
 {
-    public static function value(): string
-    {
-        return 'fixture';
-    }
+	public static function value() : string
+	{
+		return 'fixture';
+	}
 }

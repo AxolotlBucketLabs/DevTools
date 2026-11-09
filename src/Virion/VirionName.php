@@ -8,8 +8,8 @@ use function strtolower;
 
 final class VirionName
 {
-    public static function key(string $name): string
-    {
-        return 'virion:' . strtolower($name);
-    }
+	public static function key(string $name) : string
+	{
+		return 'virion:' . strtolower($name);
+	}
 }

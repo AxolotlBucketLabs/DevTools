@@ -6,9 +6,9 @@ namespace AxolotlBucketLabs\DevTools\Build;
 
 final class ArchiveEntry
 {
-    public function __construct(
-        public readonly string $path,
-        public readonly string $contents,
-        public readonly bool $symbolicLink = false,
-    ) {}
+	public function __construct(
+		public readonly string $path,
+		public readonly string $contents,
+		public readonly bool $symbolicLink = false,
+	) {}
 }

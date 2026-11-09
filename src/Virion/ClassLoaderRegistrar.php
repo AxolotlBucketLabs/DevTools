@@ -6,9 +6,9 @@ namespace AxolotlBucketLabs\DevTools\Virion;
 
 interface ClassLoaderRegistrar
 {
-    public function register(string $namespacePrefix, string $sourceRoot): void;
+	public function register(string $namespacePrefix, string $sourceRoot) : void;
 
-    public function supportsAsyncWorkers(): bool;
+	public function supportsAsyncWorkers() : bool;
 
-    public function asyncSupportDescription(): string;
+	public function asyncSupportDescription() : string;
 }

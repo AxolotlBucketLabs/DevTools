@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
-enum VirionStatus: string
+enum VirionStatus : string
 {
-    case LOADED = 'loaded';
-    case SKIPPED = 'skipped';
-    case FAILED = 'failed';
-    case CONFLICT = 'conflict';
+	case LOADED = 'loaded';
+	case SKIPPED = 'skipped';
+	case FAILED = 'failed';
+	case CONFLICT = 'conflict';
 }

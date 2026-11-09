@@ -15,32 +15,32 @@ use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 
 final class VirionRequirementCheckerTest extends TestCase
 {
-    public function test_missing_requirement_is_reported(): void
-    {
-        $checker = new VirionRequirementChecker(new VirionRegistry(), new VirionProjectSelector());
+	public function test_missing_requirement_is_reported() : void
+	{
+		$checker = new VirionRequirementChecker(new VirionRegistry(), new VirionProjectSelector());
 
-        $failure = $checker->failure([
-            new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
-        ]);
+		$failure = $checker->failure([
+			new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
+		]);
 
-        self::assertNotNull($failure);
-        self::assertStringContainsString('ExampleVirion is missing', $failure);
-        self::assertStringContainsString('ExamplePlugin/composer.lock:example/virion', $failure);
-    }
+		self::assertNotNull($failure);
+		self::assertStringContainsString('ExampleVirion is missing', $failure);
+		self::assertStringContainsString('ExamplePlugin/composer.lock:example/virion', $failure);
+	}
 
-    public function test_loaded_compatible_requirement_passes(): void
-    {
-        $registry = new VirionRegistry();
-        $registry->record(new VirionRegistryEntry(
-            $this->temporaryDirectory . '/virions/ExampleVirion',
-            new VirionManifest('ExampleVirion', '1.0.0', 'Example\\Virion', [], [], [], 'virion.yml'),
-            VirionStatus::LOADED,
-            'Loaded ExampleVirion 1.0.0.',
-        ));
-        $checker = new VirionRequirementChecker($registry, new VirionProjectSelector());
+	public function test_loaded_compatible_requirement_passes() : void
+	{
+		$registry = new VirionRegistry();
+		$registry->record(new VirionRegistryEntry(
+			$this->temporaryDirectory . '/virions/ExampleVirion',
+			new VirionManifest('ExampleVirion', '1.0.0', 'Example\\Virion', [], [], [], 'virion.yml'),
+			VirionStatus::LOADED,
+			'Loaded ExampleVirion 1.0.0.',
+		));
+		$checker = new VirionRequirementChecker($registry, new VirionProjectSelector());
 
-        self::assertNull($checker->failure([
-            new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
-        ]));
-    }
+		self::assertNull($checker->failure([
+			new VirionRequirement('ExampleVirion', '1.0.0', 'ExamplePlugin/composer.lock:example/virion'),
+		]));
+	}
 }

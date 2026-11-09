@@ -10,20 +10,20 @@ use Phar;
 
 final class PharSnapshotTest extends TestCase
 {
-    public function test_remove_releases_an_open_snapshot_and_removes_the_file(): void
-    {
-        $source = $this->temporaryDirectory . '/source.phar';
-        $phar = new Phar($source);
-        $phar['source.txt'] = 'source';
-        unset($phar);
+	public function test_remove_releases_an_open_snapshot_and_removes_the_file() : void
+	{
+		$source = $this->temporaryDirectory . '/source.phar';
+		$phar = new Phar($source);
+		$phar['source.txt'] = 'source';
+		unset($phar);
 
-        $snapshot = PharSnapshot::create($source);
-        $opened = new Phar($snapshot);
-        self::assertTrue(isset($opened['source.txt']));
-        unset($opened);
+		$snapshot = PharSnapshot::create($source);
+		$opened = new Phar($snapshot);
+		self::assertTrue(isset($opened['source.txt']));
+		unset($opened);
 
-        PharSnapshot::remove($snapshot);
+		PharSnapshot::remove($snapshot);
 
-        self::assertFileDoesNotExist($snapshot);
-    }
+		self::assertFileDoesNotExist($snapshot);
+	}
 }

@@ -7,54 +7,64 @@ namespace AxolotlBucketLabs\DevTools\Tests\Build;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
+use function copy;
+use function dirname;
+use function fclose;
+use function json_decode;
+use function md5;
+use function proc_close;
+use function proc_open;
+use function stream_get_contents;
+use const JSON_THROW_ON_ERROR;
+use const PHP_BINARY;
 
 final class DevToolsArtifactTest extends TestCase
 {
-    public function test_release_gate_accepts_parser_only_and_rejects_bundled_development_dependencies(): void
-    {
-        $root = dirname(__DIR__, 2);
-        $result = $this->builder()->build($root, $this->temporaryDirectory . '/virions', $this->temporaryDirectory);
-        [$exit, $output] = $this->validate($result->outputPath);
-        self::assertSame(0, $exit, $output);
+	public function test_release_gate_accepts_parser_only_and_rejects_bundled_development_dependencies() : void
+	{
+		$root = dirname(__DIR__, 2);
+		$result = $this->builder()->build($root, $this->temporaryDirectory . '/virions', $this->temporaryDirectory);
+		[$exit, $output] = $this->validate($result->outputPath);
+		self::assertSame(0, $exit, $output);
 
-        $phar = new Phar($result->outputPath);
-        foreach (Translator::supportedLocales() as $locale) {
-            self::assertTrue(isset($phar["resources/lang/{$locale}.json"]));
-            $catalog = json_decode($phar["resources/lang/{$locale}.json"]->getContent(), true, 512, JSON_THROW_ON_ERROR);
-            self::assertIsArray($catalog);
-            self::assertSame(Translator::fromResources($locale)->translate('virions.local.metadata_mismatch'), $catalog['virions.local.metadata_mismatch'] ?? null);
-        }
+		$phar = new Phar($result->outputPath);
+		foreach (Translator::supportedLocales() as $locale) {
+			self::assertTrue(isset($phar["resources/lang/{$locale}.json"]));
+			$catalog = json_decode($phar["resources/lang/{$locale}.json"]->getContent(), true, 512, JSON_THROW_ON_ERROR);
+			self::assertIsArray($catalog);
+			self::assertSame(Translator::fromResources($locale)->translate('virions.local.metadata_mismatch'), $catalog['virions.local.metadata_mismatch'] ?? null);
+		}
 
-        foreach (['vendor/phpunit/phpunit/src/Runner.php', 'vendor/axolotl-pm/pocketmine-mp/src/Server.php', 'vendor/composer/autoload_real.php'] as $extra) {
-            $copy = $this->temporaryDirectory . '/extra-' . md5($extra) . '.phar';
-            copy($result->outputPath, $copy);
-            $phar = new Phar($copy);
-            $phar[$extra] = '<?php';
-            unset($phar);
-            [$exit, $output] = $this->validate($copy);
-            self::assertSame(1, $exit, $output);
-            self::assertStringContainsString('unapproved bundled dependency path', $output);
-            self::assertStringContainsString($extra, $output);
-        }
-    }
+		foreach (['vendor/phpunit/phpunit/src/Runner.php', 'vendor/axolotl-pm/pocketmine-mp/src/Server.php', 'vendor/composer/autoload_real.php'] as $extra) {
+			$copy = $this->temporaryDirectory . '/extra-' . md5($extra) . '.phar';
+			copy($result->outputPath, $copy);
+			$phar = new Phar($copy);
+			$phar[$extra] = '<?php';
+			unset($phar);
+			[$exit, $output] = $this->validate($copy);
+			self::assertSame(1, $exit, $output);
+			self::assertStringContainsString('unapproved bundled dependency path', $output);
+			self::assertStringContainsString($extra, $output);
+		}
+	}
 
-    /** @return array{int, string} */
-    private function validate(string $path): array
-    {
-        $process = proc_open(
-            [PHP_BINARY, dirname(__DIR__, 2) . '/bin/validate-artifact.php', $path],
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
-        self::assertIsResource($process);
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        self::assertIsString($stdout);
-        self::assertIsString($stderr);
+	/** @return array{int, string} */
+	private function validate(string $path) : array
+	{
+		$process = proc_open(
+			[PHP_BINARY, dirname(__DIR__, 2) . '/bin/validate-artifact.php', $path],
+			[0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+			$pipes,
+		);
+		self::assertIsResource($process);
+		fclose($pipes[0]);
+		$stdout = stream_get_contents($pipes[1]);
+		$stderr = stream_get_contents($pipes[2]);
+		fclose($pipes[1]);
+		fclose($pipes[2]);
+		self::assertIsString($stdout);
+		self::assertIsString($stderr);
 
-        return [proc_close($process), $stdout . $stderr];
-    }
+		return [proc_close($process), $stdout . $stderr];
+	}
 }

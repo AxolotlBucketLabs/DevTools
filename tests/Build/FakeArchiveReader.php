@@ -9,11 +9,11 @@ use AxolotlBucketLabs\DevTools\Build\ArchiveReader;
 
 final class FakeArchiveReader implements ArchiveReader
 {
-    /** @param list<ArchiveEntry> $entries */
-    public function __construct(private readonly array $entries) {}
+	/** @param list<ArchiveEntry> $entries */
+	public function __construct(private readonly array $entries) {}
 
-    public function entries(): iterable
-    {
-        yield from $this->entries;
-    }
+	public function entries() : iterable
+	{
+		yield from $this->entries;
+	}
 }

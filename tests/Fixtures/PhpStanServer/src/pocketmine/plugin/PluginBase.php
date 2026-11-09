@@ -8,10 +8,10 @@ use pocketmine\utils\MainLogger;
 
 abstract class PluginBase
 {
-    final public function getLogger(): MainLogger
-    {
-        return new MainLogger();
-    }
+	final public function getLogger() : MainLogger
+	{
+		return new MainLogger();
+	}
 
-    protected function onEnable(): void {}
+	protected function onEnable() : void {}
 }

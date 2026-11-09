@@ -12,199 +12,202 @@ use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
 use pocketmine\plugin\PluginDescriptionParseException;
 use pocketmine\thread\ThreadSafeClassLoader;
+use function file_put_contents;
+use function str_replace;
+use const DIRECTORY_SEPARATOR;
 
 final class FolderPluginLoaderTest extends TestCase
 {
-    public function test_valid_folder_is_discovered_and_registered(): void
-    {
-        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
-        $this->filesystem->ensureDirectory($plugins);
-        $project = $this->copyFixture('ValidPlugin', 'plugins/ValidPlugin');
-        [$reader, $validator] = $this->validationServices();
-        $classLoader = new ThreadSafeClassLoader();
-        $loader = new FolderPluginLoader($classLoader, $reader, $validator);
+	public function test_valid_folder_is_discovered_and_registered() : void
+	{
+		$plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+		$this->filesystem->ensureDirectory($plugins);
+		$project = $this->copyFixture('ValidPlugin', 'plugins/ValidPlugin');
+		[$reader, $validator] = $this->validationServices();
+		$classLoader = new ThreadSafeClassLoader();
+		$loader = new FolderPluginLoader($classLoader, $reader, $validator);
 
-        self::assertSame([str_replace('\\', '/', $project)], (new FolderPluginDiscovery())->discover($plugins));
-        self::assertTrue($loader->canLoadPlugin($project));
-        self::assertSame('FixturePlugin', $loader->getPluginDescription($project)?->getName());
+		self::assertSame([str_replace('\\', '/', $project)], (new FolderPluginDiscovery())->discover($plugins));
+		self::assertTrue($loader->canLoadPlugin($project));
+		self::assertSame('FixturePlugin', $loader->getPluginDescription($project)?->getName());
 
-        $loader->loadPlugin($project);
+		$loader->loadPlugin($project);
 
-        self::assertSame(
-            str_replace('/', DIRECTORY_SEPARATOR, $project . '/src/Main.php'),
-            $classLoader->findClass('Fixture\Plugin\Main'),
-        );
-        self::assertFileExists($project . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'config.yml');
-    }
+		self::assertSame(
+			str_replace('/', DIRECTORY_SEPARATOR, $project . '/src/Main.php'),
+			$classLoader->findClass('Fixture\Plugin\Main'),
+		);
+		self::assertFileExists($project . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'config.yml');
+	}
 
-    public function test_configured_devtools_source_project_is_not_loadable(): void
-    {
-        $project = $this->copyFixture('ValidPlugin', 'plugins/DevTools');
-        [$reader, $validator] = $this->validationServices();
-        $loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator, $project);
+	public function test_configured_devtools_source_project_is_not_loadable() : void
+	{
+		$project = $this->copyFixture('ValidPlugin', 'plugins/DevTools');
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator, $project);
 
-        self::assertFalse($loader->canLoadPlugin($project));
-        self::assertNull($loader->getPluginDescription($project));
-    }
+		self::assertFalse($loader->canLoadPlugin($project));
+		self::assertNull($loader->getPluginDescription($project));
+	}
 
-    public function test_invalid_folder_is_not_silently_ignored(): void
-    {
-        $project = $this->copyFixture('MissingMain');
-        [$reader, $validator] = $this->validationServices();
-        $loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator);
+	public function test_invalid_folder_is_not_silently_ignored() : void
+	{
+		$project = $this->copyFixture('MissingMain');
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator);
 
-        self::assertTrue($loader->canLoadPlugin($project));
-        $this->expectException(PluginDescriptionParseException::class);
-        $this->expectExceptionMessage('src/Main.php');
+		self::assertTrue($loader->canLoadPlugin($project));
+		$this->expectException(PluginDescriptionParseException::class);
+		$this->expectExceptionMessage('src/Main.php');
 
-        $loader->getPluginDescription($project);
-    }
+		$loader->getPluginDescription($project);
+	}
 
-    public function test_project_with_invalid_devtools_configuration_is_not_loadable(): void
-    {
-        $project = $this->copyFixture('ValidPlugin', 'plugins/InvalidConfiguration');
-        file_put_contents($project . '/devtools.yml', "include-paths: LICENSE\n");
-        [$reader, $validator] = $this->validationServices();
-        $loader = new FolderPluginLoader(
-            new ThreadSafeClassLoader(),
-            $reader,
-            $validator,
-            null,
-            null,
-            static fn(string $root): ?string => $root === '' ? null : 'include-paths must be a list',
-        );
+	public function test_project_with_invalid_devtools_configuration_is_not_loadable() : void
+	{
+		$project = $this->copyFixture('ValidPlugin', 'plugins/InvalidConfiguration');
+		file_put_contents($project . '/devtools.yml', "include-paths: LICENSE\n");
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(
+			new ThreadSafeClassLoader(),
+			$reader,
+			$validator,
+			null,
+			null,
+			static fn(string $root) : ?string => $root === '' ? null : 'include-paths must be a list',
+		);
 
-        $this->expectException(PluginDescriptionParseException::class);
-        $this->expectExceptionMessage('DevTools configuration is invalid');
+		$this->expectException(PluginDescriptionParseException::class);
+		$this->expectExceptionMessage('DevTools configuration is invalid');
 
-        $loader->getPluginDescription($project);
-    }
+		$loader->getPluginDescription($project);
+	}
 
-    public function test_missing_required_virion_is_rejected_before_plugin_discovery(): void
-    {
-        $project = $this->copyFixture('ValidPlugin', 'plugins/MissingVirion');
-        [$reader, $validator] = $this->validationServices();
-        $loader = new FolderPluginLoader(
-            new ThreadSafeClassLoader(),
-            $reader,
-            $validator,
-            null,
-            null,
-            null,
-            static fn(string $root): string => 'Required virion ExampleVirion is missing. Add a compatible package to the selected virions directory.',
-        );
+	public function test_missing_required_virion_is_rejected_before_plugin_discovery() : void
+	{
+		$project = $this->copyFixture('ValidPlugin', 'plugins/MissingVirion');
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(
+			new ThreadSafeClassLoader(),
+			$reader,
+			$validator,
+			null,
+			null,
+			null,
+			static fn(string $root) : string => 'Required virion ExampleVirion is missing. Add a compatible package to the selected virions directory.',
+		);
 
-        $this->expectException(PluginDescriptionParseException::class);
-        $this->expectExceptionMessage('Required virion ExampleVirion is missing');
+		$this->expectException(PluginDescriptionParseException::class);
+		$this->expectExceptionMessage('Required virion ExampleVirion is missing');
 
-        $loader->getPluginDescription($project);
-    }
+		$loader->getPluginDescription($project);
+	}
 
-    public function test_hidden_and_build_directories_are_skipped(): void
-    {
-        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
-        $this->filesystem->ensureDirectory($plugins . DIRECTORY_SEPARATOR . '.hidden' . DIRECTORY_SEPARATOR . 'src');
-        $this->filesystem->ensureDirectory($plugins . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . 'src');
+	public function test_hidden_and_build_directories_are_skipped() : void
+	{
+		$plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+		$this->filesystem->ensureDirectory($plugins . DIRECTORY_SEPARATOR . '.hidden' . DIRECTORY_SEPARATOR . 'src');
+		$this->filesystem->ensureDirectory($plugins . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . 'src');
 
-        self::assertSame([], (new FolderPluginDiscovery())->discover($plugins));
-    }
+		self::assertSame([], (new FolderPluginDiscovery())->discover($plugins));
+	}
 
-    public function test_source_folder_without_manifest_is_reported(): void
-    {
-        $project = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'IncompletePlugin';
-        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src');
-        [$reader, $validator] = $this->validationServices();
-        $loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator);
+	public function test_source_folder_without_manifest_is_reported() : void
+	{
+		$project = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'IncompletePlugin';
+		$this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src');
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator);
 
-        self::assertTrue($loader->canLoadPlugin($project));
-        $this->expectException(PluginDescriptionParseException::class);
-        $this->expectExceptionMessage('plugin.yml is missing');
+		self::assertTrue($loader->canLoadPlugin($project));
+		$this->expectException(PluginDescriptionParseException::class);
+		$this->expectExceptionMessage('plugin.yml is missing');
 
-        $loader->getPluginDescription($project);
-    }
+		$loader->getPluginDescription($project);
+	}
 
-    public function test_folder_and_phar_with_the_same_plugin_name_are_reported(): void
-    {
-        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
-        $this->filesystem->ensureDirectory($plugins);
-        $this->copyFixture('ValidPlugin', 'plugins/ValidPlugin');
-        $source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
-        $path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
-        $phar = new Phar($path);
-        $phar->buildFromDirectory($source);
-        $phar->setStub("<?php __HALT_COMPILER();\n");
-        unset($phar);
-        [$reader] = $this->validationServices();
+	public function test_folder_and_phar_with_the_same_plugin_name_are_reported() : void
+	{
+		$plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+		$this->filesystem->ensureDirectory($plugins);
+		$this->copyFixture('ValidPlugin', 'plugins/ValidPlugin');
+		$source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
+		$path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
+		$phar = new Phar($path);
+		$phar->buildFromDirectory($source);
+		$phar->setStub("<?php __HALT_COMPILER();\n");
+		unset($phar);
+		[$reader] = $this->validationServices();
 
-        $warnings = (new PluginSourceConflictDetector($reader))->detect($plugins);
+		$warnings = (new PluginSourceConflictDetector($reader))->detect($plugins);
 
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('development folder', $warnings[0]);
-        self::assertStringContainsString('PHAR', $warnings[0]);
-        self::assertSame([], (new PluginSourceConflictDetector($reader))->detect($plugins, $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin'));
-    }
+		self::assertCount(1, $warnings);
+		self::assertStringContainsString('development folder', $warnings[0]);
+		self::assertStringContainsString('PHAR', $warnings[0]);
+		self::assertSame([], (new PluginSourceConflictDetector($reader))->detect($plugins, $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin'));
+	}
 
-    public function test_duplicate_plugin_sources_are_grouped_and_paths_are_debugged(): void
-    {
-        $plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
-        $this->filesystem->ensureDirectory($plugins);
-        $this->copyFixture('ValidPlugin', 'plugins/ValidPluginOne');
-        $this->copyFixture('ValidPlugin', 'plugins/ValidPluginTwo');
-        $source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
-        $path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
-        $phar = new Phar($path);
-        $phar->buildFromDirectory($source);
-        $phar->setStub("<?php __HALT_COMPILER();\n");
-        unset($phar);
-        [$reader] = $this->validationServices();
-        $debugMessages = [];
+	public function test_duplicate_plugin_sources_are_grouped_and_paths_are_debugged() : void
+	{
+		$plugins = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'plugins';
+		$this->filesystem->ensureDirectory($plugins);
+		$this->copyFixture('ValidPlugin', 'plugins/ValidPluginOne');
+		$this->copyFixture('ValidPlugin', 'plugins/ValidPluginTwo');
+		$source = $this->copyFixture('ValidPlugin', 'source/ValidPlugin');
+		$path = $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin.phar';
+		$phar = new Phar($path);
+		$phar->buildFromDirectory($source);
+		$phar->setStub("<?php __HALT_COMPILER();\n");
+		unset($phar);
+		[$reader] = $this->validationServices();
+		$debugMessages = [];
 
-        $warnings = (new PluginSourceConflictDetector(
-            $reader,
-            null,
-            new DebugLogger(static function (string $message) use (&$debugMessages): void {
-                $debugMessages[] = $message;
-            }),
-        ))->detect($plugins);
+		$warnings = (new PluginSourceConflictDetector(
+			$reader,
+			null,
+			new DebugLogger(static function (string $message) use (&$debugMessages) : void {
+				$debugMessages[] = $message;
+			}),
+		))->detect($plugins);
 
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('FixturePlugin', $warnings[0]);
-        self::assertStringContainsString('ValidPluginOne', $debugMessages[0]);
-        self::assertStringContainsString('ValidPluginTwo', $debugMessages[0]);
-        self::assertStringContainsString('ValidPlugin.phar', $debugMessages[0]);
-    }
+		self::assertCount(1, $warnings);
+		self::assertStringContainsString('FixturePlugin', $warnings[0]);
+		self::assertStringContainsString('ValidPluginOne', $debugMessages[0]);
+		self::assertStringContainsString('ValidPluginTwo', $debugMessages[0]);
+		self::assertStringContainsString('ValidPlugin.phar', $debugMessages[0]);
+	}
 
-    public function test_plugin_cannot_shadow_a_loaded_shared_virion(): void
-    {
-        $project = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'CollisionPlugin';
-        $this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion');
-        file_put_contents(
-            $project . DIRECTORY_SEPARATOR . 'plugin.yml',
-            "name: CollisionPlugin\nversion: 1.0.0\nmain: Main\napi: 5.0.0\n",
-        );
-        file_put_contents(
-            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php',
-            "<?php\nfinal class Main extends \\pocketmine\\plugin\\PluginBase {}\n",
-        );
-        file_put_contents(
-            $project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Value.inc',
-            "<?php\nnamespace Shared\\Virion; final class Value {}\n",
-        );
-        [$reader, $validator] = $this->validationServices();
-        $detector = new PluginSourceConflictDetector($reader);
-        $loader = new FolderPluginLoader(
-            new ThreadSafeClassLoader(),
-            $reader,
-            $validator,
-            null,
-            static function (string $root) use ($detector): array {
-                return $detector->detectVirionConflicts($root, ['Shared\\Virion'], ['Shared\\Virion\\Value']);
-            },
-        );
+	public function test_plugin_cannot_shadow_a_loaded_shared_virion() : void
+	{
+		$project = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'CollisionPlugin';
+		$this->filesystem->ensureDirectory($project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion');
+		file_put_contents(
+			$project . DIRECTORY_SEPARATOR . 'plugin.yml',
+			"name: CollisionPlugin\nversion: 1.0.0\nmain: Main\napi: 5.0.0\n",
+		);
+		file_put_contents(
+			$project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php',
+			"<?php\nfinal class Main extends \\pocketmine\\plugin\\PluginBase {}\n",
+		);
+		file_put_contents(
+			$project . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Shared' . DIRECTORY_SEPARATOR . 'Virion' . DIRECTORY_SEPARATOR . 'Value.inc',
+			"<?php\nnamespace Shared\\Virion; final class Value {}\n",
+		);
+		[$reader, $validator] = $this->validationServices();
+		$detector = new PluginSourceConflictDetector($reader);
+		$loader = new FolderPluginLoader(
+			new ThreadSafeClassLoader(),
+			$reader,
+			$validator,
+			null,
+			static function (string $root) use ($detector) : array {
+				return $detector->detectVirionConflicts($root, ['Shared\\Virion'], ['Shared\\Virion\\Value']);
+			},
+		);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('shadows a loaded shared virion');
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('shadows a loaded shared virion');
 
-        $loader->loadPlugin($project);
-    }
+		$loader->loadPlugin($project);
+	}
 }

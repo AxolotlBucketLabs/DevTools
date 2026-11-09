@@ -6,8 +6,8 @@ namespace Shared\Virion;
 
 final class Greeting
 {
-    public static function message(): string
-    {
-        return 'shared';
-    }
+	public static function message() : string
+	{
+		return 'shared';
+	}
 }

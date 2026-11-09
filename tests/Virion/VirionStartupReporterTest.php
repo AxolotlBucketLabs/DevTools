@@ -14,43 +14,43 @@ use PHPUnit\Framework\TestCase;
 
 final class VirionStartupReporterTest extends TestCase
 {
-    public function test_skipped_candidates_are_grouped_by_virion_name(): void
-    {
-        $registry = new VirionRegistry();
-        $registry->record($this->entry('1.0.0', 'first path'));
-        $registry->record($this->entry('1.1.0', 'second path'));
+	public function test_skipped_candidates_are_grouped_by_virion_name() : void
+	{
+		$registry = new VirionRegistry();
+		$registry->record($this->entry('1.0.0', 'first path'));
+		$registry->record($this->entry('1.1.0', 'second path'));
 
-        $messages = (new VirionStartupReporter())->messages($registry);
+		$messages = (new VirionStartupReporter())->messages($registry);
 
-        self::assertCount(1, $messages);
-        self::assertSame('warning', $messages[0]['level']);
-        self::assertSame(
-            'Skipped SharedVirion candidates (1.0.0, 1.1.0). See /devtools virions for selection details.',
-            $messages[0]['message'],
-        );
-        self::assertSame(['first path', 'second path'], $messages[0]['details']);
-    }
+		self::assertCount(1, $messages);
+		self::assertSame('warning', $messages[0]['level']);
+		self::assertSame(
+			'Skipped SharedVirion candidates (1.0.0, 1.1.0). See /devtools virions for selection details.',
+			$messages[0]['message'],
+		);
+		self::assertSame(['first path', 'second path'], $messages[0]['details']);
+	}
 
-    private function entry(string $version, string $message): VirionRegistryEntry
-    {
-        return new VirionRegistryEntry(
-            $version,
-            new VirionManifest('SharedVirion', $version, 'Shared\\Virion', [], [], [], $version),
-            VirionStatus::SKIPPED,
-            $message,
-        );
-    }
+	private function entry(string $version, string $message) : VirionRegistryEntry
+	{
+		return new VirionRegistryEntry(
+			$version,
+			new VirionManifest('SharedVirion', $version, 'Shared\\Virion', [], [], [], $version),
+			VirionStatus::SKIPPED,
+			$message,
+		);
+	}
 
-    public function test_loaded_and_skipped_summaries_follow_the_runtime_language(): void
-    {
-        $registry = new VirionRegistry();
-        $manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
-        $registry->record(new VirionRegistryEntry('source', $manifest, VirionStatus::LOADED, 'Loaded ExampleVirion 1.2.3 (Example\\Library).'));
-        $registry->record($this->entry('1.0.0', 'Technical selection detail'));
-        $messages = (new VirionStartupReporter(Translator::fromResources('vie')))->messages($registry);
+	public function test_loaded_and_skipped_summaries_follow_the_runtime_language() : void
+	{
+		$registry = new VirionRegistry();
+		$manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
+		$registry->record(new VirionRegistryEntry('source', $manifest, VirionStatus::LOADED, 'Loaded ExampleVirion 1.2.3 (Example\\Library).'));
+		$registry->record($this->entry('1.0.0', 'Technical selection detail'));
+		$messages = (new VirionStartupReporter(Translator::fromResources('vie')))->messages($registry);
 
-        self::assertSame('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages[0]['message']);
-        self::assertSame('Đã bỏ qua một bản SharedVirion (1.0.0). Xem /devtools virions để biết chi tiết lựa chọn.', $messages[1]['message']);
-        self::assertSame(['Technical selection detail'], $messages[1]['details']);
-    }
+		self::assertSame('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages[0]['message']);
+		self::assertSame('Đã bỏ qua một bản SharedVirion (1.0.0). Xem /devtools virions để biết chi tiết lựa chọn.', $messages[1]['message']);
+		self::assertSame(['Technical selection detail'], $messages[1]['details']);
+	}
 }

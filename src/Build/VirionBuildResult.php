@@ -8,9 +8,9 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifest;
 
 final class VirionBuildResult
 {
-    public function __construct(
-        public readonly VirionManifest $manifest,
-        public readonly string $outputPath,
-        public readonly int $fileCount,
-    ) {}
+	public function __construct(
+		public readonly VirionManifest $manifest,
+		public readonly string $outputPath,
+		public readonly int $fileCount,
+	) {}
 }

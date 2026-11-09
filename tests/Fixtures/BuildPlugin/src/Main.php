@@ -9,8 +9,8 @@ use Shared\Virion\Greeting;
 
 final class Main extends PluginBase
 {
-    public function greeting(): string
-    {
-        return Greeting::message();
-    }
+	public function greeting() : string
+	{
+		return Greeting::message();
+	}
 }

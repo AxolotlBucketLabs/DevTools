@@ -4,24 +4,22 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Support;
 
+use InvalidArgumentException;
+use RuntimeException;
 use function dirname;
 use function file_get_contents;
 use function implode;
 use function in_array;
-
-use InvalidArgumentException;
-
+use function is_array;
 use function is_file;
 use function is_string;
 use function json_decode;
-
-use const JSON_THROW_ON_ERROR;
-
-use RuntimeException;
-
 use function str_replace;
 use function strtolower;
+use function strtr;
 use function trim;
+use const DIRECTORY_SEPARATOR;
+use const JSON_THROW_ON_ERROR;
 
 /**
  * Loads the small human-facing message catalog used by DevTools.
@@ -31,145 +29,145 @@ use function trim;
  */
 final class Translator
 {
-    /** @var list<string> */
-    private const SUPPORTED_LOCALES = [
-        'bul',
-        'chs',
-        'deu',
-        'eng',
-        'fra',
-        'ita',
-        'jpn',
-        'kor',
-        'lav',
-        'nld',
-        'rus',
-        'spa',
-        'tur',
-        'vie',
-    ];
+	/** @var list<string> */
+	private const SUPPORTED_LOCALES = [
+		'bul',
+		'chs',
+		'deu',
+		'eng',
+		'fra',
+		'ita',
+		'jpn',
+		'kor',
+		'lav',
+		'nld',
+		'rus',
+		'spa',
+		'tur',
+		'vie',
+	];
 
-    /** @var array<string, string> */
-    private const ALIASES = [
-        'bg' => 'bul',
-        'bulgarian' => 'bul',
-        'chs' => 'chs',
-        'de' => 'deu',
-        'deu' => 'deu',
-        'deutsch' => 'deu',
-        'en' => 'eng',
-        'eng' => 'eng',
-        'english' => 'eng',
-        'es' => 'spa',
-        'fr' => 'fra',
-        'it' => 'ita',
-        'ja' => 'jpn',
-        'ko' => 'kor',
-        'lv' => 'lav',
-        'nl' => 'nld',
-        'ru' => 'rus',
-        'spa' => 'spa',
-        'tr' => 'tur',
-        'vi' => 'vie',
-        'zh' => 'chs',
-        'zh_cn' => 'chs',
-    ];
+	/** @var array<string, string> */
+	private const ALIASES = [
+		'bg' => 'bul',
+		'bulgarian' => 'bul',
+		'chs' => 'chs',
+		'de' => 'deu',
+		'deu' => 'deu',
+		'deutsch' => 'deu',
+		'en' => 'eng',
+		'eng' => 'eng',
+		'english' => 'eng',
+		'es' => 'spa',
+		'fr' => 'fra',
+		'it' => 'ita',
+		'ja' => 'jpn',
+		'ko' => 'kor',
+		'lv' => 'lav',
+		'nl' => 'nld',
+		'ru' => 'rus',
+		'spa' => 'spa',
+		'tr' => 'tur',
+		'vi' => 'vie',
+		'zh' => 'chs',
+		'zh_cn' => 'chs',
+	];
 
-    /** @var array<string, string> */
-    private readonly array $messages;
+	/** @var array<string, string> */
+	private readonly array $messages;
 
-    /** @var array<string, string> */
-    private readonly array $fallback;
+	/** @var array<string, string> */
+	private readonly array $fallback;
 
-    public function __construct(
-        private readonly string $directory,
-        private readonly string $locale,
-    ) {
-        self::assertSupported($locale);
-        $this->fallback = self::load($directory, 'eng');
-        $this->messages = $locale === 'eng' ? $this->fallback : self::load($directory, $locale);
-    }
+	public function __construct(
+		private readonly string $directory,
+		private readonly string $locale,
+	) {
+		self::assertSupported($locale);
+		$this->fallback = self::load($directory, 'eng');
+		$this->messages = $locale === 'eng' ? $this->fallback : self::load($directory, $locale);
+	}
 
-    public static function fromResources(string $locale = 'eng'): self
-    {
-        return new self(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'lang', self::normalize($locale));
-    }
+	public static function fromResources(string $locale = 'eng') : self
+	{
+		return new self(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'lang', self::normalize($locale));
+	}
 
-    public static function resolve(string $configured, string $serverLocale): string
-    {
-        $requested = strtolower(trim($configured));
+	public static function resolve(string $configured, string $serverLocale) : string
+	{
+		$requested = strtolower(trim($configured));
 
-        return self::normalize($requested === '' || $requested === 'auto' ? $serverLocale : $requested);
-    }
+		return self::normalize($requested === '' || $requested === 'auto' ? $serverLocale : $requested);
+	}
 
-    /** @return list<string> */
-    public static function supportedLocales(): array
-    {
-        return self::SUPPORTED_LOCALES;
-    }
+	/** @return list<string> */
+	public static function supportedLocales() : array
+	{
+		return self::SUPPORTED_LOCALES;
+	}
 
-    public static function normalize(string $locale): string
-    {
-        $normalized = strtolower(str_replace('-', '_', trim($locale)));
-        if (isset(self::ALIASES[$normalized])) {
-            return self::ALIASES[$normalized];
-        }
-        if (in_array($normalized, self::SUPPORTED_LOCALES, true)) {
-            return $normalized;
-        }
+	public static function normalize(string $locale) : string
+	{
+		$normalized = strtolower(str_replace('-', '_', trim($locale)));
+		if (isset(self::ALIASES[$normalized])) {
+			return self::ALIASES[$normalized];
+		}
+		if (in_array($normalized, self::SUPPORTED_LOCALES, true)) {
+			return $normalized;
+		}
 
-        throw new InvalidArgumentException(
-            "Unsupported locale {$locale}. Supported locales: " . implode(', ', self::SUPPORTED_LOCALES) . '.',
-        );
-    }
+		throw new InvalidArgumentException(
+			"Unsupported locale {$locale}. Supported locales: " . implode(', ', self::SUPPORTED_LOCALES) . '.',
+		);
+	}
 
-    public function locale(): string
-    {
-        return $this->locale;
-    }
+	public function locale() : string
+	{
+		return $this->locale;
+	}
 
-    public function withLocale(string $locale): self
-    {
-        return new self($this->directory, self::normalize($locale));
-    }
+	public function withLocale(string $locale) : self
+	{
+		return new self($this->directory, self::normalize($locale));
+	}
 
-    /** @param array<string, int|string> $parameters */
-    public function translate(string $key, array $parameters = []): string
-    {
-        $message = $this->messages[$key] ?? $this->fallback[$key] ?? $key;
-        $replacements = [];
-        foreach ($parameters as $name => $value) {
-            $replacements['{' . $name . '}'] = (string) $value;
-        }
+	/** @param array<string, int|string> $parameters */
+	public function translate(string $key, array $parameters = []) : string
+	{
+		$message = $this->messages[$key] ?? $this->fallback[$key] ?? $key;
+		$replacements = [];
+		foreach ($parameters as $name => $value) {
+			$replacements['{' . $name . '}'] = (string) $value;
+		}
 
-        return strtr($message, $replacements);
-    }
+		return strtr($message, $replacements);
+	}
 
-    /** @return array<string, string> */
-    private static function load(string $directory, string $locale): array
-    {
-        $path = $directory . DIRECTORY_SEPARATOR . $locale . '.json';
-        if (!is_file($path)) {
-            throw new RuntimeException("Translation catalog is missing: {$path}");
-        }
-        $decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-        if (!is_array($decoded)) {
-            throw new RuntimeException("Translation catalog must contain an object: {$path}");
-        }
-        foreach ($decoded as $key => $message) {
-            if (!is_string($key) || !is_string($message)) {
-                throw new RuntimeException("Translation catalog values must be strings: {$path}");
-            }
-        }
+	/** @return array<string, string> */
+	private static function load(string $directory, string $locale) : array
+	{
+		$path = $directory . DIRECTORY_SEPARATOR . $locale . '.json';
+		if (!is_file($path)) {
+			throw new RuntimeException("Translation catalog is missing: {$path}");
+		}
+		$decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+		if (!is_array($decoded)) {
+			throw new RuntimeException("Translation catalog must contain an object: {$path}");
+		}
+		foreach ($decoded as $key => $message) {
+			if (!is_string($key) || !is_string($message)) {
+				throw new RuntimeException("Translation catalog values must be strings: {$path}");
+			}
+		}
 
-        /** @var array<string, string> $decoded */
-        return $decoded;
-    }
+		/** @var array<string, string> $decoded */
+		return $decoded;
+	}
 
-    private static function assertSupported(string $locale): void
-    {
-        if (!in_array($locale, self::SUPPORTED_LOCALES, true)) {
-            throw new InvalidArgumentException('Locale must be one of: ' . implode(', ', self::SUPPORTED_LOCALES) . '.');
-        }
-    }
+	private static function assertSupported(string $locale) : void
+	{
+		if (!in_array($locale, self::SUPPORTED_LOCALES, true)) {
+			throw new InvalidArgumentException('Locale must be one of: ' . implode(', ', self::SUPPORTED_LOCALES) . '.');
+		}
+	}
 }

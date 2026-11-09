@@ -8,8 +8,8 @@ use Shared\Virion\Greeting;
 
 final class UseVirion
 {
-    public static function message(): string
-    {
-        return Greeting::message();
-    }
+	public static function message() : string
+	{
+		return Greeting::message();
+	}
 }

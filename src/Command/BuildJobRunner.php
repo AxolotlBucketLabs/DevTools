@@ -6,15 +6,15 @@ namespace AxolotlBucketLabs\DevTools\Command;
 
 interface BuildJobRunner
 {
-    /**
-     * @param array<string, mixed> $payload
-     * @param callable(array{success: bool, messages: list<string>, debug?: list<string>}): void $onComplete
-     */
-    public function submit(string $operation, array $payload, callable $onComplete): bool;
+	/**
+	 * @param array<string, mixed>                                                               $payload
+	 * @param callable(array{success: bool, messages: list<string>, debug?: list<string>}): void $onComplete
+	 */
+	public function submit(string $operation, array $payload, callable $onComplete) : bool;
 
-    public function isBusy(): bool;
+	public function isBusy() : bool;
 
-    public function status(): string;
+	public function status() : string;
 
-    public function shutdown(): void;
+	public function shutdown() : void;
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Validation;
 
-enum Severity: string
+enum Severity : string
 {
-    case ERROR = 'error';
-    case WARNING = 'warning';
-    case NOTICE = 'notice';
+	case ERROR = 'error';
+	case WARNING = 'warning';
+	case NOTICE = 'notice';
 }
