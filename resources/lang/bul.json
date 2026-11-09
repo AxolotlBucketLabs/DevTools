@@ -72,7 +72,6 @@
     "cli.project_missing": "Директорията на проекта {project} не съществува.",
     "cli.artifact_type_missing": "Типът на артефакта не може да бъде определен.",
     "cli.dual_artifact_type_required": "Артефакт с две роли изисква --type=plugin или --type=virion за екстракция.",
-    "cli.both_roles_required": "Изграждането на двете роли изисква проект с plugin.yml и virion.yml. Избраният проект е {project}.",
     "cli.path_option_invalid": "Опцията за път {option} е дублирана или невалидна.",
     "cli.unknown_argument": "Неизвестна команда или аргумент {argument}.",
     "cli.command_required": "Посочете команда.",

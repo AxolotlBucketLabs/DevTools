@@ -72,7 +72,6 @@
     "cli.project_missing": "项目目录 {project} 不存在。",
     "cli.artifact_type_missing": "无法检测工件类型。",
     "cli.dual_artifact_type_required": "双角色工件必须使用 --type=plugin 或 --type=virion 才能提取。",
-    "cli.both_roles_required": "构建两个角色时，项目必须同时包含 plugin.yml 和 virion.yml。当前项目为 {project}。",
     "cli.path_option_invalid": "路径选项 {option} 重复或无效。",
     "cli.unknown_argument": "未知的命令或参数 {argument}。",
     "cli.command_required": "请指定一个命令。",

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Cli;
 
 use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
-use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
 use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
@@ -13,12 +12,10 @@ use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
 use AxolotlBucketLabs\DevTools\Build\ProjectRole;
-use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
-use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -64,8 +61,7 @@ final class Application
 		private readonly ArtifactInspector $inspector,
 		private readonly ComposerVirionPreparer $preparer,
 		private readonly VirionManifestReader $virionManifestReader,
-		private readonly ProjectRoleDetector $roleDetector,
-		private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
+		private readonly DualArtifactBuilder $dualArtifactBuilder,
 		private readonly ?DebugLogger $debug = null,
 		private readonly ?Translator $translator = null,
 	) {}
@@ -153,32 +149,19 @@ final class Application
 						$checks['artifact'] = 'passed';
 					} elseif ($command === 'build' && $type === 'both') {
 						$checks['structure'] = 'failed';
-						$role = $this->roleDetector->detect($project);
-						if ($role !== ProjectRole::DUAL) {
-							throw new LocalizedException('cli.both_roles_required', ['project' => $project]);
-						}
-						$pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
-						$virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
+						$dualProject = $this->dualArtifactBuilder->prepare($project);
 						$checks['structure'] = 'passed';
 						$checks['dependencies'] = 'failed';
-						$config = $this->configResolver->resolve($project, $pluginManifest->description->getName());
+						$config = $this->configResolver->resolve($project, $dualProject->pluginName);
 						$virionsResolved = $this->resolver->resolve($config->virions, $virions);
 						$checks['dependencies'] = 'passed';
 						$output = $this->absolute($options['out'] ?? 'build', $project);
 						$checks['artifact'] = 'failed';
-						$dualArtifactBuilder = $this->dualArtifactBuilder ?? new DualArtifactBuilder(
-							new Filesystem(),
-							$this->builder,
-							$this->virionBuilder,
-							new ArtifactSetInstaller(),
-						);
-						$artifacts = $dualArtifactBuilder->build(
-							$project,
+						$artifacts = $this->dualArtifactBuilder->build(
+							$dualProject,
 							$virions,
 							$output,
 							$overwrite,
-							$pluginManifest->description->getName() . '-plugin',
-							$virionManifest->name . '-virion',
 						);
 						$data = [
 							'project' => $project,

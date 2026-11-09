@@ -13,7 +13,6 @@ use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
 use AxolotlBucketLabs\DevTools\Build\PluginProjectLocator;
-use AxolotlBucketLabs\DevTools\Build\ProjectRole;
 use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionProjectLocator;
@@ -165,18 +164,12 @@ final class BuildWorkerApplication
 
 		$project = $services['projectLocator']->locate($selection, $services['pluginsDirectory']);
 		if ($target === 'both') {
-			if ($services['roleDetector']->detect($project) !== ProjectRole::DUAL) {
-				throw new BuildException($translator->translate('build.both_required', ['project' => $project]));
-			}
-			$pluginName = $services['manifestReader']->read($project . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
-			$virionName = $services['virionManifestReader']->read($project . DIRECTORY_SEPARATOR . 'virion.yml')->name;
+			$dualProject = $services['dualArtifactBuilder']->prepare($project);
 			$artifacts = $services['dualArtifactBuilder']->build(
-				$project,
+				$dualProject,
 				$services['virionsDirectory'],
 				$services['buildDirectory'],
 				$overwrite,
-				$pluginName . '-plugin',
-				$virionName . '-virion',
 			);
 
 			return [
@@ -273,9 +266,7 @@ final class BuildWorkerApplication
 	 *     virionBuilder: VirionBuilder,
 	 *     zipWriter: ZipArchiveWriter,
 	 *     artifactInspector: ArtifactInspector,
-	 *     roleDetector: ProjectRoleDetector,
 	 *     virionProjectLocator: VirionProjectLocator,
-	 *     virionManifestReader: VirionManifestReader,
 	 *     dualArtifactBuilder: DualArtifactBuilder,
 	 *     pluginsDirectory: string,
 	 *     virionsDirectory: string,
@@ -328,14 +319,15 @@ final class BuildWorkerApplication
 			'virionBuilder' => $virionBuilder,
 			'zipWriter' => new ZipArchiveWriter($filesystem),
 			'artifactInspector' => new ArtifactInspector($manifestReader, $virionManifestReader),
-			'roleDetector' => new ProjectRoleDetector(),
 			'virionProjectLocator' => new VirionProjectLocator($virionDiscovery, $virionFactory),
-			'virionManifestReader' => $virionManifestReader,
 			'dualArtifactBuilder' => new DualArtifactBuilder(
 				$filesystem,
 				$builder,
 				$virionBuilder,
 				new ArtifactSetInstaller(),
+				$manifestReader,
+				$virionManifestReader,
+				new ProjectRoleDetector(),
 			),
 			'pluginsDirectory' => $payload['pluginsDirectory'],
 			'virionsDirectory' => $payload['virionsDirectory'],

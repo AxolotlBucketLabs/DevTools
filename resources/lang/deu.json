@@ -72,7 +72,6 @@
     "cli.project_missing": "Das Projektverzeichnis {project} existiert nicht.",
     "cli.artifact_type_missing": "Der Artefakttyp konnte nicht erkannt werden.",
     "cli.dual_artifact_type_required": "Ein Artefakt mit zwei Rollen erfordert für die Extraktion --type=plugin oder --type=virion.",
-    "cli.both_roles_required": "Das Erstellen beider Rollen erfordert ein Projekt mit plugin.yml und virion.yml. Das ausgewählte Projekt ist {project}.",
     "cli.path_option_invalid": "Die Pfadoption {option} ist doppelt oder ungültig.",
     "cli.unknown_argument": "Unbekannter Befehl oder unbekanntes Argument {argument}.",
     "cli.command_required": "Gib einen Befehl an.",

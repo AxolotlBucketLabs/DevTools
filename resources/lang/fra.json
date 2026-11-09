@@ -72,7 +72,6 @@
     "cli.project_missing": "Le répertoire du projet {project} n'existe pas.",
     "cli.artifact_type_missing": "Le type de l'artefact n'a pas pu être détecté.",
     "cli.dual_artifact_type_required": "Un artefact à deux rôles nécessite --type=plugin ou --type=virion pour l'extraction.",
-    "cli.both_roles_required": "La construction des deux rôles nécessite un projet contenant plugin.yml et virion.yml. Le projet sélectionné est {project}.",
     "cli.path_option_invalid": "L'option de chemin {option} est dupliquée ou invalide.",
     "cli.unknown_argument": "Commande ou argument inconnu {argument}.",
     "cli.command_required": "Indiquez une commande.",
