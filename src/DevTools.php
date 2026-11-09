@@ -38,6 +38,7 @@ use function is_string;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
+use pocketmine\Server;
 use Throwable;
 
 final class DevTools extends PluginBase
@@ -66,16 +67,7 @@ final class DevTools extends PluginBase
         $sourceConflictDetector = new PluginSourceConflictDetector($manifestReader, null, $debug);
 
         $server = $this->getServer();
-        $configuredLocale = $this->getConfig()->get('language', 'auto');
-        try {
-            $this->translator = Translator::fromResources(Translator::resolve(
-                is_string($configuredLocale) ? $configuredLocale : 'auto',
-                $server->getLanguage()->getLang(),
-            ));
-        } catch (Throwable $error) {
-            $this->getLogger()->warning("Cannot use configured DevTools language. {$error->getMessage()} Falling back to English.");
-            $this->translator = Translator::fromResources();
-        }
+        $this->translator = $this->createTranslator($server);
         $pluginsDirectory = $server->getPluginPath();
         $ownSourceProject = Path::join($pluginsDirectory, $this->getDescription()->getName());
         $virionsDirectory = $server->getDataPath() . 'virions';
@@ -101,51 +93,27 @@ final class DevTools extends PluginBase
             $debug,
             $this->translator,
         );
-        $requirements = [];
-        /** @var array<string, list<VirionRequirement>> $requirementsByProject */
-        $requirementsByProject = [];
-        /** @var array<string, string> $configurationFailures */
-        $configurationFailures = [];
-        $normalizeProjectPath = static function (string $path): string {
-            $resolved = realpath($path) ?: $path;
-            $normalized = str_replace('\\', '/', $resolved);
-
-            return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
-        };
-        $pluginProjects = $pluginDiscovery->discover($pluginsDirectory);
-        $debug->debug('Discovered ' . count($pluginProjects) . ' development plugin folder(s).');
-        foreach ($pluginProjects as $project) {
-            try {
-                $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
-            } catch (Throwable $error) {
-                $this->getLogger()->warning(
-                    "Cannot read plugin manifest for {$project}. {$error->getMessage()}",
-                );
-
-                continue;
-            }
-            try {
-                $projectRequirements = $sharedConfigResolver->resolve($project, $manifest->description->getName(), $virionsDirectory);
-                $requirementsByProject[$normalizeProjectPath($project)] = $projectRequirements;
-                $requirements = array_merge($requirements, $projectRequirements);
-            } catch (Throwable $error) {
-                $configurationFailures[$normalizeProjectPath($project)] = $error->getMessage();
-                $this->getLogger()->warning(
-                    $this->translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]),
-                );
-            }
-        }
-        $manager = new VirionManager(
+        $pluginRequirements = $this->collectPluginRequirements(
+            $pluginDiscovery,
+            $manifestReader,
+            $sharedConfigResolver,
+            $pluginsDirectory,
+            $virionsDirectory,
+            $debug,
+            $this->translator,
+        );
+        $registry = $this->loadSharedVirions(
+            $server,
+            $virionsDirectory,
+            $pluginRequirements['requirements'],
+            $sharedConfigResolver,
             $virionDiscovery,
             $virionFactory,
             $virionScanner,
-            new PocketMineClassLoaderRegistrar($server->getLoader()),
             $registry,
             $selector,
-            $server->getApiVersion(),
             $debug,
         );
-        $manager->discoverAndLoad($virionsDirectory, $requirements, $sharedConfigResolver->aliases(), $sharedConfigResolver->skippedLocations());
 
         $sharedVirionAntigens = [];
         $sharedVirionClasses = [];
@@ -160,12 +128,13 @@ final class DevTools extends PluginBase
         $virionConflictChecker = static function (string $root) use ($sourceConflictDetector, $sharedVirionAntigens, $sharedVirionClasses): array {
             return $sourceConflictDetector->detectVirionConflicts($root, $sharedVirionAntigens, $sharedVirionClasses);
         };
-        $configurationFailureChecker = static function (string $root) use (&$configurationFailures, $normalizeProjectPath): ?string {
-            return $configurationFailures[$normalizeProjectPath($root)] ?? null;
+        $configurationFailures = $pluginRequirements['configurationFailures'];
+        $configurationFailureChecker = static function (string $root) use (&$configurationFailures): ?string {
+            return $configurationFailures[DevTools::normalizeProjectPath($root)] ?? null;
         };
         $requirementChecker = new VirionRequirementChecker($registry, $selector);
-        $dependencyFailureChecker = static function (string $root) use ($requirementsByProject, $normalizeProjectPath, $requirementChecker): ?string {
-            return $requirementChecker->failure($requirementsByProject[$normalizeProjectPath($root)] ?? []);
+        $dependencyFailureChecker = static function (string $root) use ($pluginRequirements, $requirementChecker): ?string {
+            return $requirementChecker->failure($pluginRequirements['requirementsByProject'][DevTools::normalizeProjectPath($root)] ?? []);
         };
 
         $server->getPluginManager()->registerInterface(
@@ -210,6 +179,109 @@ final class DevTools extends PluginBase
             }
         }
         $debug->debug('DevTools runtime initialization completed.');
+    }
+
+    private function createTranslator(Server $server): Translator
+    {
+        $configuredLocale = $this->getConfig()->get('language', 'auto');
+        try {
+            return Translator::fromResources(Translator::resolve(
+                is_string($configuredLocale) ? $configuredLocale : 'auto',
+                $server->getLanguage()->getLang(),
+            ));
+        } catch (Throwable $error) {
+            $this->getLogger()->warning("Cannot use configured DevTools language. {$error->getMessage()} Falling back to English.");
+
+            return Translator::fromResources();
+        }
+    }
+
+    /**
+     * @return array{
+     *     requirements: list<VirionRequirement>,
+     *     requirementsByProject: array<string, list<VirionRequirement>>,
+     *     configurationFailures: array<string, string>
+     * }
+     */
+    private function collectPluginRequirements(
+        FolderPluginDiscovery $pluginDiscovery,
+        PluginManifestReader $manifestReader,
+        SharedVirionConfigResolver $sharedConfigResolver,
+        string $pluginsDirectory,
+        string $virionsDirectory,
+        DebugLogger $debug,
+        Translator $translator,
+    ): array {
+        $requirements = [];
+        $requirementsByProject = [];
+        $configurationFailures = [];
+        $pluginProjects = $pluginDiscovery->discover($pluginsDirectory);
+        $debug->debug('Discovered ' . count($pluginProjects) . ' development plugin folder(s).');
+        foreach ($pluginProjects as $project) {
+            try {
+                $manifest = $manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+            } catch (Throwable $error) {
+                $this->getLogger()->warning(
+                    "Cannot read plugin manifest for {$project}. {$error->getMessage()}",
+                );
+
+                continue;
+            }
+            try {
+                $projectRequirements = $sharedConfigResolver->resolve($project, $manifest->description->getName(), $virionsDirectory);
+                $requirementsByProject[self::normalizeProjectPath($project)] = $projectRequirements;
+                $requirements = array_merge($requirements, $projectRequirements);
+            } catch (Throwable $error) {
+                $configurationFailures[self::normalizeProjectPath($project)] = $error->getMessage();
+                $this->getLogger()->warning(
+                    $translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]),
+                );
+            }
+        }
+
+        return [
+            'requirements' => $requirements,
+            'requirementsByProject' => $requirementsByProject,
+            'configurationFailures' => $configurationFailures,
+        ];
+    }
+
+    /**
+     * @param list<VirionRequirement> $requirements
+     */
+    private function loadSharedVirions(
+        Server $server,
+        string $virionsDirectory,
+        array $requirements,
+        SharedVirionConfigResolver $sharedConfigResolver,
+        VirionDiscovery $virionDiscovery,
+        VirionProjectFactory $virionFactory,
+        VirionClassScanner $virionScanner,
+        VirionRegistry $registry,
+        VirionProjectSelector $selector,
+        DebugLogger $debug,
+    ): VirionRegistry {
+        $manager = new VirionManager(
+            $virionDiscovery,
+            $virionFactory,
+            $virionScanner,
+            new PocketMineClassLoaderRegistrar($server->getLoader()),
+            $registry,
+            $selector,
+            $server->getApiVersion(),
+            $debug,
+        );
+        $manager->discoverAndLoad($virionsDirectory, $requirements, $sharedConfigResolver->aliases(), $sharedConfigResolver->skippedLocations());
+
+        return $registry;
+    }
+
+    private static function normalizeProjectPath(string $path): string
+    {
+        $resolved = realpath($path) ?: $path;
+        $normalized = str_replace('\\', '/', $resolved);
+
+        return DIRECTORY_SEPARATOR === '\\' ? strtolower($normalized) : $normalized;
     }
 
     protected function onEnable(): void
