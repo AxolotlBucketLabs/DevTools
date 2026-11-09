@@ -32,6 +32,31 @@ final class TranslatorTest extends TestCase
         self::assertSame('unknown.key', Translator::fromResources('vie')->translate('unknown.key', ['value' => 'Example']));
     }
 
+    public function test_every_locale_has_the_complete_message_catalog(): void
+    {
+        $englishContents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/eng.json');
+        self::assertIsString($englishContents);
+        $englishCatalog = json_decode($englishContents, true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($englishCatalog);
+        $expectedKeys = array_keys($englishCatalog);
+        sort($expectedKeys);
+
+        foreach (Translator::supportedLocales() as $locale) {
+            $contents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/' . $locale . '.json');
+            self::assertIsString($contents);
+            $catalog = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+            self::assertIsArray($catalog);
+            $actualKeys = array_keys($catalog);
+            sort($actualKeys);
+
+            self::assertSame($expectedKeys, $actualKeys, "{$locale} must contain the complete message catalog");
+            $translator = Translator::fromResources($locale);
+            foreach ($expectedKeys as $key) {
+                self::assertSame($catalog[$key], $translator->translate($key), "{$locale} unexpectedly used fallback for {$key}");
+            }
+        }
+    }
+
     public function test_invalid_locale_is_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);
