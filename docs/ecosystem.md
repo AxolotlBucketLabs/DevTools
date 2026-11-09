@@ -1,12 +1,10 @@
 # DevTools ecosystem inventory
 
-This page gives a short human-readable summary of public projects using DevTools in a GitHub Actions workflow. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
+This page gives a short human-readable summary of public projects whose default-branch workflows reference DevTools. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
 
 ## Inventory
 
-The inventory lists 143 public repositories across five organizations.
-
-The last audit inspected 178 non-archived repositories and 208 default-branch workflow files. At that time, counted repositories referenced the maintained `@v3` channel or the exact `v3.2.0` release commit `d3e81dcb5bc0c0d14378279beb689c7ee56ced45`. The `v3` and `latest` tags now point to `v3.3.0` at commit `0fd73cc2c82d03d0d47f6c7ce119859deda042e3`. Full-SHA references remain pinned to their selected commits. The repository count was not checked again for this release.
+The table below summarizes the repository totals stored in `ecosystem.json`.
 
 | Organization | Repositories |
 | --- | ---: |
@@ -27,7 +25,7 @@ Run `composer ecosystem` after changing the JSON or schema. The check validates 
 
 A repository is counted when its public default-branch workflow references DevTools or one of DevTools' reusable workflows. Archived repositories, organization-level repositories, and repositories that only mention DevTools in documentation are excluded.
 
-The transferred ScoreHud and await-generator repositories are also excluded because their default-branch workflows do not currently reference DevTools. BedrockNexus is documented separately because its workflow template is maintained outside this inventory.
+The transferred ScoreHud and await-generator repositories are also excluded because their default-branch workflows do not reference DevTools. BedrockNexus is documented separately because its workflow template is maintained outside this inventory.
 
 ## Limitations
 

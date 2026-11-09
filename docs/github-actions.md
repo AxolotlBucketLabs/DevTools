@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds. Virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in the current `v3.3.0` release. Most repositories should use the maintained `v3` channel: `AxolotlBucketLabs/DevTools@v3` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3` or `build-virion.yml@v3` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions: use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v3.3.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. No release is performed merely by installing DevTools.
+These interfaces are available in the `v3.3.0` release. Most repositories should use the maintained `v3` channel: `AxolotlBucketLabs/DevTools@v3` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3` or `build-virion.yml@v3` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v3.3.0` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
 
 ## Short build workflow
 
@@ -168,7 +168,7 @@ jobs:
       mode: nightly
 ```
 
-Nightly runs use `nightly-<full commit SHA>` tags, always prerelease and never the shared `latest` channel. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
+Nightly runs use `nightly-FULL_COMMIT_SHA` tags, always prerelease and never the shared `latest` channel. They create an immutable release per commit rather than force-moving a shared `nightly` tag. A repeated run of the same commit fails at publication if that nightly release already exists. There is no automatic deletion or retention policy for releases. GitHub artifact retention does not delete release assets. Scheduled and manual branch events are accepted. Pull-request events are excluded.
 
 ## Select the builder revision
 
@@ -195,7 +195,7 @@ git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v3.3.
 ```
 
 ```yaml
-uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v3.3.0
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@FULL_COMMIT_SHA # v3.3.0
 ```
 
 The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The v3 workflow contract no longer accepts the removed `devtools-ref` input. Remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com. These reusable workflows are not supported on GitHub Enterprise Server without that context.
@@ -206,7 +206,7 @@ Update the reusable workflow reference to `@v3` and remove legacy inputs that v3
 
 ```diff
  with:
--  devtools-ref: <old-builder-sha>
+-  devtools-ref: OLD_BUILDER_SHA
 -  retention-days: 14
    php-version: '8.4'
 ```

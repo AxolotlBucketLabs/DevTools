@@ -4,19 +4,19 @@ DevTools targets Axolotl-PM only. Folder loading, virion selection, dependency p
 
 ## Direct dependencies
 
-The accepted Composer runtime requirements are PHP `^8.4`, `ext-json`, `ext-phar`, `ext-yaml`, and `nikic/php-parser:^5.6`. The parser is essential for AST-based shading and its existing license is retained. The current lock selects `nikic/php-parser` `v5.9.0`.
+The accepted Composer runtime requirements are PHP `^8.4`, `ext-json`, `ext-phar`, `ext-yaml`, and `nikic/php-parser:^5.6`. The parser is essential for AST-based shading and its existing license is retained. The lockfile selects `nikic/php-parser` `v5.9.0`.
 
 The accepted development requirements are `friendsofphp/php-cs-fixer:^3.64`, `phpstan/phpstan:^2.1`, `phpunit/phpunit:^10.5`, and `axolotl-pm/pocketmine-mp:5.51.1`. Axolotl-PM is pinned by `composer.lock`, rather than resolved afresh for a test run. Packages such as Symfony components or Composer utilities are dependencies of those tools/server packages, not direct runtime dependencies introduced by DevTools.
 
-Axolotl-PM 5.51.1 requires BedrockProtocol 64.0.0 and NetherNet 0.3.2 in the current lock. Installing the development dependencies therefore also requires `ext-webrtc`. Use a current Axolotl-PM PHP binary.
+Axolotl-PM 5.51.1 requires BedrockProtocol 64.0.0 and NetherNet 0.3.2 in the lockfile. Installing the development dependencies therefore also requires `ext-webrtc`. Use an Axolotl-PM PHP binary with the required extensions.
 
-The standalone CLI currently uses Axolotl-PM manifest value objects from the development installation. Consequently, its documented source-checkout installation includes development dependencies, even though it never starts a server. On a server, Axolotl-PM itself supplies those classes. The shipped DevTools plugin PHAR does not contain Axolotl-PM, PHPUnit, PHPStan, PHP CS Fixer, or Composer's autoloader.
+The standalone CLI uses Axolotl-PM manifest value objects from the development installation. Its documented source-checkout installation therefore includes development dependencies, even though the CLI never starts a server. On a server, Axolotl-PM supplies those classes. The shipped DevTools plugin PHAR does not contain Axolotl-PM, PHPUnit, PHPStan, PHP CS Fixer, or Composer's autoloader.
 
-PHP 8.4 is the source, CLI and build minimum. The complete CI quality gate runs on PHP 8.4 and 8.5. Axolotl-PM runtime smoke evidence identifies its actual PHP version separately. This release's runtime smoke is on PHP 8.4.24 ZTS and does not claim a PHP 8.5 server test.
+PHP 8.4 is the source, CLI and build minimum. The complete CI quality gate runs on PHP 8.4 and 8.5. The documented Axolotl-PM runtime smoke uses PHP 8.4.27 ZTS. No PHP 8.5 server smoke test is claimed.
 
 ## Abandoned server dependencies
 
-Reviewed on 2026-11-03. All ten packages below are required by [Axolotl-PM 5.51.1](https://github.com/axolotl-pm/PocketMine-MP/blob/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1/composer.json) and appear in the development section of DevTools' lockfile. Packagist marks each abandoned without a suggested replacement. Their source repositories are archived.
+All ten packages below are required by [Axolotl-PM 5.51.1](https://github.com/axolotl-pm/PocketMine-MP/blob/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1/composer.json) and appear in the development section of DevTools' lockfile. Packagist marks each abandoned without a suggested replacement. Their source repositories are archived.
 
 | Package | Locked version |
 | --- | --- |
@@ -31,7 +31,7 @@ Reviewed on 2026-11-03. All ten packages below are required by [Axolotl-PM 5.51.
 | `pocketmine/raklib-ipc` | `1.0.1` |
 | `pocketmine/snooze` | `0.5.0` |
 
-`composer outdated "pocketmine/*" --locked` reported all ten at their latest stable versions. A targeted update with `--minimal-changes --dry-run` proposed no lockfile changes. Retain these versions until a compatible replacement is verified with Axolotl-PM: removing them would leave required server classes unavailable, including in the source-checkout CLI installation. Review again by 2026-11-20, or when the server pin changes, a replacement is published, or an advisory appears.
+`composer outdated "pocketmine/*" --locked` reported all ten at their latest stable versions. A targeted update with `--minimal-changes --dry-run` proposed no lockfile changes. Retain these versions until a compatible replacement is verified with Axolotl-PM. Removing them would leave required server classes unavailable, including in the source-checkout CLI installation. Recheck this decision when the server pin changes, a replacement is published, or an advisory appears.
 
 `composer audit --locked` reported no vulnerability advisories and ten abandoned-package findings. The full audit remains enabled and returns nonzero for these findings. `composer audit --locked --no-dev` reported no findings, but excludes the dependencies needed by the source-checkout CLI. The PHAR gate below checks the separate shipped-plugin boundary.
 

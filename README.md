@@ -80,9 +80,9 @@ The reusable workflow supports push and pull-request builds. Use the [step-level
 
 ## Ecosystem
 
-DevTools is currently verified in 143 public repositories across several plugin
-and virion ecosystems. See the [ecosystem inventory](docs/ecosystem.md) for the
-summary, complete JSON data and detection method.
+The repository includes an inventory of public repositories whose default-branch
+workflows reference DevTools. See the [ecosystem inventory](docs/ecosystem.md)
+for the summary, canonical JSON data and detection method.
 
 - [BedrockNexus](https://bedrocknexus.com/) provides an official [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml) powered by DevTools.
 
@@ -98,13 +98,13 @@ The command keeps the legacy `devtools.command` permission for compatibility. It
 /devtools status
 /devtools doctor [plugin]
 /devtools virions
-/devtools build [plugin|virion|both] <project> [--overwrite]
-/devtools extract <phar> [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]
+/devtools build [plugin|virion|both] PROJECT [--overwrite]
+/devtools extract PHAR [--format=folder|zip] [--type=auto|plugin|virion] [--overwrite]
 ```
 
 Migration aliases `/makeplugin` and `/extractplugin` are also available.
 
-`doctor`, `build` and `extract` run as one-at-a-time background jobs on a dedicated worker thread, so they do not block the server tick thread or consume PocketMine's central async task pool. A second heavy operation is rejected while one is running. To run DevTools only as a production folder and virion loader, disable these commands in `config.yml`:
+`doctor`, `build` and `extract` run as one-at-a-time background jobs on a dedicated worker thread, so they do not block the server tick thread or consume Axolotl-PM's central async task pool. A second heavy operation is rejected while one is running. To run DevTools only as a production folder and virion loader, disable these commands in `config.yml`:
 
 ```yaml
 commands:

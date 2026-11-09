@@ -31,7 +31,7 @@ commands:
   extract: false
 ```
 
-Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use PocketMine's central async task pool. DevTools accepts only one background operation at a time. A second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
+Server-side `doctor`, `build` and `extract` operations run on a dedicated worker thread and never use Axolotl-PM's central async task pool. DevTools accepts only one background operation at a time. A second operation is rejected while the first is running. The CLI and GitHub Actions remain synchronous because they do not share a server tick thread.
 
 ## `logging.debug`
 

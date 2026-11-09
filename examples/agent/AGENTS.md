@@ -2,7 +2,7 @@
 
 ## DevTools PHAR workflow
 
-- For CLI, dependency and release interfaces, read `docs/cli.md`, `docs/dependencies.md`, and `docs/github-actions.md` from the exact DevTools revision used. The references below describe the current v3.3.0 release and its maintained channels.
+- For CLI, dependency and release interfaces, read `docs/cli.md`, `docs/dependencies.md`, and `docs/github-actions.md` from the exact DevTools revision used. The references below describe the `v3.3.0` release and its maintained channels.
 - Use CLI `--json`, check the exit status and `success`, consume the returned artifact path and verify its SHA-256. Report runtime testing and static analysis separately from package validation.
 
 - Read `plugin.yml`, `devtools.yml`, Composer metadata, existing workflows, and referenced source before changing the build.
@@ -14,7 +14,7 @@
 - Use a verified release tag for ordinary external checkouts and a full commit SHA when strict reproducibility is required. Do not guess virion repositories, dependency revisions, or compatible server sources.
 - Preserve unrelated workflow gates and user changes.
 - Do not use Poggit CI, commit generated PHARs, publish a release, force-push, delete releases, suppress PHPStan failures, or change plugin source only to make CI pass.
-- Upload exactly one artifact from the PHAR path returned by DevTools. Verify the inner `<PluginName>.phar`, shaded virion count, annotation count, and artifact count.
+- Upload exactly one artifact from the PHAR path returned by DevTools. Verify the inner `PLUGIN_NAME.phar`, shaded virion count, annotation count, and artifact count.
 - Stop with an actionable report when an authoritative dependency source or compatible revision cannot be established from repository evidence.
 
 ## Required handoff

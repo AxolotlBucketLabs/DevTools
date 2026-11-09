@@ -14,7 +14,7 @@ DevTools cannot bootstrap itself from a source folder on an otherwise unmodified
 
 ## Confirm folder loading
 
-Download and extract the release asset `DevTools-examples-<version>.zip`. Copy `HelloShared/` to `plugins/HelloShared/` and `SharedGreeting/` to `virions/SharedGreeting/`, then restart. The server log should report one loaded virion and enable `HelloShared`. Run these commands.
+Download and extract the release asset `DevTools-examples-VERSION.zip`. Replace `VERSION` with the release version. Copy `HelloShared/` to `plugins/HelloShared/` and `SharedGreeting/` to `virions/SharedGreeting/`, then restart. The server log should report one loaded virion and enable `HelloShared`. Run these commands.
 
 ```text
 /devtools virions
