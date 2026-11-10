@@ -18,7 +18,7 @@ DevTools has three core workflows. It loads folder plugins, loads shared develop
 
 Build code works without a running server. Commands orchestrate services rather than duplicating their algorithms. Support does not depend on business modules.
 
-`PluginDependencyCollector` prepares startup requirements. `PluginDependencyIndex` supplies the loader's project-scoped failure checks. `VirionGraphPreflight` owns cycle and graph conflict decisions. `ProjectDoctor` provides the shared structure and dependency check. `PreparedVirionProvenance` verifies prepared content, and `ArtifactSetInstaller` installs both single and paired artifacts.
+`PluginDependencyCollector` prepares startup requirements. `PluginDependencyIndex` supplies the loader's project-scoped failure checks. `VirionSelectionPlanner` decides candidate preference and version selection. `VirionGraphPreflight` owns cycle and graph conflict decisions. `ProjectDoctor` provides the shared structure and dependency check. `PreparedVirionProvenance` verifies prepared content, and `ArtifactSetInstaller` installs both single and paired artifacts.
 
 ## Entry points and tooling
 

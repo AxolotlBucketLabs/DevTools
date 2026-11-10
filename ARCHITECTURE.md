@@ -25,6 +25,7 @@ flowchart TB
         Loader["FolderPluginLoader"]
         Validation["PluginProjectValidator"]
         Manager["VirionManager"]
+        Selection["VirionSelectionPlanner"]
         Preflight["VirionGraphPreflight"]
         Doctor["ProjectDoctor"]
         Resolver["BuildConfigResolver<br/>and VirionResolver"]
@@ -51,6 +52,7 @@ flowchart TB
     Plugin --> Resolver
     Config --> Resolver
     Manager --> ClassLoader
+    Manager --> Selection
     Manager --> Preflight
     Commands --> Doctor
     CLI --> Doctor
@@ -81,9 +83,11 @@ The loader validates the project first, then maps either the manifest's `src-nam
 
 Before the folder loader is registered, `PluginDependencyCollector` resolves each folder project's requirements and records manifest or configuration warnings. It returns a `PluginDependencyIndex` with normalized project keys. The same index provides requirements to shared virion loading and checks each plugin against the populated registry during discovery and direct loading. Collection stays in Runtime so Loader does not depend on Build declarations.
 
-`VirionManager` scans root `virions/`. `VirionProjectFactory` normalizes source and PHAR layouts. The manifest reader checks `name`, semantic `version`, `antigen`, and compatibility. The class scanner parses declarations without executing them.
+`VirionManager` scans root `virions/`. `VirionProjectFactory` normalizes source and PHAR layouts. The manifest reader checks `name`, semantic `version` and `antigen`. `VirionClassScanner` validates declaration uniqueness, antigen membership and source layout without executing source. Builders and the runtime manager rely on that contract for source validation.
 
-`VirionProjectSelector` filters server-incompatible candidates and chooses the unique highest semantic version satisfying every plugin constraint. The registry records loaded, skipped, failed, and conflicting candidates. It rejects duplicate selected versions, antigen overlap, and class conflicts deterministically. Valid antigen and source paths are added to the server's shared `ThreadSafeClassLoader`. Compatible servers supply the same thread-safe object to async workers, including workers created later, so no separate per-worker SPL loader or worker-start task is needed when that capability is present.
+`VirionSelectionPlanner` applies folder precedence and compatibility checks, resolves transitive constraints and delegates unique version selection to `VirionProjectSelector`. Its plan separates diagnostics recorded before preflight from load decisions and missing requirements reported afterward. It does not mutate the registry or register classes. The manager preserves discovery errors, alias mapping, diagnostic order and repeated-discovery state when applying the plan.
+
+The registry records loaded, skipped, failed and conflicting candidates. Duplicate selected versions, antigen overlap and class conflicts are rejected deterministically. Valid antigen and source paths are added to the server's shared `ThreadSafeClassLoader`. Compatible servers supply the same thread-safe object to async workers, including workers created later, so no separate per-worker SPL loader or worker-start task is needed when that capability is present.
 
 `VirionGraphPreflight` owns dependency traversal, failure propagation, cycle analysis and selected-symbol conflict checks. It receives runtime symbol inspection from the manager and returns readiness plus ordered failures. `VirionManager` retains process-level checks, registry mutation and class-loader registration. Preflight caches retain the manager's lifetime, and compatible cycles remain supported.
 

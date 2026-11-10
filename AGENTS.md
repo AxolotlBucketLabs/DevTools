@@ -18,7 +18,9 @@
 - Build code must work without a running `Server`.
 - Runtime composition may use Build declarations and Loader metadata. Loader must not depend on Build or Runtime.
 - `ProjectDoctor` owns structure and dependency checks shared by the CLI and worker.
+- `VirionSelectionPlanner` owns candidate preference, version selection and selection diagnostics. The manager applies its plan.
 - `VirionGraphPreflight` owns selected-graph checks. Runtime inspection and registration stay in `VirionManager`.
+- `VirionClassScanner` owns source layout and declaration validation. Callers retain their runtime and artifact checks.
 - `ArtifactSetInstaller` owns artifact replacement and rollback for all builders.
 - `PreparedVirionProvenance` owns prepared-content verification for selection and packaging.
 - PocketMine runtime calls stay in `DevTools`, Loader, the registrar, and Command.
