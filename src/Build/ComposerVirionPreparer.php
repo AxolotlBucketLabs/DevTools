@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
@@ -20,7 +23,6 @@ use SplFileInfo;
 use function array_key_first;
 use function array_keys;
 use function basename;
-use function bin2hex;
 use function dirname;
 use function file_exists;
 use function file_put_contents;
@@ -32,7 +34,6 @@ use function is_file;
 use function is_string;
 use function json_encode;
 use function ksort;
-use function random_bytes;
 use function realpath;
 use function rename;
 use function rtrim;
@@ -52,6 +53,18 @@ use const SORT_STRING;
 
 final class ComposerVirionPreparer
 {
+	private const PREPARED_METADATA_SCHEMA_VERSION = 1;
+	private const THIRD_PARTY_LICENSE_FILES = [
+		'LICENSE',
+		'LICENSE.md',
+		'LICENSE.txt',
+		'COPYING',
+		'COPYING.md',
+		'NOTICE',
+		'NOTICE.md',
+		'THIRD_PARTY_NOTICES.md',
+	];
+
 	public function __construct(private readonly Filesystem $filesystem) {}
 
 	/** @return list<array<string, mixed>> */
@@ -74,16 +87,16 @@ final class ComposerVirionPreparer
 		}
 		$this->filesystem->ensureDirectory(dirname($destination));
 		$parent = realpath(dirname($destination)) ?: throw new BuildException('Cannot resolve dependency output parent.');
-		if (Path::isInside($projectRoot . '/vendor', $parent) || Path::isInside($projectRoot . '/src', $parent)) {
+		if (Path::isInside($projectRoot . '/' . ArtifactFile::COMPOSER_VENDOR_DIRECTORY, $parent) || Path::isInside($projectRoot . '/' . ArtifactFile::SOURCE_DIRECTORY, $parent)) {
 			throw new BuildException('Dependency output must be outside vendor/ and src/.');
 		}
-		$composer = $plan->readJson($projectRoot . '/composer.json');
+		$composer = $plan->readJson($projectRoot . '/' . ArtifactFile::COMPOSER_MANIFEST);
 		$config = $composer['config'] ?? [];
 		if (is_array($config) && isset($config['vendor-dir']) && $config['vendor-dir'] !== 'vendor') {
 			throw new BuildException('Composer preparation currently requires the standard vendor directory.');
 		}
-		$this->filesystem->assertNoSymbolicLinkComponents($projectRoot, 'vendor/composer/installed.json');
-		$installed = $plan->readJson($projectRoot . '/vendor/composer/installed.json');
+		$this->filesystem->assertNoSymbolicLinkComponents($projectRoot, ArtifactFile::COMPOSER_VENDOR_DIRECTORY . '/' . ArtifactFile::COMPOSER_INSTALLED_METADATA);
+		$installed = $plan->readJson($projectRoot . '/' . ArtifactFile::COMPOSER_VENDOR_DIRECTORY . '/' . ArtifactFile::COMPOSER_INSTALLED_METADATA);
 		$installedByName = [];
 		$installedPackages = $installed['packages'] ?? [];
 		if (!is_array($installedPackages)) {
@@ -94,7 +107,7 @@ final class ComposerVirionPreparer
 				$installedByName[$package['name']] = $package;
 			}
 		}
-		$stage = $parent . '/.devtools-prepare-' . bin2hex(random_bytes(8));
+		$stage = $parent . '/.devtools-prepare-' . RandomToken::pathSuffix();
 		$this->filesystem->ensureDirectory($stage);
 		$result = [];
 		try {
@@ -107,10 +120,10 @@ final class ComposerVirionPreparer
 						throw new BuildException("Installed Composer package {$name} differs from composer.lock ({$field}). Run composer install --no-dev --no-scripts --no-plugins again.");
 					}
 				}
-				$relative = 'vendor/' . $name;
-				$this->filesystem->assertNoSymbolicLinkComponents($projectRoot, $relative . '/composer.json');
+			$relative = ArtifactFile::COMPOSER_VENDOR_DIRECTORY . '/' . $name;
+				$this->filesystem->assertNoSymbolicLinkComponents($projectRoot, $relative . '/' . ArtifactFile::COMPOSER_MANIFEST);
 				$source = $projectRoot . '/' . $relative;
-				$sourceComposer = $plan->readJson($source . '/composer.json');
+				$sourceComposer = $plan->readJson($source . '/' . ArtifactFile::COMPOSER_MANIFEST);
 				foreach (['name', 'autoload', 'require', 'extra'] as $field) {
 					$sourceMetadata = $sourceComposer[$field] ?? null;
 					$lockedMetadata = $package[$field] ?? null;
@@ -143,13 +156,13 @@ final class ComposerVirionPreparer
 					throw new BuildException("Composer package name collision at {$localName}.");
 				}
 				$sourceDirectory = $sourceRelative === '' ? $source : $source . '/' . $sourceRelative;
-				$this->filesystem->copyTree($sourceDirectory, $target . '/src', static function (string $relative) : bool {
+				$this->filesystem->copyTree($sourceDirectory, $target . '/' . ArtifactFile::SOURCE_DIRECTORY, static function (string $relative) : bool {
 					if (Path::isSensitive($relative)) {
 						throw new BuildException("Refusing sensitive package source file {$relative}.");
 					}
 					return !Path::isHiddenOrTemporary($relative);
 				});
-				$autoloadShims = $this->createCoLocatedClassShims($target . '/src', $antigen, $name);
+				$autoloadShims = $this->createCoLocatedClassShims($target . '/' . ArtifactFile::SOURCE_DIRECTORY, $antigen, $name);
 				$requirements = [];
 				foreach ($plan->dependencyNames($package['require'] ?? [], $name) as $dependency) {
 					if ($dependency === 'pocketmine/pocketmine-mp' && !isset($packages[$dependency])) {
@@ -166,17 +179,17 @@ final class ComposerVirionPreparer
 				}
 				(new VirionPlatformRequirements())->validate($platform, $name);
 				$manifest['composer-platform'] = $platform;
-				$this->write($target . '/virion.yml', yaml_emit($manifest));
-				foreach (['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING', 'COPYING.md', 'NOTICE', 'NOTICE.md', 'THIRD_PARTY_NOTICES.md'] as $license) {
+				$this->write($target . '/' . ArtifactFile::VIRION_MANIFEST, yaml_emit($manifest));
+				foreach (self::THIRD_PARTY_LICENSE_FILES as $license) {
 					if (is_file($source . '/' . $license)) {
 						$this->filesystem->copyFile($source . '/' . $license, $target . '/' . $license);
 					}
 				}
-				$metadata = ['package' => $name, 'name' => $localName, 'version' => $manifest['version'], 'composerVersion' => $package['version'], 'antigen' => $antigen, 'source' => $package['source'] ?? null, 'dist' => $package['dist'] ?? null, 'composerLockSha256' => hash_file('sha256', $projectRoot . '/composer.lock'), 'autoloadShims' => $autoloadShims];
-				$metadata['sourceSha256'] = (new VirionSourceFingerprint())->hash($target . '/src');
-				$metadata['manifestSha256'] = hash_file('sha256', $target . '/virion.yml');
+				$metadata = ['package' => $name, 'name' => $localName, 'version' => $manifest['version'], 'composerVersion' => $package['version'], 'antigen' => $antigen, 'source' => $package['source'] ?? null, 'dist' => $package['dist'] ?? null, 'composerLockSha256' => hash_file(HashAlgorithm::SHA256, $projectRoot . '/' . ArtifactFile::COMPOSER_LOCK), 'autoloadShims' => $autoloadShims];
+				$metadata['sourceSha256'] = (new VirionSourceFingerprint())->hash($target . '/' . ArtifactFile::SOURCE_DIRECTORY);
+				$metadata['manifestSha256'] = hash_file(HashAlgorithm::SHA256, $target . '/' . ArtifactFile::VIRION_MANIFEST);
 				$metadata['composerPackageSha256'] = $plan->fingerprint($package);
-				$this->write($target . '/devtools-provenance.json', json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+				$this->write($target . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA, json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
 				$project = $factory->open($target);
 				$classes = $scanner->scan($project);
 				if ($classes === []) {
@@ -189,7 +202,7 @@ final class ComposerVirionPreparer
 				}
 				$result[] = $metadata;
 			}
-			$this->write($stage . '/devtools-prepared.json', json_encode(['schemaVersion' => 1, 'packages' => $result], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+			$this->write($stage . '/' . ArtifactFile::PREPARED_VIRION_METADATA, json_encode(['schemaVersion' => self::PREPARED_METADATA_SCHEMA_VERSION, 'packages' => $result], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
 			if (!rename($stage, $destination)) {
 				throw new BuildException("Cannot install prepared dependencies at {$destination}.");
 			}
@@ -207,7 +220,7 @@ final class ComposerVirionPreparer
 		$files = [];
 		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
 		foreach ($iterator as $entry) {
-			if (!$entry instanceof SplFileInfo || !$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+			if (!$entry instanceof SplFileInfo || !$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), ArtifactFile::PHP_SOURCE_EXTENSION)) {
 				continue;
 			}
 			$relative = str_replace('\\', '/', substr($entry->getPathname(), strlen($root) + 1));
@@ -223,7 +236,7 @@ final class ComposerVirionPreparer
 		ksort($files, SORT_STRING);
 		$shims = [];
 		foreach ($files as $relative => $classes) {
-			$primary = $antigen . '\\' . str_replace('/', '\\', substr($relative, 0, -4));
+			$primary = $antigen . '\\' . str_replace('/', '\\', substr($relative, 0, -strlen(ArtifactFile::PHP_SOURCE_EXTENSION)));
 			if (!in_array($primary, $classes, true)) {
 				continue;
 			}
@@ -231,7 +244,7 @@ final class ComposerVirionPreparer
 				if ($class === $primary || !str_starts_with($class, $antigen . '\\')) {
 					continue;
 				}
-				$expected = str_replace('\\', '/', substr($class, strlen($antigen) + 1)) . '.php';
+				$expected = str_replace('\\', '/', substr($class, strlen($antigen) + 1)) . ArtifactFile::PHP_SOURCE_EXTENSION;
 				if (dirname($expected) !== dirname($relative) || file_exists($root . '/' . $expected)) {
 					continue;
 				}
@@ -268,7 +281,7 @@ final class ComposerVirionPreparer
 			if (Filesystem::isLink($entry->getPathname())) {
 				throw new BuildException("Composer virion {$name} classmap contains a symbolic link: {$entry->getPathname()}.");
 			}
-			if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), '.php')) {
+			if (!$entry->isFile() || !str_ends_with(strtolower($entry->getFilename()), ArtifactFile::PHP_SOURCE_EXTENSION)) {
 				continue;
 			}
 			$relative = str_replace('\\', '/', substr($entry->getPathname(), strlen($root) + 1));

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Loader;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use FilesystemIterator;
@@ -41,7 +42,7 @@ final class FolderPluginDiscovery
 				continue;
 			}
 			$path = $entry->getPathname();
-			if (is_file($path . DIRECTORY_SEPARATOR . 'plugin.yml') || is_dir($path . DIRECTORY_SEPARATOR . 'src')) {
+			if (is_file($path . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST) || is_dir($path . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY)) {
 				$projects[] = str_replace('\\', '/', $path);
 			}
 		}

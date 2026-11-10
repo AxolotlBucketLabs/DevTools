@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
@@ -166,7 +167,7 @@ final class VirionClassScanner
 					"Cannot load {$project->manifest->name}: class {$class} is outside antigen {$project->manifest->antigen}.",
 				);
 			}
-			$relative = str_replace('\\', '/', substr($class, strlen($project->manifest->antigen) + 1)) . '.php';
+			$relative = str_replace('\\', '/', substr($class, strlen($project->manifest->antigen) + 1)) . ArtifactFile::PHP_SOURCE_EXTENSION;
 			if (!$this->caseSensitiveFileExists($project->sourceRoot, $relative)) {
 				throw new VirionException(
 					"Cannot load {$project->manifest->name}: expected source file {$project->sourceRoot}/{$relative} for class {$class}. "

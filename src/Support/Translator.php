@@ -29,48 +29,66 @@ use const JSON_THROW_ON_ERROR;
  */
 final class Translator
 {
+	private const BULGARIAN_LOCALE = 'bul';
+	private const SIMPLIFIED_CHINESE_LOCALE = 'chs';
+	private const GERMAN_LOCALE = 'deu';
+	private const ENGLISH_LOCALE = 'eng';
+	private const FRENCH_LOCALE = 'fra';
+	private const ITALIAN_LOCALE = 'ita';
+	private const JAPANESE_LOCALE = 'jpn';
+	private const KOREAN_LOCALE = 'kor';
+	private const LATVIAN_LOCALE = 'lav';
+	private const DUTCH_LOCALE = 'nld';
+	private const RUSSIAN_LOCALE = 'rus';
+	private const SPANISH_LOCALE = 'spa';
+	private const TURKISH_LOCALE = 'tur';
+	private const VIETNAMESE_LOCALE = 'vie';
+
+	public const DEFAULT_LOCALE = self::ENGLISH_LOCALE;
+	public const AUTO_LOCALE = 'auto';
+
 	/** @var list<string> */
 	private const SUPPORTED_LOCALES = [
-		'bul',
-		'chs',
-		'deu',
-		'eng',
-		'fra',
-		'ita',
-		'jpn',
-		'kor',
-		'lav',
-		'nld',
-		'rus',
-		'spa',
-		'tur',
-		'vie',
+		self::BULGARIAN_LOCALE,
+		self::SIMPLIFIED_CHINESE_LOCALE,
+		self::GERMAN_LOCALE,
+		self::DEFAULT_LOCALE,
+		self::FRENCH_LOCALE,
+		self::ITALIAN_LOCALE,
+		self::JAPANESE_LOCALE,
+		self::KOREAN_LOCALE,
+		self::LATVIAN_LOCALE,
+		self::DUTCH_LOCALE,
+		self::RUSSIAN_LOCALE,
+		self::SPANISH_LOCALE,
+		self::TURKISH_LOCALE,
+		self::VIETNAMESE_LOCALE,
 	];
 
 	/** @var array<string, string> */
 	private const ALIASES = [
-		'bg' => 'bul',
-		'bulgarian' => 'bul',
-		'chs' => 'chs',
-		'de' => 'deu',
-		'deu' => 'deu',
-		'deutsch' => 'deu',
-		'en' => 'eng',
-		'eng' => 'eng',
-		'english' => 'eng',
-		'es' => 'spa',
-		'fr' => 'fra',
-		'it' => 'ita',
-		'ja' => 'jpn',
-		'ko' => 'kor',
-		'lv' => 'lav',
-		'nl' => 'nld',
-		'ru' => 'rus',
-		'spa' => 'spa',
-		'tr' => 'tur',
-		'vi' => 'vie',
-		'zh' => 'chs',
-		'zh_cn' => 'chs',
+		'bg' => self::BULGARIAN_LOCALE,
+		'bulgarian' => self::BULGARIAN_LOCALE,
+		'chs' => self::SIMPLIFIED_CHINESE_LOCALE,
+		'de' => self::GERMAN_LOCALE,
+		'deu' => self::GERMAN_LOCALE,
+		'deutsch' => self::GERMAN_LOCALE,
+		'en' => self::DEFAULT_LOCALE,
+		self::DEFAULT_LOCALE => self::DEFAULT_LOCALE,
+		'english' => self::DEFAULT_LOCALE,
+		'es' => self::SPANISH_LOCALE,
+		'fr' => self::FRENCH_LOCALE,
+		'it' => self::ITALIAN_LOCALE,
+		'ja' => self::JAPANESE_LOCALE,
+		'ko' => self::KOREAN_LOCALE,
+		'lv' => self::LATVIAN_LOCALE,
+		'nl' => self::DUTCH_LOCALE,
+		'ru' => self::RUSSIAN_LOCALE,
+		'spa' => self::SPANISH_LOCALE,
+		'tr' => self::TURKISH_LOCALE,
+		'vi' => self::VIETNAMESE_LOCALE,
+		'zh' => self::SIMPLIFIED_CHINESE_LOCALE,
+		'zh_cn' => self::SIMPLIFIED_CHINESE_LOCALE,
 	];
 
 	/** @var array<string, string> */
@@ -84,11 +102,11 @@ final class Translator
 		private readonly string $locale,
 	) {
 		self::assertSupported($locale);
-		$this->fallback = self::load($directory, 'eng');
-		$this->messages = $locale === 'eng' ? $this->fallback : self::load($directory, $locale);
+		$this->fallback = self::load($directory, self::DEFAULT_LOCALE);
+		$this->messages = $locale === self::DEFAULT_LOCALE ? $this->fallback : self::load($directory, $locale);
 	}
 
-	public static function fromResources(string $locale = 'eng') : self
+	public static function fromResources(string $locale = self::DEFAULT_LOCALE) : self
 	{
 		return new self(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'lang', self::normalize($locale));
 	}
@@ -97,7 +115,7 @@ final class Translator
 	{
 		$requested = strtolower(trim($configured));
 
-		return self::normalize($requested === '' || $requested === 'auto' ? $serverLocale : $requested);
+		return self::normalize($requested === '' || $requested === self::AUTO_LOCALE ? $serverLocale : $requested);
 	}
 
 	/** @return list<string> */
@@ -150,7 +168,7 @@ final class Translator
 		if (!is_file($path)) {
 			throw new RuntimeException("Translation catalog is missing: {$path}");
 		}
-		$decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+		$decoded = json_decode((string) file_get_contents($path), true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		if (!is_array($decoded)) {
 			throw new RuntimeException("Translation catalog must contain an object: {$path}");
 		}

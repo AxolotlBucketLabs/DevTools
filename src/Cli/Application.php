@@ -16,6 +16,10 @@ use AxolotlBucketLabs\DevTools\Build\ProjectRole;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
+use AxolotlBucketLabs\DevTools\Command\BuildTarget;
+use AxolotlBucketLabs\DevTools\Command\ExtractFormat;
+use AxolotlBucketLabs\DevTools\Command\ExtractType;
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Translator;
@@ -36,6 +40,7 @@ use function preg_match;
 use function realpath;
 use function str_contains;
 use function str_starts_with;
+use function strlen;
 use function substr;
 use const DIRECTORY_SEPARATOR;
 use const JSON_INVALID_UTF8_SUBSTITUTE;
@@ -47,6 +52,9 @@ use const STDOUT;
 
 final class Application
 {
+	private const JSON_RESPONSE_SCHEMA_VERSION = 1;
+	private const OPTION_PREFIX = '--';
+
 	public function __construct(
 		private readonly string $version,
 		private readonly ProjectDoctor $doctor,
@@ -83,7 +91,7 @@ final class Application
 				}
 			}
 			[$command, $options] = $this->parse($arguments, $command);
-			$translator = $translator->withLocale($options['lang'] ?? (getenv('DEVTOOLS_LANG') ?: 'eng'));
+			$translator = $translator->withLocale($options['lang'] ?? (getenv('DEVTOOLS_LANG') ?: Translator::DEFAULT_LOCALE));
 			$this->debug?->debug("CLI command {$command} selected.");
 			if ($command === 'help') {
 				$data = ['help' => self::help($translator)];
@@ -100,7 +108,7 @@ final class Application
 				}
 				$virions = $this->absolute($options['virions'] ?? 'virions', $project);
 				$overwrite = isset($options['overwrite']);
-				$type = $options['type'] ?? 'plugin';
+			$type = $options['type'] ?? BuildTarget::PLUGIN->value;
 				if ($command === 'prepare') {
 					$checks['dependencies'] = 'failed';
 					$data = ['directory' => $virions, 'dependencies' => $this->preparer->prepare($project, $virions)];
@@ -111,9 +119,9 @@ final class Application
 					$checks['artifact'] = 'passed';
 				} elseif ($command === 'extract') {
 					$data = $this->extractArtifact($project, $options, $overwrite, $checks);
-				} elseif ($command === 'build' && $type === 'virion') {
+				} elseif ($command === 'build' && $type === BuildTarget::VIRION->value) {
 					$data = $this->buildVirion($project, $options, $overwrite, $checks);
-				} elseif ($command === 'build' && $type === 'both') {
+				} elseif ($command === 'build' && $type === BuildTarget::BOTH->value) {
 					$data = $this->buildBoth($project, $virions, $options, $overwrite, $checks);
 				} else {
 					$summary = $this->checkPlugin($project, $virions, $checks, $diagnostics);
@@ -144,7 +152,7 @@ final class Application
 		}
 
 		$this->debug?->debug("CLI command {$command} finished with exit code {$exit}.");
-		$response = ['schema_version' => 1, 'success' => $exit === 0, 'command' => $command, 'tool' => ['name' => 'DevTools', 'version' => $this->version], 'data' => (object) $data, 'diagnostics' => $diagnostics, 'checks' => $checks];
+		$response = ['schema_version' => self::JSON_RESPONSE_SCHEMA_VERSION, 'success' => $exit === 0, 'command' => $command, 'tool' => ['name' => 'DevTools', 'version' => $this->version], 'data' => (object) $data, 'diagnostics' => $diagnostics, 'checks' => $checks];
 		if ($json) {
 			fwrite(STDOUT, json_encode($response, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) . "\n");
 		} else {
@@ -178,8 +186,8 @@ final class Application
 	{
 		$artifact = $this->absolute($this->required($options, 'artifact'), $project);
 		$destination = $this->absolute($this->required($options, 'out'), $project);
-		$format = $options['format'] ?? 'folder';
-		$artifactType = $options['type'] ?? 'auto';
+		$format = $options['format'] ?? ExtractFormat::FOLDER->value;
+		$artifactType = $options['type'] ?? ExtractType::AUTO->value;
 		$checks['artifact'] = 'failed';
 		$inspection = $this->inspector->inspect($artifact);
 		$checks['artifact'] = 'passed';
@@ -187,7 +195,7 @@ final class Application
 		if (!is_string($detected)) {
 			throw new LocalizedException('cli.artifact_type_missing', usageError: true);
 		}
-		if ($artifactType === 'auto') {
+		if ($artifactType === ExtractType::AUTO->value) {
 			if ($detected === ProjectRole::DUAL->value) {
 				throw new LocalizedException('cli.dual_artifact_type_required', usageError: true);
 			}
@@ -195,7 +203,7 @@ final class Application
 		} else {
 			$this->assertArtifactType($inspection, $artifactType);
 		}
-		if ($format === 'folder') {
+		if ($format === ExtractFormat::FOLDER->value) {
 			$files = $this->extractor->extract(new PharArchiveReader($artifact), $destination, $overwrite);
 		} else {
 			$files = $this->zipWriter->write(new PharArchiveReader($artifact), $destination, $overwrite);
@@ -212,7 +220,7 @@ final class Application
 	private function buildVirion(string $project, array $options, bool $overwrite, array &$checks) : array
 	{
 		$checks['structure'] = 'failed';
-		$this->virionManifestReader->read($project . '/virion.yml');
+		$this->virionManifestReader->read($project . '/' . ArtifactFile::VIRION_MANIFEST);
 		$checks['structure'] = 'passed';
 		$checks['artifact'] = 'failed';
 		$result = $this->virionBuilder->build($project, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
@@ -260,7 +268,7 @@ final class Application
 	 */
 	private function checkPlugin(string $project, string $virions, array &$checks, array &$diagnostics) : ?array
 	{
-		$check = $this->doctor->check($project, $virions, $project . '/plugin.yml');
+		$check = $this->doctor->check($project, $virions, $project . '/' . ArtifactFile::PLUGIN_MANIFEST);
 		$validation = $check->validation;
 		foreach ($validation->issues() as $issue) {
 			$diagnostics[] = ['code' => $issue->code, 'severity' => $issue->severity->value, 'message' => $issue->message, 'file' => $issue->path, 'line' => null, 'suggestion' => $issue->suggestion];
@@ -294,7 +302,7 @@ final class Application
 				continue;
 			}
 			if ($argument === '--help' || $argument === '--version') {
-				$options[substr($argument, 2)] = 'true';
+				$options[substr($argument, strlen(self::OPTION_PREFIX))] = 'true';
 				continue;
 			}
 			if ($argument === '--overwrite') {
@@ -336,12 +344,14 @@ final class Application
 			}
 		}
 		if (isset($options['type'])) {
-			$allowedTypes = $command === 'build' ? ['plugin', 'virion', 'both'] : ['auto', 'plugin', 'virion'];
+			$allowedTypes = $command === 'build'
+				? array_map(static fn(BuildTarget $target) : string => $target->value, BuildTarget::cases())
+				: array_map(static fn(ExtractType $type) : string => $type->value, ExtractType::cases());
 			if (!in_array($options['type'], $allowedTypes, true)) {
 				throw new LocalizedException($command === 'build' ? 'cli.build_type_invalid' : 'cli.extract_type_invalid', usageError: true);
 			}
 		}
-		if (isset($options['format']) && !in_array($options['format'], ['folder', 'zip'], true)) {
+		if (isset($options['format']) && !in_array($options['format'], array_map(static fn(ExtractFormat $format) : string => $format->value, ExtractFormat::cases()), true)) {
 			throw new LocalizedException('cli.format_invalid', usageError: true);
 		}
 
@@ -357,7 +367,7 @@ final class Application
 	/** @param array<string, mixed> $inspection */
 	private function assertArtifactType(array $inspection, string $type) : void
 	{
-		if ($type === 'auto') {
+		if ($type === ExtractType::AUTO->value) {
 			return;
 		}
 		$detected = $inspection['type'] ?? null;

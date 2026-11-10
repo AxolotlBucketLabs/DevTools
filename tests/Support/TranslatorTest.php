@@ -43,7 +43,7 @@ final class TranslatorTest extends TestCase
 	{
 		$englishContents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/eng.json');
 		self::assertIsString($englishContents);
-		$englishCatalog = json_decode($englishContents, true, 512, JSON_THROW_ON_ERROR);
+		$englishCatalog = json_decode($englishContents, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		self::assertIsArray($englishCatalog);
 		$expectedKeys = array_keys($englishCatalog);
 		sort($expectedKeys);
@@ -51,7 +51,7 @@ final class TranslatorTest extends TestCase
 		foreach (Translator::supportedLocales() as $locale) {
 			$contents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/' . $locale . '.json');
 			self::assertIsString($contents);
-			$catalog = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+			$catalog = json_decode($contents, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			self::assertIsArray($catalog);
 			$actualKeys = array_keys($catalog);
 			sort($actualKeys);
@@ -89,7 +89,7 @@ final class TranslatorTest extends TestCase
 		foreach (Translator::supportedLocales() as $locale) {
 			$contents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/' . $locale . '.json');
 			self::assertIsString($contents);
-			$catalog = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+			$catalog = json_decode($contents, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			self::assertIsArray($catalog);
 			$translator = Translator::fromResources($locale);
 			foreach ($keys as $key) {

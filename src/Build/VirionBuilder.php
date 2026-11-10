@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use AxolotlBucketLabs\DevTools\Virion\PreparedVirionProvenance;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -19,7 +22,6 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Throwable;
-use function bin2hex;
 use function count;
 use function hash;
 use function hash_equals;
@@ -29,7 +31,6 @@ use function ini_get;
 use function is_dir;
 use function is_file;
 use function preg_match;
-use function random_bytes;
 use function realpath;
 use function str_replace;
 use function str_starts_with;
@@ -88,7 +89,7 @@ final class VirionBuilder
 			throw new BuildException('Cannot resolve the virion project or build output directory.');
 		}
 		if ($realOutput === $realProject
-			|| Path::isInside($realProject . DIRECTORY_SEPARATOR . 'src', $realOutput)
+			|| Path::isInside($realProject . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY, $realOutput)
 			|| Path::isInside($realProject . DIRECTORY_SEPARATOR . 'resources', $realOutput)) {
 			throw new BuildException("Refusing build output inside virion source or resources: {$realOutput}.");
 		}
@@ -97,12 +98,12 @@ final class VirionBuilder
 		if (preg_match('/^[A-Za-z0-9_.-]+$/D', $safeName) !== 1) {
 			throw new BuildException("Cannot derive a safe virion artifact name from {$safeName}.");
 		}
-		$outputPath = Path::join($outputDirectory, $safeName . '.phar');
+		$outputPath = Path::join($outputDirectory, $safeName . ArtifactFile::PHAR_EXTENSION);
 		$this->installer->assertDestinations([$outputPath], $overwrite);
 
-		$nonce = bin2hex(random_bytes(8));
+		$nonce = RandomToken::pathSuffix();
 		$stage = Path::join($outputDirectory, '.devtools-virion-stage-' . $nonce);
-		$temporaryPhar = Path::join($outputDirectory, '.' . $safeName . '.' . $nonce . '.tmp.phar');
+		$temporaryPhar = Path::join($outputDirectory, '.' . $safeName . '.' . $nonce . '.tmp' . ArtifactFile::PHAR_EXTENSION);
 		$this->filesystem->ensureDirectory($stage);
 		$failure = null;
 		$result = null;
@@ -148,10 +149,10 @@ final class VirionBuilder
 	{
 		$antigen = $project->manifest->antigen;
 		$name = $project->manifest->name;
-		$this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $stage . DIRECTORY_SEPARATOR . 'virion.yml');
-		$source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
+		$this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_MANIFEST, $stage . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_MANIFEST);
+		$source = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		$antigenSource = $source . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $antigen);
-		$sourceDestination = $stage . DIRECTORY_SEPARATOR . 'src';
+		$sourceDestination = $stage . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		if (is_dir($antigenSource)) {
 			$this->filesystem->copyTree(
 				$antigenSource,
@@ -166,7 +167,7 @@ final class VirionBuilder
 			);
 		}
 		$resources = $projectRoot . DIRECTORY_SEPARATOR . 'resources';
-		if (!is_file($projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml')
+		if (!is_file($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST)
 			&& is_dir($resources)
 			&& (new FilesystemIterator($resources, FilesystemIterator::SKIP_DOTS))->valid()) {
 			throw new BuildException(
@@ -179,7 +180,7 @@ final class VirionBuilder
 				$this->filesystem->copyFile($source, $stage . DIRECTORY_SEPARATOR . $notice);
 			}
 		}
-		$provenance = $projectRoot . DIRECTORY_SEPARATOR . 'devtools-provenance.json';
+		$provenance = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_PROVENANCE_METADATA;
 		if (!is_file($provenance)) {
 			return null;
 		}
@@ -188,7 +189,7 @@ final class VirionBuilder
 		} catch (VirionException $error) {
 			throw new BuildException($error->getMessage(), 0, $error);
 		}
-		$this->filesystem->copyFile($provenance, $stage . DIRECTORY_SEPARATOR . 'devtools-provenance.json');
+		$this->filesystem->copyFile($provenance, $stage . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_PROVENANCE_METADATA);
 
 		return $provenance;
 	}
@@ -201,25 +202,25 @@ final class VirionBuilder
 	private function validatePhar(string $path, string $name, ?string $provenance) : void
 	{
 		$phar = new Phar($path);
-		if (!isset($phar['virion.yml']) || !isset($phar['src'])) {
+		if (!isset($phar[ArtifactFile::VIRION_MANIFEST]) || !isset($phar[ArtifactFile::SOURCE_DIRECTORY])) {
 			throw new BuildException("Generated virion {$name} PHAR is missing virion.yml or src/.");
 		}
-		$manifest = $this->manifestReader->read('phar://' . str_replace('\\', '/', $path) . '/virion.yml');
+		$manifest = $this->manifestReader->read('phar://' . str_replace('\\', '/', $path) . '/' . ArtifactFile::VIRION_MANIFEST);
 		if ($manifest->name !== $name) {
 			throw new BuildException("Generated virion manifest name {$manifest->name} does not match {$name}.");
 		}
 		if ($provenance !== null) {
-			if (!isset($phar['devtools-provenance.json'])) {
-				throw new BuildException("Generated virion {$name} PHAR is missing devtools-provenance.json.");
+			if (!isset($phar[ArtifactFile::VIRION_PROVENANCE_METADATA])) {
+				throw new BuildException("Generated virion {$name} PHAR is missing " . ArtifactFile::VIRION_PROVENANCE_METADATA . '.');
 			}
-			$expected = hash_file('sha256', $provenance);
-			$actual = hash('sha256', $phar['devtools-provenance.json']->getContent());
+			$expected = hash_file(HashAlgorithm::SHA256, $provenance);
+			$actual = hash(HashAlgorithm::SHA256, $phar[ArtifactFile::VIRION_PROVENANCE_METADATA]->getContent());
 			if ($expected === false || !hash_equals($expected, $actual)) {
 				throw new BuildException("Generated virion {$name} PHAR has altered provenance metadata.");
 			}
 		}
 		$signature = $phar->getSignature();
-		if ($signature['hash_type'] !== 'SHA-256') {
+		if ($signature['hash_type'] !== HashAlgorithm::PHAR_SHA256_SIGNATURE) {
 			throw new BuildException("Generated virion {$name} PHAR has no SHA-256 signature.");
 		}
 		unset($phar);

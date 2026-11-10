@@ -71,7 +71,7 @@ final class ArtifactInspectorTest extends TestCase
 		self::assertSame('', $stderr);
 		self::assertIsString($stdout);
 		self::assertJson($stdout);
-		$result = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
+		$result = json_decode($stdout, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		self::assertIsArray($result);
 		self::assertFalse($result['success']);
 		self::assertStringContainsString('Artifact has no PHAR signature', $stdout);

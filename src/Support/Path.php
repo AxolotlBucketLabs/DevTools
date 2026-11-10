@@ -24,6 +24,10 @@ use const DIRECTORY_SEPARATOR;
 
 final class Path
 {
+	private const WINDOWS_DRIVE_PREFIX_LENGTH = 2;
+	private const WINDOWS_DRIVE_LETTER_INDEX = 0;
+	private const WINDOWS_DRIVE_SEPARATOR_INDEX = 1;
+
 	/** @var list<string> */
 	private const DEFAULT_EXCLUDED_COMPONENTS = [
 		'.git',
@@ -192,8 +196,8 @@ final class Path
 	private static function comparable(string $path) : string
 	{
 		$path = rtrim(str_replace('\\', '/', $path), '/');
-		if (isset($path[1]) && $path[1] === ':' && ctype_alpha($path[0])) {
-			$path = strtolower(substr($path, 0, 2)) . substr($path, 2);
+		if (isset($path[self::WINDOWS_DRIVE_SEPARATOR_INDEX]) && $path[self::WINDOWS_DRIVE_SEPARATOR_INDEX] === ':' && ctype_alpha($path[self::WINDOWS_DRIVE_LETTER_INDEX])) {
+			$path = strtolower(substr($path, 0, self::WINDOWS_DRIVE_PREFIX_LENGTH)) . substr($path, self::WINDOWS_DRIVE_PREFIX_LENGTH);
 		}
 
 		return $path;

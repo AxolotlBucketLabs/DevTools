@@ -52,6 +52,24 @@ use const TOKEN_PARSE;
 
 final class PhpSourceInspector
 {
+	private const HEXADECIMAL_RADIX = 16;
+	private const HEXADECIMAL_ESCAPE_MAX_DIGITS = 2;
+	private const HEXADECIMAL_ALPHA_OFFSET = 10;
+	private const UNICODE_MAX_CODE_POINT = 0x10FFFF;
+	private const UNICODE_SURROGATE_START = 0xD800;
+	private const UNICODE_SURROGATE_END = 0xDFFF;
+	private const UTF8_ONE_BYTE_MAX = 0x7F;
+	private const UTF8_TWO_BYTE_MAX = 0x7FF;
+	private const UTF8_THREE_BYTE_MAX = 0xFFFF;
+	private const UTF8_TWO_BYTE_PREFIX = 0xC0;
+	private const UTF8_THREE_BYTE_PREFIX = 0xE0;
+	private const UTF8_FOUR_BYTE_PREFIX = 0xF0;
+	private const UTF8_CONTINUATION_PREFIX = 0x80;
+	private const UTF8_CONTINUATION_DATA_MASK = 0x3F;
+	private const UTF8_CONTINUATION_DATA_BITS = 6;
+	private const UTF8_THREE_BYTE_SHIFT = 12;
+	private const UTF8_FOUR_BYTE_SHIFT = 18;
+
 	public function inspect(string $path) : PhpFileSymbols
 	{
 		$source = file_get_contents($path);
@@ -349,7 +367,7 @@ final class PhpSourceInspector
 		}
 		if ($escape === 'x') {
 			$digits = '';
-			for ($count = 0; $count < 2 && $index + 1 < $length; ++$count) {
+			for ($count = 0; $count < self::HEXADECIMAL_ESCAPE_MAX_DIGITS && $index + 1 < $length; ++$count) {
 				$next = $value[$index + 1];
 				if (preg_match('/^[0-9A-Fa-f]$/', $next) !== 1) {
 					break;
@@ -358,7 +376,7 @@ final class PhpSourceInspector
 				$digits .= $next;
 			}
 			if ($digits !== '') {
-				return chr($this->parseDigits($digits, 16));
+				return chr($this->parseDigits($digits, self::HEXADECIMAL_RADIX));
 			}
 
 			return '\\x';
@@ -368,8 +386,8 @@ final class PhpSourceInspector
 			if ($end !== false) {
 				$digits = substr($value, $index + 2, $end - $index - 2);
 				if (preg_match('/^[0-9A-Fa-f]+$/', $digits) === 1) {
-					$codePoint = $this->parseDigits($digits, 16);
-					if ($codePoint <= 0x10FFFF && !($codePoint >= 0xD800 && $codePoint <= 0xDFFF)) {
+					$codePoint = $this->parseDigits($digits, self::HEXADECIMAL_RADIX);
+					if ($codePoint <= self::UNICODE_MAX_CODE_POINT && !($codePoint >= self::UNICODE_SURROGATE_START && $codePoint <= self::UNICODE_SURROGATE_END)) {
 						$index = $end;
 
 						return $this->encodeCodePoint($codePoint);
@@ -388,7 +406,7 @@ final class PhpSourceInspector
 			$character = ord($digits[$index]);
 			$digit = $character <= ord('9')
 				? $character - ord('0')
-				: 10 + ord(strtolower($digits[$index])) - ord('a');
+				: self::HEXADECIMAL_ALPHA_OFFSET + ord(strtolower($digits[$index])) - ord('a');
 			$value = ($value * $base) + $digit;
 		}
 
@@ -397,23 +415,23 @@ final class PhpSourceInspector
 
 	private function encodeCodePoint(int $codePoint) : string
 	{
-		if ($codePoint <= 0x7F) {
+		if ($codePoint <= self::UTF8_ONE_BYTE_MAX) {
 			return chr($codePoint);
 		}
-		if ($codePoint <= 0x7FF) {
-			return chr(0xC0 | ($codePoint >> 6))
-				. chr(0x80 | ($codePoint & 0x3F));
+		if ($codePoint <= self::UTF8_TWO_BYTE_MAX) {
+			return chr(self::UTF8_TWO_BYTE_PREFIX | ($codePoint >> self::UTF8_CONTINUATION_DATA_BITS))
+				. chr(self::UTF8_CONTINUATION_PREFIX | ($codePoint & self::UTF8_CONTINUATION_DATA_MASK));
 		}
-		if ($codePoint <= 0xFFFF) {
-			return chr(0xE0 | ($codePoint >> 12))
-				. chr(0x80 | (($codePoint >> 6) & 0x3F))
-				. chr(0x80 | ($codePoint & 0x3F));
+		if ($codePoint <= self::UTF8_THREE_BYTE_MAX) {
+			return chr(self::UTF8_THREE_BYTE_PREFIX | ($codePoint >> self::UTF8_THREE_BYTE_SHIFT))
+				. chr(self::UTF8_CONTINUATION_PREFIX | (($codePoint >> self::UTF8_CONTINUATION_DATA_BITS) & self::UTF8_CONTINUATION_DATA_MASK))
+				. chr(self::UTF8_CONTINUATION_PREFIX | ($codePoint & self::UTF8_CONTINUATION_DATA_MASK));
 		}
 
-		return chr(0xF0 | ($codePoint >> 18))
-			. chr(0x80 | (($codePoint >> 12) & 0x3F))
-			. chr(0x80 | (($codePoint >> 6) & 0x3F))
-			. chr(0x80 | ($codePoint & 0x3F));
+		return chr(self::UTF8_FOUR_BYTE_PREFIX | ($codePoint >> self::UTF8_FOUR_BYTE_SHIFT))
+			. chr(self::UTF8_CONTINUATION_PREFIX | (($codePoint >> self::UTF8_THREE_BYTE_SHIFT) & self::UTF8_CONTINUATION_DATA_MASK))
+			. chr(self::UTF8_CONTINUATION_PREFIX | (($codePoint >> self::UTF8_CONTINUATION_DATA_BITS) & self::UTF8_CONTINUATION_DATA_MASK))
+			. chr(self::UTF8_CONTINUATION_PREFIX | ($codePoint & self::UTF8_CONTINUATION_DATA_MASK));
 	}
 
 	/**

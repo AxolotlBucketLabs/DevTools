@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use function is_dir;
 use function is_file;
@@ -17,8 +18,8 @@ final class ProjectRoleDetector
 			throw new BuildException("Project directory does not exist or is a symbolic link: {$projectRoot}");
 		}
 
-		$plugin = is_file($projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml');
-		$virion = is_file($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml');
+		$plugin = is_file($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
+		$virion = is_file($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_MANIFEST);
 		if ($plugin && $virion) {
 			return ProjectRole::DUAL;
 		}

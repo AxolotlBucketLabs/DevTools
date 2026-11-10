@@ -38,6 +38,9 @@ use const PHP_OS_FAMILY;
 
 final class Filesystem
 {
+	private const DEFAULT_DIRECTORY_PERMISSIONS = 0777;
+	private const PERMISSION_BITS_MASK = 07777;
+
 	public static function isLink(string $path) : bool
 	{
 		$path = rtrim($path, '/\\');
@@ -69,7 +72,7 @@ final class Filesystem
 		if (is_dir($path)) {
 			return;
 		}
-		if (file_exists($path) || !mkdir($path, 0777, true)) {
+		if (file_exists($path) || !mkdir($path, self::DEFAULT_DIRECTORY_PERMISSIONS, true)) {
 			throw new FilesystemException("Cannot create directory: {$path}");
 		}
 	}
@@ -122,7 +125,7 @@ final class Filesystem
 	public function copyPermissions(string $source, string $destination) : void
 	{
 		$permissions = fileperms($source);
-		if ($permissions === false || !chmod($destination, $permissions & 07777)) {
+		if ($permissions === false || !chmod($destination, $permissions & self::PERMISSION_BITS_MASK)) {
 			throw new FilesystemException("Cannot preserve permissions from {$source} to {$destination}");
 		}
 	}

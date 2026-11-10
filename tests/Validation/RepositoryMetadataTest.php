@@ -28,7 +28,7 @@ final class RepositoryMetadataTest extends TestCase
 		$root = dirname(__DIR__, 2);
 		$composerContents = file_get_contents($root . DIRECTORY_SEPARATOR . 'composer.json');
 		self::assertIsString($composerContents);
-		$composer = json_decode($composerContents, true, 512, JSON_THROW_ON_ERROR);
+		$composer = json_decode($composerContents, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		$plugin = yaml_parse_file($root . DIRECTORY_SEPARATOR . 'plugin.yml');
 		$changelog = file_get_contents($root . DIRECTORY_SEPARATOR . 'CHANGELOG.md');
 		$releaseNotes = file_get_contents($root . DIRECTORY_SEPARATOR . 'RELEASE_NOTES.md');
@@ -152,7 +152,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertIsString($lockContents);
 		self::assertIsString($ci);
 		self::assertIsString($monitor);
-		$lock = json_decode($lockContents, true, 512, JSON_THROW_ON_ERROR);
+		$lock = json_decode($lockContents, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		self::assertIsArray($lock);
 		$packages = $lock['packages-dev'] ?? null;
 		self::assertIsArray($packages);

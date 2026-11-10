@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
+use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -30,7 +33,6 @@ use function json_decode;
 use function json_encode;
 use function ksort;
 use function ltrim;
-use function md5;
 use function preg_match;
 use function rtrim;
 use function str_replace;
@@ -45,10 +47,12 @@ use const SORT_STRING;
 
 final class ComposerVirionPlan
 {
+	private const GIT_COMMIT_REFERENCE_LENGTH = 40;
+
 	/** @return array<string, array<string, mixed>> */
 	public function packages(string $projectRoot) : array
 	{
-		$path = $projectRoot . '/composer.json';
+		$path = $projectRoot . '/' . ArtifactFile::COMPOSER_MANIFEST;
 		if (!is_file($path)) {
 			return [];
 		}
@@ -57,7 +61,7 @@ final class ComposerVirionPlan
 		if (!is_array($rootAutoload) || array_diff(array_keys($rootAutoload), ['psr-4', 'psr-0']) !== []) {
 			throw new BuildException('Root Composer autoload.files, classmap and other runtime bootstrap modes are unsupported. Axolotl-PM loads plugin classes from plugin.yml and src/.');
 		}
-		$sourcePrefix = $rootAutoload === [] ? '' : (new PluginManifestReader(new YamlReader()))->read($projectRoot . '/plugin.yml')->description->getSrcNamespacePrefix();
+		$sourcePrefix = $rootAutoload === [] ? '' : (new PluginManifestReader(new YamlReader()))->read($projectRoot . '/' . ArtifactFile::PLUGIN_MANIFEST)->description->getSrcNamespacePrefix();
 		$sourcePrefix = trim($sourcePrefix, '\\');
 		foreach ($rootAutoload as $kind => $mapping) {
 			if (!is_array($mapping)) {
@@ -68,7 +72,7 @@ final class ComposerVirionPlan
 					throw new BuildException('Root Composer autoload mappings must each use one source directory under src/. Multiple source roots are unsupported.');
 				}
 				$normalized = Path::normalizeRelative($source);
-				if ($normalized !== 'src' && !str_starts_with($normalized, 'src/')) {
+				if ($normalized !== ArtifactFile::SOURCE_DIRECTORY && !str_starts_with($normalized, ArtifactFile::SOURCE_DIRECTORY . '/')) {
 					throw new BuildException("Root Composer autoload path {$source} is outside src/. Move plugin source under src/ and use the namespace layout declared by plugin.yml.");
 				}
 				if (!is_string($namespace) || ($namespace !== '' && preg_match('/^(?:[A-Za-z_][A-Za-z0-9_]*\\\\)+$/D', $namespace) !== 1)) {
@@ -79,7 +83,7 @@ final class ComposerVirionPlan
 					throw new BuildException("Root Composer namespace {$namespace} is outside plugin.yml src-namespace-prefix {$sourcePrefix} and would not autoload on Axolotl-PM.");
 				}
 				$suffix = $sourcePrefix === '' ? $namespace : ltrim(substr($namespace, strlen($sourcePrefix)), '\\');
-				$expected = 'src' . ($suffix === '' ? '' : '/' . str_replace('\\', '/', $suffix));
+				$expected = ArtifactFile::SOURCE_DIRECTORY . ($suffix === '' ? '' : '/' . str_replace('\\', '/', $suffix));
 				$effective = $normalized . ($kind === 'psr-0' && $namespace !== '' ? '/' . str_replace('\\', '/', $namespace) : '');
 				if ($effective !== $expected) {
 					throw new BuildException("Root Composer namespace {$namespace} resolves to {$effective}, but Axolotl-PM expects {$expected} from plugin.yml. Align the mapping and source layout before building.");
@@ -90,7 +94,7 @@ final class ComposerVirionPlan
 		if ($roots === []) {
 			return [];
 		}
-		$lockPath = $projectRoot . '/composer.lock';
+		$lockPath = $projectRoot . '/' . ArtifactFile::COMPOSER_LOCK;
 		$lock = $this->readJson($lockPath);
 		$content = array_intersect_key($composer, array_flip(['name', 'version', 'require', 'require-dev', 'conflict', 'replace', 'provide', 'minimum-stability', 'prefer-stable', 'repositories', 'extra']));
 		$config = $composer['config'] ?? null;
@@ -106,7 +110,7 @@ final class ComposerVirionPlan
 			}
 		}
 		ksort($content);
-		if (($lock['content-hash'] ?? null) !== md5(json_encode($content, JSON_THROW_ON_ERROR))) {
+		if (($lock['content-hash'] ?? null) !== hash(HashAlgorithm::MD5, json_encode($content, JSON_THROW_ON_ERROR))) {
 			throw new BuildException('composer.lock is stale or lacks its Composer content-hash. Run composer update explicitly and review the lock change before preparation or building.');
 		}
 		$locked = [];
@@ -165,7 +169,7 @@ final class ComposerVirionPlan
 	{
 		$requirements = [];
 		foreach ($this->packages($projectRoot) as $name => $package) {
-			$requirements[] = new VirionRequirement(self::localName($name), $this->version($package), $projectRoot . '/composer.lock:' . $name, $this->fingerprint($package));
+			$requirements[] = new VirionRequirement(self::localName($name), $this->version($package), $projectRoot . '/' . ArtifactFile::COMPOSER_LOCK . ':' . $name, $this->fingerprint($package));
 		}
 		return $requirements;
 	}
@@ -184,7 +188,7 @@ final class ComposerVirionPlan
 	public function fingerprint(array $package) : string
 	{
 		$metadata = array_intersect_key($package, array_flip(['name', 'version', 'source', 'dist', 'autoload', 'require', 'extra']));
-		return hash('sha256', json_encode($this->canonical($metadata), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+		return hash(HashAlgorithm::SHA256, json_encode($this->canonical($metadata), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
 	}
 
 	private function canonical(mixed $value) : mixed
@@ -219,7 +223,8 @@ final class ComposerVirionPlan
 			|| !is_array($source)
 			|| ($source['type'] ?? null) !== 'git'
 			|| !is_string($reference)
-			|| preg_match('/^[a-fA-F0-9]{40}$/D', $reference) !== 1) {
+			|| strlen($reference) !== self::GIT_COMMIT_REFERENCE_LENGTH
+			|| preg_match('/^[a-fA-F0-9]+$/D', $reference) !== 1) {
 			throw new BuildException("Composer virion {$name} needs a semantic version or a development branch locked to a full Git commit in composer.lock.");
 		}
 		$dist = $package['dist'] ?? null;
@@ -343,7 +348,7 @@ final class ComposerVirionPlan
 			throw new BuildException("Cannot read {$path}.");
 		}
 		try {
-			$value = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+			$value = json_decode($contents, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		} catch (\JsonException $error) {
 			throw new BuildException("Cannot parse {$path}: {$error->getMessage()}", 0, $error);
 		}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Validation;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use pocketmine\plugin\PluginDescription;
 use function str_replace;
 use function str_starts_with;
@@ -33,6 +34,6 @@ final class PluginManifest
 			$main = substr($main, strlen($prefix) + 1);
 		}
 
-		return str_replace('\\', '/', $main) . '.php';
+		return str_replace('\\', '/', $main) . ArtifactFile::PHP_SOURCE_EXTENSION;
 	}
 }

@@ -10,6 +10,7 @@ use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -19,8 +20,6 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
-use function bin2hex;
-use function random_bytes;
 use function restore_error_handler;
 use function set_error_handler;
 use function symlink;
@@ -37,7 +36,7 @@ abstract class TestCase extends PHPUnitTestCase
 	{
 		parent::setUp();
 		$this->filesystem = new Filesystem();
-		$this->temporaryDirectory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-tests-' . bin2hex(random_bytes(8));
+		$this->temporaryDirectory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-tests-' . RandomToken::pathSuffix();
 		$this->filesystem->ensureDirectory($this->temporaryDirectory);
 	}
 

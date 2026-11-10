@@ -30,7 +30,7 @@ final class DevToolsArtifactTest extends TestCase
 		$phar = new Phar($result->outputPath);
 		foreach (Translator::supportedLocales() as $locale) {
 			self::assertTrue(isset($phar["resources/lang/{$locale}.json"]));
-			$catalog = json_decode($phar["resources/lang/{$locale}.json"]->getContent(), true, 512, JSON_THROW_ON_ERROR);
+			$catalog = json_decode($phar["resources/lang/{$locale}.json"]->getContent(), true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			self::assertIsArray($catalog);
 			self::assertSame(Translator::fromResources($locale)->translate('virions.local.metadata_mismatch'), $catalog['virions.local.metadata_mismatch'] ?? null);
 		}

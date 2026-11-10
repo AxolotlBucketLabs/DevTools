@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use PharData;
 use Throwable;
 use function array_map;
 use function basename;
-use function bin2hex;
 use function count;
 use function dirname;
 use function file_exists;
 use function is_file;
 use function pathinfo;
-use function random_bytes;
 use function realpath;
 use function rename;
 use function str_starts_with;
@@ -43,7 +43,7 @@ final class ZipArchiveWriter
 			throw new BuildException("Cannot resolve ZIP output directory: {$parent}");
 		}
 		$output = Path::join($realParent, basename($output));
-		if (strtolower(pathinfo($output, PATHINFO_EXTENSION)) !== 'zip') {
+		if ('.' . strtolower(pathinfo($output, PATHINFO_EXTENSION)) !== ArtifactFile::ZIP_EXTENSION) {
 			throw new BuildException("ZIP output must use a .zip extension: {$output}");
 		}
 
@@ -76,8 +76,8 @@ final class ZipArchiveWriter
 			throw new BuildException($error->getMessage(), 0, $error);
 		}
 
-		$nonce = bin2hex(random_bytes(8));
-		$temporary = Path::join($realParent, '.' . basename($output) . '.' . $nonce . '.tmp.zip');
+		$nonce = RandomToken::pathSuffix();
+		$temporary = Path::join($realParent, '.' . basename($output) . '.' . $nonce . '.tmp' . ArtifactFile::ZIP_EXTENSION);
 		$backup = null;
 		try {
 			$zip = new PharData($temporary);
@@ -86,7 +86,7 @@ final class ZipArchiveWriter
 			}
 			unset($zip);
 			if (file_exists($output)) {
-				$backup = $output . '.backup-' . bin2hex(random_bytes(4));
+				$backup = $output . '.backup-' . RandomToken::pathSuffix();
 				if (!rename($output, $backup)) {
 					throw new BuildException("Cannot move existing ZIP aside before replacement: {$output}");
 				}

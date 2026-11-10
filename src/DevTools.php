@@ -175,10 +175,10 @@ final class DevTools extends PluginBase
 
 	private function createTranslator(Server $server) : Translator
 	{
-		$configuredLocale = $this->getConfig()->get('language', 'auto');
+		$configuredLocale = $this->getConfig()->get('language', Translator::AUTO_LOCALE);
 		try {
 			return Translator::fromResources(Translator::resolve(
-				is_string($configuredLocale) ? $configuredLocale : 'auto',
+				is_string($configuredLocale) ? $configuredLocale : Translator::AUTO_LOCALE,
 				$server->getLanguage()->getLang(),
 			));
 		} catch (Throwable $error) {

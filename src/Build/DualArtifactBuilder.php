@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
-use function bin2hex;
-use function random_bytes;
 
 final class DualArtifactBuilder
 {
@@ -29,8 +29,8 @@ final class DualArtifactBuilder
 		if ($this->roleDetector->detect($project) !== ProjectRole::DUAL) {
 			throw new LocalizedException('build.both_required', ['project' => $project]);
 		}
-		$plugin = $this->pluginManifestReader->read($project . '/plugin.yml');
-		$virion = $this->virionManifestReader->read($project . '/virion.yml');
+		$plugin = $this->pluginManifestReader->read($project . '/' . ArtifactFile::PLUGIN_MANIFEST);
+		$virion = $this->virionManifestReader->read($project . '/' . ArtifactFile::VIRION_MANIFEST);
 
 		return new DualArtifactProject($project, $plugin->description->getName(), $virion->name);
 	}
@@ -44,11 +44,11 @@ final class DualArtifactBuilder
 	) : array {
 		$pluginName = $project->pluginName . '-plugin';
 		$virionName = $project->virionName . '-virion';
-		$pluginOutput = Path::join($outputDirectory, $pluginName . '.phar');
-		$virionOutput = Path::join($outputDirectory, $virionName . '.phar');
+		$pluginOutput = Path::join($outputDirectory, $pluginName . ArtifactFile::PHAR_EXTENSION);
+		$virionOutput = Path::join($outputDirectory, $virionName . ArtifactFile::PHAR_EXTENSION);
 		$this->installer->assertDestinations([$pluginOutput, $virionOutput], $overwrite);
 
-		$temporaryDirectory = Path::join($outputDirectory, '.devtools-dual-' . bin2hex(random_bytes(8)));
+		$temporaryDirectory = Path::join($outputDirectory, '.devtools-dual-' . RandomToken::pathSuffix());
 		$this->filesystem->ensureDirectory($temporaryDirectory);
 		try {
 			$plugin = $this->pluginBuilder->build($project->root, $virionsDirectory, $temporaryDirectory, false, $pluginName);

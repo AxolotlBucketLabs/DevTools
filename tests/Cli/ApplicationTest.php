@@ -404,7 +404,7 @@ final class ApplicationTest extends TestCase
 		self::assertIsString($stdout);
 		self::assertIsString($stderr);
 		self::assertJson($stdout, "CLI exit {$exit}; stderr: {$stderr}");
-		$result = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
+		$result = json_decode($stdout, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		self::assertIsArray($result);
 		self::assertIsInt($result['schema_version']);
 		self::assertIsBool($result['success']);

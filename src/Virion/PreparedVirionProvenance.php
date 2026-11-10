@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
+use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use JsonException;
 use function file_get_contents;
 use function hash_file;
@@ -25,7 +28,7 @@ final class PreparedVirionProvenance
 		$expectedPackageSha256 = $requirement?->composerPackageSha256;
 		$packageMismatch = "Prepared virion {$name} does not match this composer.lock. Run prepare into a new directory and use that --virions directory.";
 		try {
-			$provenance = $this->read($project->packageRoot . '/devtools-provenance.json');
+			$provenance = $this->read($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA);
 		} catch (VirionException $error) {
 			if ($expectedPackageSha256 === null) {
 				throw $error;
@@ -38,11 +41,11 @@ final class PreparedVirionProvenance
 		if ($expectedPackageSha256 === null) {
 			foreach ($provenance as $key => $entry) {
 				if (!is_string($key)) {
-					throw new VirionException("Expected named JSON object keys in {$project->packageRoot}/devtools-provenance.json.");
+					throw new VirionException("Expected named JSON object keys in {$project->packageRoot}/" . ArtifactFile::VIRION_PROVENANCE_METADATA . '.');
 				}
 			}
 		}
-		$manifestHash = hash_file('sha256', $project->manifest->path);
+		$manifestHash = hash_file(HashAlgorithm::SHA256, $project->manifest->path);
 		if ($manifestHash === false || ($provenance['manifestSha256'] ?? null) !== $manifestHash) {
 			throw new VirionException("Prepared manifest for {$name} changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.");
 		}
@@ -63,7 +66,7 @@ final class PreparedVirionProvenance
 			throw new VirionException("Cannot read {$path}.");
 		}
 		try {
-			$value = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+			$value = json_decode($contents, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 		} catch (JsonException $error) {
 			throw new VirionException("Cannot parse {$path}: {$error->getMessage()}", 0, $error);
 		}

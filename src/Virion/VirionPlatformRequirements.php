@@ -13,6 +13,7 @@ use function preg_match;
 use function preg_split;
 use function str_replace;
 use function str_starts_with;
+use function strlen;
 use function strtolower;
 use function substr;
 use function trim;
@@ -25,6 +26,12 @@ use const PHP_VERSION;
 
 final class VirionPlatformRequirements
 {
+	private const PHP_REQUIREMENT_NAME = 'php';
+	private const PHP_64BIT_REQUIREMENT_NAME = 'php-64bit';
+	private const EXTENSION_REQUIREMENT_PREFIX = 'ext-';
+	private const ANY_VERSION_CONSTRAINT = '*';
+	private const EXPECTED_64_BIT_INTEGER_BYTES = 8;
+
 	public function validateManifest(VirionManifest $manifest) : void
 	{
 		if (isset($manifest->raw['composer-platform'])) {
@@ -42,19 +49,19 @@ final class VirionPlatformRequirements
 			if (!is_string($name) || !is_string($constraint)) {
 				throw new VirionException("Invalid Composer platform requirement in {$source}.");
 			}
-			if ($name === 'php') {
+			if ($name === self::PHP_REQUIREMENT_NAME) {
 				if (!$this->matchesPhp($constraint)) {
 					throw new VirionException("{$source} requires PHP {$constraint}. Current PHP is " . PHP_VERSION . '.');
 				}
-			} elseif ($name === 'php-64bit') {
-				if ($constraint !== '*' || PHP_INT_SIZE !== 8) {
+			} elseif ($name === self::PHP_64BIT_REQUIREMENT_NAME) {
+				if ($constraint !== self::ANY_VERSION_CONSTRAINT || PHP_INT_SIZE !== self::EXPECTED_64_BIT_INTEGER_BYTES) {
 					throw new VirionException("{$source} requires 64-bit PHP. Current PHP integer size is " . PHP_INT_SIZE . ' bytes.');
 				}
-			} elseif (str_starts_with($name, 'ext-')) {
-				if ($constraint !== '*') {
+			} elseif (str_starts_with($name, self::EXTENSION_REQUIREMENT_PREFIX)) {
+				if ($constraint !== self::ANY_VERSION_CONSTRAINT) {
 					throw new VirionException("{$source} uses unsupported versioned extension requirement {$name} {$constraint}. Only * is supported.");
 				}
-				$extension = strtolower(str_replace(' ', '-', substr($name, 4)));
+				$extension = strtolower(str_replace(' ', '-', substr($name, strlen(self::EXTENSION_REQUIREMENT_PREFIX))));
 				$loaded = [];
 				foreach (get_loaded_extensions() as $loadedExtension) {
 					$loaded[strtolower(str_replace(' ', '-', $loadedExtension))] = true;

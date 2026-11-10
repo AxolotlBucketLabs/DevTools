@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
 use Throwable;
@@ -29,7 +30,7 @@ final class ProjectDoctor
 		$manifest = null;
 		$dependencyStatus = 'not_run';
 		try {
-			$manifest = $this->manifestReader->read($manifestPath ?? $project . DIRECTORY_SEPARATOR . 'plugin.yml');
+			$manifest = $this->manifestReader->read($manifestPath ?? $project . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 			$dependencyStatus = 'failed';
 			$config = $this->configResolver->resolve($project, $manifest->description->getName());
 			$virions = $this->resolver->resolve($config->virions, $virionsDirectory);

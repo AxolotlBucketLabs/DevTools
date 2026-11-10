@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
+use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\Thread;
@@ -80,7 +81,7 @@ final class BuildWorkerThread extends Thread
 	{
 		try {
 			/** @var array{jobId: string, operation: string, payload: array<string, mixed>} $decoded */
-			$decoded = json_decode($request, true, 512, JSON_THROW_ON_ERROR);
+			$decoded = json_decode($request, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			$result = BuildWorkerApplication::run($decoded['operation'], $decoded['payload']);
 			$result['jobId'] = $decoded['jobId'];
 		} catch (Throwable $error) {

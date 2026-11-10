@@ -20,13 +20,19 @@ use function basename;
 use function count;
 use function explode;
 use function in_array;
-use function preg_match;
 use function str_starts_with;
+use function strlen;
 use function strtolower;
 use function substr;
 
 final class DevToolsCommandHandler
 {
+	private const OVERWRITE_OPTION = '--overwrite';
+	private const FORMAT_OPTION_NAME = 'format';
+	private const TYPE_OPTION_NAME = 'type';
+	private const FORMAT_OPTION_PREFIX = '--' . self::FORMAT_OPTION_NAME . '=';
+	private const TYPE_OPTION_PREFIX = '--' . self::TYPE_OPTION_NAME . '=';
+
 	public function __construct(
 		private readonly Plugin $plugin,
 		private readonly FolderPluginDiscovery $pluginDiscovery,
@@ -86,7 +92,7 @@ final class DevToolsCommandHandler
 	private function validateArguments(string $command, array $arguments) : void
 	{
 		if (in_array($command, ['build', 'extract'], true)) {
-			if ($command === 'build' && isset($arguments[0]) && in_array(strtolower($arguments[0]), ['plugin', 'virion', 'both'], true)) {
+			if ($command === 'build' && isset($arguments[0]) && BuildTarget::tryFrom(strtolower($arguments[0])) !== null) {
 				array_shift($arguments);
 			}
 			if ($arguments === [] || str_starts_with($arguments[0], '--')) {
@@ -94,24 +100,27 @@ final class DevToolsCommandHandler
 			}
 			$seen = [];
 			foreach (array_slice($arguments, 1) as $argument) {
-				if ($argument === '--overwrite') {
+				if ($argument === self::OVERWRITE_OPTION) {
 					if (isset($seen['overwrite'])) {
 						throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
 					}
 					$seen['overwrite'] = true;
 					continue;
 				}
-				if ($command === 'extract' && preg_match('/^--(format|type)=(folder|zip|auto|plugin|virion|both)$/D', $argument, $match) === 1) {
-					if (isset($seen[$match[1]])) {
+				if ($command === 'extract' && (str_starts_with($argument, self::FORMAT_OPTION_PREFIX) || str_starts_with($argument, self::TYPE_OPTION_PREFIX))) {
+					$option = str_starts_with($argument, self::FORMAT_OPTION_PREFIX) ? self::FORMAT_OPTION_NAME : self::TYPE_OPTION_NAME;
+					$prefix = $option === self::FORMAT_OPTION_NAME ? self::FORMAT_OPTION_PREFIX : self::TYPE_OPTION_PREFIX;
+					$value = substr($argument, strlen($prefix));
+					if (isset($seen[$option])) {
 						throw new BuildException($this->translate('command.usage.extract'));
 					}
-					if ($match[1] === 'format' && !in_array($match[2], ['folder', 'zip'], true)) {
+					if ($option === self::FORMAT_OPTION_NAME && ExtractFormat::tryFrom($value) === null) {
 						throw new BuildException($this->translate('command.usage.extract_format'));
 					}
-					if ($match[1] === 'type' && !in_array($match[2], ['auto', 'plugin', 'virion'], true)) {
+					if ($option === self::TYPE_OPTION_NAME && ExtractType::tryFrom($value) === null) {
 						throw new BuildException($this->translate('command.usage.extract_type'));
 					}
-					$seen[$match[1]] = true;
+					$seen[$option] = true;
 					continue;
 				}
 				throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
@@ -152,9 +161,13 @@ final class DevToolsCommandHandler
 	/** @param list<string> $arguments */
 	private function build(CommandSender $sender, array $arguments) : bool
 	{
-		$target = 'plugin';
-		if (isset($arguments[0]) && in_array(strtolower($arguments[0]), ['plugin', 'virion', 'both'], true)) {
-			$target = strtolower((string) array_shift($arguments));
+		$target = BuildTarget::PLUGIN->value;
+		if (isset($arguments[0])) {
+			$parsedTarget = BuildTarget::tryFrom(strtolower($arguments[0]));
+			if ($parsedTarget !== null) {
+				$target = $parsedTarget->value;
+				array_shift($arguments);
+			}
 		}
 		$selection = array_shift($arguments);
 		if ($selection === null) {
@@ -162,7 +175,7 @@ final class DevToolsCommandHandler
 
 			return true;
 		}
-		$overwrite = in_array('--overwrite', $arguments, true);
+		$overwrite = in_array(self::OVERWRITE_OPTION, $arguments, true);
 		return $this->submit($sender, 'build', [
 			'target' => $target,
 			'selection' => $selection,
@@ -179,14 +192,14 @@ final class DevToolsCommandHandler
 
 			return true;
 		}
-		$overwrite = in_array('--overwrite', $arguments, true);
-		$format = 'folder';
-		$type = 'auto';
+		$overwrite = in_array(self::OVERWRITE_OPTION, $arguments, true);
+		$format = ExtractFormat::FOLDER->value;
+		$type = ExtractType::AUTO->value;
 		foreach ($arguments as $argument) {
-			if (str_starts_with($argument, '--format=')) {
-				$format = substr($argument, 9);
-			} elseif (str_starts_with($argument, '--type=')) {
-				$type = substr($argument, 7);
+			if (str_starts_with($argument, self::FORMAT_OPTION_PREFIX)) {
+				$format = substr($argument, strlen(self::FORMAT_OPTION_PREFIX));
+			} elseif (str_starts_with($argument, self::TYPE_OPTION_PREFIX)) {
+				$type = substr($argument, strlen(self::TYPE_OPTION_PREFIX));
 			}
 		}
 		return $this->submit($sender, 'extract', [

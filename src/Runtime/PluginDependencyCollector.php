@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Runtime;
 use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\PluginDependencyIndex;
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -37,7 +38,7 @@ final class PluginDependencyCollector
 		$this->debug?->debug('Discovered ' . count($projects) . ' development plugin folder(s).');
 		foreach ($projects as $project) {
 			try {
-				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 			} catch (Throwable $error) {
 				($this->warning)($this->translator->translate('runtime.plugin_manifest_failed', ['project' => $project, 'error' => $error->getMessage()]));
 				continue;

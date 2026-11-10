@@ -8,17 +8,16 @@ use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\FilesystemException;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use function array_map;
 use function array_pop;
 use function basename;
-use function bin2hex;
 use function count;
 use function dirname;
 use function explode;
 use function file_exists;
 use function file_put_contents;
 use function is_dir;
-use function random_bytes;
 use function realpath;
 use function rename;
 use function str_contains;
@@ -103,7 +102,7 @@ final class PharExtractor
 			throw new BuildException('Archive contains non-portable paths: ' . $error->getMessage(), 0, $error);
 		}
 
-		$nonce = bin2hex(random_bytes(8));
+		$nonce = RandomToken::pathSuffix();
 		$stage = Path::join($realParent, '.devtools-extract-' . $nonce);
 		$backup = null;
 		$this->filesystem->ensureDirectory($stage);

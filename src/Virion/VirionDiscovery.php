@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use FilesystemIterator;
@@ -33,7 +34,7 @@ final class VirionDiscovery
 			if (Path::isExcluded($entry->getFilename()) || Filesystem::isLink($entry->getPathname())) {
 				continue;
 			}
-			if ($entry->isDir() || ($entry->isFile() && str_ends_with(strtolower($entry->getFilename()), '.phar'))) {
+			if ($entry->isDir() || ($entry->isFile() && str_ends_with(strtolower($entry->getFilename()), ArtifactFile::PHAR_EXTENSION))) {
 				$locations[] = $entry->getPathname();
 			}
 		}

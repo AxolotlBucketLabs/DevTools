@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use Phar;
@@ -50,8 +52,8 @@ final class ArtifactInspector
 			throw new BuildException("Cannot open PHAR {$displayPath}: {$error->getMessage()}", 0, $error);
 		}
 		$prefix = 'phar://' . str_replace('\\', '/', $snapshot) . '/';
-		$hasPlugin = isset($phar['plugin.yml']);
-		$hasVirion = isset($phar['virion.yml']);
+		$hasPlugin = isset($phar[ArtifactFile::PLUGIN_MANIFEST]);
+		$hasVirion = isset($phar[ArtifactFile::VIRION_MANIFEST]);
 		if (!$hasPlugin && !$hasVirion) {
 			throw new BuildException("Artifact is missing plugin.yml and virion.yml: {$displayPath}");
 		}
@@ -65,16 +67,16 @@ final class ArtifactInspector
 			'files' => count($phar),
 		];
 		if ($hasPlugin) {
-			$manifest = $this->manifestReader->read($prefix . 'plugin.yml');
+			$manifest = $this->manifestReader->read($prefix . ArtifactFile::PLUGIN_MANIFEST);
 			$main = $manifest->expectedMainRelativePath();
-			if ($main === null || !isset($phar['src/' . $main])) {
+			if ($main === null || !isset($phar[ArtifactFile::SOURCE_DIRECTORY . '/' . $main])) {
 				throw new BuildException("Artifact is missing its declared main class source: {$displayPath}");
 			}
 			$data['plugin'] = ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()];
 		}
 		if ($hasVirion) {
-			$manifest = $this->virionManifestReader->read($prefix . 'virion.yml');
-			if (!isset($phar['src'])) {
+			$manifest = $this->virionManifestReader->read($prefix . ArtifactFile::VIRION_MANIFEST);
+			if (!isset($phar[ArtifactFile::SOURCE_DIRECTORY])) {
 				throw new BuildException("Artifact is missing its virion source directory: {$displayPath}");
 			}
 			$data['virion'] = ['name' => $manifest->name, 'version' => $manifest->version, 'antigen' => $manifest->antigen];
@@ -84,7 +86,7 @@ final class ArtifactInspector
 		if ($signature === false || $signature['hash_type'] === '') {
 			throw new BuildException("Artifact has no PHAR signature: {$displayPath}");
 		}
-		$hash = hash_file('sha256', $real);
+		$hash = hash_file(HashAlgorithm::SHA256, $real);
 		if ($hash === false) {
 			throw new BuildException("Cannot hash artifact: {$displayPath}");
 		}

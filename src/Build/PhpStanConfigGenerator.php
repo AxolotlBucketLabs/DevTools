@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Virion\VirionProject;
 use function array_keys;
@@ -20,6 +21,10 @@ use const JSON_UNESCAPED_SLASHES;
 
 final class PhpStanConfigGenerator
 {
+	private const MIN_LEVEL = 0;
+	private const MAX_LEVEL = 10;
+	private const LEVEL_PATTERN = '/^(?:0|[1-9][0-9]*)$/D';
+
 	/**
 	 * @param list<VirionProject> $virions
 	 * @param list<string>        $additionalScanDirectories
@@ -35,8 +40,8 @@ final class PhpStanConfigGenerator
 		$level = $this->normalizeLevel($level);
 		$projectRoot = $this->requireDirectory($projectRoot, 'plugin project');
 		$serverRoot = $this->requireDirectory($serverRoot, 'server source');
-		$projectSource = $this->requireDirectory($projectRoot . DIRECTORY_SEPARATOR . 'src', 'plugin source');
-		$serverSource = $this->requireDirectory($serverRoot . DIRECTORY_SEPARATOR . 'src', 'server source');
+		$projectSource = $this->requireDirectory($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY, 'plugin source');
+		$serverSource = $this->requireDirectory($serverRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY, 'server source');
 
 		$scanDirectories = [$this->portable($serverSource) => $serverSource];
 		foreach (['generated', 'vendor'] as $optional) {
@@ -94,9 +99,9 @@ final class PhpStanConfigGenerator
 		if ($level === 'max') {
 			return $level;
 		}
-		if (preg_match('/^(?:[0-9]|10)$/D', $level) !== 1) {
+		if (preg_match(self::LEVEL_PATTERN, $level) !== 1 || (int) $level < self::MIN_LEVEL || (int) $level > self::MAX_LEVEL) {
 			throw new BuildException(
-				"Invalid PHPStan level \"{$level}\". Use off, a number from 0 through 10, or max. Omit phpstan or use off to disable analysis.",
+				"Invalid PHPStan level \"{$level}\". Use off, a number from " . self::MIN_LEVEL . ' through ' . self::MAX_LEVEL . ', or max. Omit phpstan or use off to disable analysis.',
 			);
 		}
 

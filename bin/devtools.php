@@ -29,6 +29,8 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 
+const BOOTSTRAP_RESPONSE_SCHEMA_VERSION = 1;
+
 ini_set('display_errors', 'stderr');
 $autoload = dirname(__DIR__) . '/vendor/autoload.php';
 try {
@@ -84,7 +86,7 @@ try {
 	$message = $error->getMessage();
 	if (in_array('--json', $argv ?? [], true)) {
 		fwrite(STDOUT, json_encode([
-			'schema_version' => 1, 'success' => false, 'command' => 'bootstrap',
+			'schema_version' => BOOTSTRAP_RESPONSE_SCHEMA_VERSION, 'success' => false, 'command' => 'bootstrap',
 			'tool' => ['name' => 'DevTools', 'version' => null], 'data' => (object) [],
 			'diagnostics' => [['code' => 'cli.environment', 'severity' => 'error', 'message' => $message, 'file' => null, 'line' => null, 'suggestion' => 'Check PHP extensions and install the locked DevTools dependencies (including development packages), then retry.']],
 			'checks' => ['structure' => 'not_run', 'dependencies' => 'not_run', 'artifact' => 'not_run', 'static_analysis' => 'not_run', 'runtime' => 'not_run'],

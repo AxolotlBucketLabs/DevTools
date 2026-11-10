@@ -14,12 +14,14 @@ use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
 use AxolotlBucketLabs\DevTools\Build\PluginProjectLocator;
 use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
+use AxolotlBucketLabs\DevTools\Build\ProjectRole;
 use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionProjectLocator;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
@@ -44,6 +46,7 @@ use function is_string;
 use function preg_match;
 use function realpath;
 use function str_ends_with;
+use function strlen;
 use function strtolower;
 use function substr;
 use const DIRECTORY_SEPARATOR;
@@ -136,7 +139,7 @@ final class BuildWorkerApplication
 			: null);
 		$debug->debug("Worker operation {$operation} started.");
 		try {
-			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : 'eng');
+			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : Translator::DEFAULT_LOCALE);
 			if (!in_array($operation, ['doctor', 'build', 'extract'], true)) {
 				throw new BuildException($translator->translate('worker.unknown_operation', ['operation' => $operation]));
 			}
@@ -213,14 +216,15 @@ final class BuildWorkerApplication
 	 */
 	private function build(array $payload) : array
 	{
-		$target = $payload['target'] ?? 'plugin';
+		$target = $payload['target'] ?? BuildTarget::PLUGIN->value;
 		$selection = $payload['selection'] ?? null;
 		$overwrite = $payload['overwrite'] ?? false;
-		if (!is_string($target) || !is_string($selection) || !is_bool($overwrite)) {
+		$buildTarget = is_string($target) ? BuildTarget::tryFrom($target) : null;
+		if ($buildTarget === null || !is_string($selection) || !is_bool($overwrite)) {
 			throw new BuildException($this->translator->translate('worker.invalid_build_payload'));
 		}
 
-		if ($target === 'virion') {
+		if ($buildTarget === BuildTarget::VIRION) {
 			$project = $this->virionProjectLocator->locate($selection, $this->virionsDirectory);
 			$result = $this->virionBuilder->build($project, $this->buildDirectory, $overwrite);
 
@@ -232,7 +236,7 @@ final class BuildWorkerApplication
 		}
 
 		$project = $this->projectLocator->locate($selection, $this->pluginsDirectory);
-		if ($target === 'both') {
+		if ($buildTarget === BuildTarget::BOTH) {
 			$dualProject = $this->dualArtifactBuilder->prepare($project);
 			$artifacts = $this->dualArtifactBuilder->build(
 				$dualProject,
@@ -265,8 +269,8 @@ final class BuildWorkerApplication
 	private function extract(array $payload) : array
 	{
 		$selection = $payload['selection'] ?? null;
-		$format = $payload['format'] ?? 'folder';
-		$type = $payload['type'] ?? 'auto';
+		$format = $payload['format'] ?? ExtractFormat::FOLDER->value;
+		$type = $payload['type'] ?? ExtractType::AUTO->value;
 		$overwrite = $payload['overwrite'] ?? false;
 		if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
 			throw new BuildException($this->translator->translate('worker.invalid_extract_payload'));
@@ -274,39 +278,45 @@ final class BuildWorkerApplication
 
 		$path = self::locatePhar($selection, $this->pluginsDirectory, $this->virionsDirectory, $this->buildDirectory);
 		$detectedType = $this->artifactInspector->inspect($path)['type'];
-		if (!is_string($detectedType)) {
+		$extractFormat = ExtractFormat::tryFrom($format);
+		$extractType = ExtractType::tryFrom($type);
+		$projectRole = is_string($detectedType) ? ProjectRole::tryFrom($detectedType) : null;
+		if (!is_string($detectedType) || $projectRole === null) {
 			throw new BuildException($this->translator->translate('extract.artifact_type'));
 		}
-		if ($type === 'auto') {
-			$type = $detectedType;
-		}
-		if ($type === 'both') {
+		if ($type === BuildTarget::BOTH->value) {
 			throw new BuildException($this->translator->translate('extract.dual'));
 		}
-		if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
+		if ($extractType === null || $extractFormat === null) {
 			throw new BuildException($this->translator->translate('extract.usage'));
 		}
-		if (!ArtifactInspector::roleMatches($detectedType, $type)) {
-			throw new BuildException($this->translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $type]));
+		if ($extractType === ExtractType::AUTO) {
+			if ($projectRole === ProjectRole::DUAL) {
+				throw new BuildException($this->translator->translate('extract.dual'));
+			}
+			$extractType = ExtractType::from($projectRole->value);
+		}
+		if (!ArtifactInspector::roleMatches($detectedType, $extractType->value)) {
+			throw new BuildException($this->translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $extractType->value]));
 		}
 
 		$name = basename($path);
-		if (str_ends_with(strtolower($name), '.phar')) {
-			$name = substr($name, 0, -5);
+		if (str_ends_with(strtolower($name), ArtifactFile::PHAR_EXTENSION)) {
+			$name = substr($name, 0, -strlen(ArtifactFile::PHAR_EXTENSION));
 		}
 		if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
 			throw new BuildException($this->translator->translate('extract.safe_name', ['path' => $path]));
 		}
 		Path::normalizeRelative($name);
 
-		if ($format === 'zip') {
-			$destination = Path::join(realpath($this->buildDirectory) ?: $this->buildDirectory, $name . '.zip');
+		if ($extractFormat === ExtractFormat::ZIP) {
+			$destination = Path::join(realpath($this->buildDirectory) ?: $this->buildDirectory, $name . ArtifactFile::ZIP_EXTENSION);
 			$count = $this->zipWriter->write(new PharArchiveReader($path), $destination, $overwrite);
 
 			return [$this->translator->translate('extract.archived', ['count' => $count, 'path' => $destination])];
 		}
 
-		$baseDirectory = $type === 'virion' ? $this->virionsDirectory : $this->pluginsDirectory;
+		$baseDirectory = $extractType === ExtractType::VIRION ? $this->virionsDirectory : $this->pluginsDirectory;
 		$base = realpath($baseDirectory);
 		if ($base === false) {
 			throw new BuildException($this->translator->translate('extract.directory', ['type' => $type, 'directory' => $baseDirectory]));
@@ -328,10 +338,10 @@ final class BuildWorkerApplication
 			$pluginsDirectory . DIRECTORY_SEPARATOR . $selection,
 			$virionsDirectory . DIRECTORY_SEPARATOR . $selection,
 		];
-		if (!str_ends_with(strtolower($selection), '.phar')) {
-			$candidates[] = $buildDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
-			$candidates[] = $pluginsDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
-			$candidates[] = $virionsDirectory . DIRECTORY_SEPARATOR . $selection . '.phar';
+		if (!str_ends_with(strtolower($selection), ArtifactFile::PHAR_EXTENSION)) {
+			$candidates[] = $buildDirectory . DIRECTORY_SEPARATOR . $selection . ArtifactFile::PHAR_EXTENSION;
+			$candidates[] = $pluginsDirectory . DIRECTORY_SEPARATOR . $selection . ArtifactFile::PHAR_EXTENSION;
+			$candidates[] = $virionsDirectory . DIRECTORY_SEPARATOR . $selection . ArtifactFile::PHAR_EXTENSION;
 		}
 		foreach ($candidates as $candidate) {
 			if (is_file($candidate)) {

@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+const MINIMUM_PHAR_SIZE_BYTES = 1024;
+const PHAR_SHA256_SIGNATURE = 'SHA-256';
+const SHA256_ALGORITHM = 'sha256';
+const RELEASE_TAG_PREFIX = 'v';
+
 function artifactFailure(string $message) : never
 {
 	fwrite(STDERR, "Artifact validation failed: {$message}\n");
@@ -14,7 +19,7 @@ if (!is_file($path)) {
 	artifactFailure("PHAR does not exist: {$path}");
 }
 $size = filesize($path);
-if ($size === false || $size < 1024) {
+if ($size === false || $size < MINIMUM_PHAR_SIZE_BYTES) {
 	artifactFailure("PHAR is unexpectedly small: {$path}");
 }
 
@@ -35,8 +40,8 @@ if (!is_array($manifest)) {
 }
 $expectedVersion = $argv[2] ?? null;
 if (is_string($expectedVersion)) {
-	if (str_starts_with($expectedVersion, 'v')) {
-		$expectedVersion = substr($expectedVersion, 1);
+	if (str_starts_with($expectedVersion, RELEASE_TAG_PREFIX)) {
+		$expectedVersion = substr($expectedVersion, strlen(RELEASE_TAG_PREFIX));
 	}
 	if (($manifest['version'] ?? null) !== $expectedVersion) {
 		artifactFailure("plugin.yml version does not match {$expectedVersion}");
@@ -93,10 +98,10 @@ foreach ($iterator as $entry) {
 
 /** @var array{hash: string, hash_type: string}|false $signature */
 $signature = $phar->getSignature();
-if ($signature === false || $signature['hash_type'] !== 'SHA-256') {
+if ($signature === false || $signature['hash_type'] !== PHAR_SHA256_SIGNATURE) {
 	artifactFailure('PHAR signature is not SHA-256');
 }
-$checksum = hash_file('sha256', $path);
+$checksum = hash_file(SHA256_ALGORITHM, $path);
 if (!is_string($checksum)) {
 	artifactFailure('cannot calculate SHA-256 checksum');
 }

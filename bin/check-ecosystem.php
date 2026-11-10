@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+const JSON_MAX_NESTING_DEPTH = 512;
+const EXPECTED_ECOSYSTEM_SCHEMA_VERSION = 2;
+
 $projectRoot = dirname(__DIR__);
 $dataPath = $projectRoot . '/docs/ecosystem.json';
 $schemaPath = $projectRoot . '/docs/ecosystem.schema.json';
@@ -12,7 +15,7 @@ $decode = static function (string $path) : array {
 		throw new RuntimeException("Cannot read {$path}");
 	}
 
-	$value = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+	$value = json_decode($contents, true, JSON_MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 	if (!is_array($value)) {
 		throw new RuntimeException("Expected a JSON object in {$path}");
 	}
@@ -48,7 +51,7 @@ $isNonEmptyString = static fn(mixed $value) : bool => is_string($value) && $valu
 if (($data['$schema'] ?? null) !== './ecosystem.schema.json') {
 	$failures[] = 'The data file must reference ./ecosystem.schema.json';
 }
-if (($data['schema_version'] ?? null) !== 2) {
+if (($data['schema_version'] ?? null) !== EXPECTED_ECOSYSTEM_SCHEMA_VERSION) {
 	$failures[] = 'The data file must use schema version 2';
 }
 if (($schema['$schema'] ?? null) !== 'https://json-schema.org/draft/2020-12/schema') {

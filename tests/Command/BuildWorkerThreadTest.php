@@ -96,7 +96,7 @@ final class BuildWorkerThreadTest extends TestCase
 		$jobIds = [];
 		foreach ($completed as $response) {
 			/** @var array{jobId: string, success: bool, messages: list<string>} $result */
-			$result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+			$result = json_decode($response, true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			self::assertTrue($result['success'], implode("\n", $result['messages']));
 			$jobIds[] = $result['jobId'];
 		}

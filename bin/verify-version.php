@@ -6,9 +6,11 @@ use AxolotlBucketLabs\DevTools\Virion\VirionVersionConstraint;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+const RELEASE_TAG_PREFIX = 'v';
+
 $expected = $argv[1] ?? '';
-if (str_starts_with($expected, 'v')) {
-	$expected = substr($expected, 1);
+if (str_starts_with($expected, RELEASE_TAG_PREFIX)) {
+	$expected = substr($expected, strlen(RELEASE_TAG_PREFIX));
 }
 if (!VirionVersionConstraint::isValidVersion($expected)) {
 	fwrite(STDERR, "Expected a semantic release version or v-prefixed tag. Received \"{$expected}\".\n");

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Build;
 
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -52,7 +53,7 @@ final class PluginProjectLocator
 		$matches = [];
 		foreach ($this->discovery->discover($pluginsDirectory) as $project) {
 			try {
-				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 			} catch (Throwable) {
 				continue;
 			}

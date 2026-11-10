@@ -15,6 +15,8 @@ use const JSON_THROW_ON_ERROR;
 
 final class VirionDependencyResolver
 {
+	private const MAX_SELECTION_PASSES = 100;
+
 	public function __construct(
 		private readonly VirionProjectSelector $selector,
 		private readonly PreparedVirionProvenance $provenance = new PreparedVirionProvenance(),
@@ -30,7 +32,7 @@ final class VirionDependencyResolver
 		$available = $this->normalizeAvailable($available);
 		$selected = [];
 		$states = [];
-		for ($iteration = 0; $iteration < 100; ++$iteration) {
+		for ($iteration = 0; $iteration < self::MAX_SELECTION_PASSES; ++$iteration) {
 			$requirements = [];
 			foreach ($roots as $requirement) {
 				$requirements[VirionName::key($requirement->name)][] = $requirement;
@@ -88,7 +90,7 @@ final class VirionDependencyResolver
 			$states[$state] = true;
 			$selected = $next;
 		}
-		throw new VirionException('Virion dependency graph exceeds 100 selection passes. Reduce or pin the local dependency graph.');
+		throw new VirionException('Virion dependency graph exceeds ' . self::MAX_SELECTION_PASSES . ' selection passes. Reduce or pin the local dependency graph.');
 	}
 
 	/**

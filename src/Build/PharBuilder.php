@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifest;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -21,7 +24,6 @@ use SplFileInfo;
 use Throwable;
 use function array_map;
 use function array_merge;
-use function bin2hex;
 use function count;
 use function file_exists;
 use function hash;
@@ -34,7 +36,6 @@ use function ltrim;
 use function pathinfo;
 use function preg_match;
 use function preg_replace;
-use function random_bytes;
 use function realpath;
 use function str_replace;
 use function str_starts_with;
@@ -48,6 +49,13 @@ use const PATHINFO_EXTENSION;
 
 final class PharBuilder
 {
+	private const PRIVATE_NAMESPACE_HASH_LENGTH = 12;
+	private const TEMPORARY_PATH_SUFFIX = '.tmp' . ArtifactFile::PHAR_EXTENSION;
+	private const TEMPORARY_FILE_PREFIX = '.';
+	private const PRIVATE_NAMESPACE_SEPARATOR = '|';
+	private const PRIVATE_NAMESPACE_PREFIX = 'DevToolsShade\\';
+	private const INVALID_NAMESPACE_CHARACTER = '_';
+
 	private const NOTICE_FILES = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING', 'COPYING.md', 'NOTICE', 'NOTICE.md', 'THIRD_PARTY_NOTICES.md'];
 
 	private readonly PhpSourceInspector $sourceInspector;
@@ -90,7 +98,7 @@ final class PharBuilder
 			throw new BuildException('Cannot build a PHAR because phar.readonly is enabled. Start PHP with -d phar.readonly=0.');
 		}
 
-		$manifest = $this->manifestReader->read($projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml');
+		$manifest = $this->manifestReader->read($projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 		$this->assertStandaloneManifest($manifest);
 		$config = $this->configResolver->resolve($projectRoot, $manifest->description->getName());
 		$virions = $this->virionResolver->resolve($config->virions, $virionsDirectory);
@@ -102,8 +110,8 @@ final class PharBuilder
 		$dependencies = [];
 		foreach ($virions as $virion) {
 			$dependency = ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location];
-			if (is_file($virion->packageRoot . '/devtools-provenance.json')) {
-				$dependency['provenance'] = (new ComposerVirionPlan())->readJson($virion->packageRoot . '/devtools-provenance.json');
+			if (is_file($virion->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)) {
+				$dependency['provenance'] = (new ComposerVirionPlan())->readJson($virion->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA);
 			}
 			$dependencies[] = $dependency;
 		}
@@ -128,7 +136,7 @@ final class PharBuilder
 		if ($realProject === false || $realOutput === false) {
 			throw new BuildException('Cannot resolve the plugin project or build output directory.');
 		}
-		$sourceRoot = $realProject . DIRECTORY_SEPARATOR . 'src';
+		$sourceRoot = $realProject . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		$resourceRoot = $realProject . DIRECTORY_SEPARATOR . 'resources';
 		if ($realOutput === $realProject || Path::isInside($sourceRoot, $realOutput) || Path::isInside($resourceRoot, $realOutput)) {
 			throw new BuildException(
@@ -139,12 +147,12 @@ final class PharBuilder
 		if (preg_match('/^[A-Za-z0-9_.-]+$/D', $artifactName) !== 1) {
 			throw new BuildException("Cannot derive a safe plugin artifact name from {$artifactName}.");
 		}
-		$outputPath = Path::join($outputDirectory, $artifactName . '.phar');
+		$outputPath = Path::join($outputDirectory, $artifactName . ArtifactFile::PHAR_EXTENSION);
 		$this->installer->assertDestinations([$outputPath], $overwrite);
 
-		$nonce = bin2hex(random_bytes(8));
+		$nonce = RandomToken::pathSuffix();
 		$stage = Path::join($outputDirectory, '.devtools-stage-' . $nonce);
-		$temporaryPhar = Path::join($outputDirectory, '.' . $manifest->description->getName() . '.' . $nonce . '.tmp.phar');
+		$temporaryPhar = Path::join($outputDirectory, self::TEMPORARY_FILE_PREFIX . $manifest->description->getName() . '.' . $nonce . self::TEMPORARY_PATH_SUFFIX);
 		$this->filesystem->ensureDirectory($stage);
 
 		$result = null;
@@ -202,13 +210,13 @@ final class PharBuilder
 	private function stagePlugin(string $projectRoot, string $stage, BuildConfig $config, string $realOutput) : void
 	{
 		$this->filesystem->copyFile(
-			$projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml',
-			$stage . DIRECTORY_SEPARATOR . 'plugin.yml',
+			$projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST,
+			$stage . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST,
 		);
-		$source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
+		$source = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		$this->filesystem->copyTree(
 			$source,
-			$stage . DIRECTORY_SEPARATOR . 'src',
+			$stage . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY,
 			static fn(string $relative) : bool => !Path::isHiddenOrTemporary($relative),
 		);
 
@@ -301,7 +309,7 @@ final class PharBuilder
 			if ($sourcePrefix !== '') {
 				$targetRelative = substr($targetNamespace, strlen($sourcePrefix) + 1);
 			}
-			$target = $stage . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $targetRelative);
+			$target = $stage . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $targetRelative);
 			if (file_exists($target)) {
 				throw new BuildException("Shaded virion output collides with an existing source path: {$target}");
 			}
@@ -377,10 +385,10 @@ final class PharBuilder
 		$pluginNamespace = $separator === false ? '' : substr($main, 0, $separator);
 		$base = $sourcePrefix !== '' ? $sourcePrefix : $pluginNamespace;
 		if ($base === '') {
-			$base = 'DevToolsShade\\' . preg_replace('/^(?=[0-9])|[^A-Za-z0-9_]/', '_', $plugin->description->getName());
+			$base = self::PRIVATE_NAMESPACE_PREFIX . preg_replace('/^(?=[0-9])|[^A-Za-z0-9_]/', self::INVALID_NAMESPACE_CHARACTER, $plugin->description->getName());
 		}
-		$name = preg_replace('/^(?=[0-9])|[^A-Za-z0-9_]/', '_', $virion->manifest->name);
-		$digest = substr(hash('sha256', strtolower($plugin->description->getName() . '|' . $virion->manifest->name . '|' . $virion->manifest->antigen)), 0, 12);
+		$name = preg_replace('/^(?=[0-9])|[^A-Za-z0-9_]/', self::INVALID_NAMESPACE_CHARACTER, $virion->manifest->name);
+		$digest = substr(hash(HashAlgorithm::SHA256, strtolower($plugin->description->getName() . self::PRIVATE_NAMESPACE_SEPARATOR . $virion->manifest->name . self::PRIVATE_NAMESPACE_SEPARATOR . $virion->manifest->antigen)), 0, self::PRIVATE_NAMESPACE_HASH_LENGTH);
 
 		return $base . '\\_DevTools\\' . $name . '_' . $digest;
 	}
@@ -397,7 +405,7 @@ final class PharBuilder
 		if (file_exists($metadata)) {
 			throw new BuildException("Virion metadata output collides with an existing plugin path: {$metadata}");
 		}
-		foreach ([...self::NOTICE_FILES, 'devtools-provenance.json'] as $license) {
+		foreach ([...self::NOTICE_FILES, ArtifactFile::VIRION_PROVENANCE_METADATA] as $license) {
 			$source = $virion->packageRoot . '/' . $license;
 			if (is_file($source)) {
 				$this->filesystem->copyFile($source, $metadata . '/' . $license);
@@ -438,14 +446,14 @@ final class PharBuilder
 	private function validatePhar(string $path, PluginManifest $manifest, array $shaded) : void
 	{
 		$phar = new Phar($path);
-		if (!isset($phar['plugin.yml'])) {
+		if (!isset($phar[ArtifactFile::PLUGIN_MANIFEST])) {
 			throw new BuildException('Generated PHAR is invalid: plugin.yml is missing.');
 		}
 		$mainRelative = $manifest->expectedMainRelativePath();
-		if ($mainRelative === null || !isset($phar['src/' . $mainRelative])) {
+		if ($mainRelative === null || !isset($phar[ArtifactFile::SOURCE_DIRECTORY . '/' . $mainRelative])) {
 			throw new BuildException('Generated PHAR is invalid: the main class source file is missing.');
 		}
-		$mainPath = 'phar://' . str_replace('\\', '/', $path) . '/src/' . $mainRelative;
+		$mainPath = 'phar://' . str_replace('\\', '/', $path) . '/' . ArtifactFile::SOURCE_DIRECTORY . '/' . $mainRelative;
 		try {
 			$symbols = $this->sourceInspector->inspect($mainPath);
 		} catch (Throwable $error) {
@@ -459,13 +467,13 @@ final class PharBuilder
 		foreach ($shaded as $target) {
 			$sourcePrefix = trim($manifest->description->getSrcNamespacePrefix(), '\\');
 			$relative = $sourcePrefix === '' ? $target : substr($target, strlen($sourcePrefix) + 1);
-			$directory = 'src/' . str_replace('\\', '/', $relative);
+			$directory = ArtifactFile::SOURCE_DIRECTORY . '/' . str_replace('\\', '/', $relative);
 			if (!isset($phar[$directory])) {
 				throw new BuildException("Generated PHAR is invalid: shaded virion directory {$directory} is missing.");
 			}
 		}
 		$signature = $phar->getSignature();
-		if ($signature['hash_type'] !== 'SHA-256') {
+		if ($signature['hash_type'] !== HashAlgorithm::PHAR_SHA256_SIGNATURE) {
 			throw new BuildException('Generated PHAR has no SHA-256 signature.');
 		}
 		unset($phar);

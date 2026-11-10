@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Translator;
@@ -80,7 +81,7 @@ final class SharedVirionConfigResolver
 					$invalidNames[VirionName::key($name)] = true;
 				}
 				$root = is_dir($location) ? $location : 'phar://' . str_replace('\\', '/', realpath($location) ?: $location);
-				$provenancePath = $root . '/devtools-provenance.json';
+				$provenancePath = $root . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA;
 				if (file_exists($provenancePath) || Filesystem::isLink($provenancePath)) {
 					$hasUnopenedPrepared = true;
 				}
@@ -103,9 +104,9 @@ final class SharedVirionConfigResolver
 			$named = $folders !== [] ? $folders : $named;
 			if ($hasUnopenedPrepared || array_any($projects, fn(VirionProject $project) : bool => $this->isPreparedFor($project, $packageName, $package, $requirement, $plan))) {
 				foreach ($projects as $project) {
-					$path = $project->packageRoot . '/composer.json';
-					if (!$project->phar && !file_exists($project->packageRoot . '/devtools-provenance.json')
-						&& !Filesystem::isLink($project->packageRoot . '/devtools-provenance.json')
+					$path = $project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST;
+					if (!$project->phar && !file_exists($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)
+						&& !Filesystem::isLink($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)
 						&& is_file($path) && !Filesystem::isLink($path)
 						&& ($plan->readJson($path)['name'] ?? null) === $packageName) {
 						$skippedLocations[$project->location] = $this->translator->translate('virions.local.skipped_prepared', ['name' => $project->manifest->name, 'package' => $packageName]);
@@ -172,7 +173,7 @@ final class SharedVirionConfigResolver
 		if ($project->phar && $canonicalName) {
 			return true;
 		}
-		$path = $project->packageRoot . '/devtools-provenance.json';
+		$path = $project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA;
 		if (!file_exists($path) && !Filesystem::isLink($path)) {
 			return false;
 		}
@@ -187,12 +188,12 @@ final class SharedVirionConfigResolver
 	/** @param array<string, mixed> $package */
 	private function matchesLocal(VirionProject $project, string $name, array $package, VirionRequirement $requirement, ComposerVirionPlan $plan) : bool
 	{
-		if ($project->phar || !is_file($project->packageRoot . '/composer.json')
-			|| file_exists($project->packageRoot . '/devtools-provenance.json')
-			|| Filesystem::isLink($project->packageRoot . '/devtools-provenance.json')) {
+		if ($project->phar || !is_file($project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST)
+			|| file_exists($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)
+			|| Filesystem::isLink($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)) {
 			return false;
 		}
-		$metadata = $plan->readJson($project->packageRoot . '/composer.json');
+		$metadata = $plan->readJson($project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST);
 		if (($metadata['name'] ?? null) !== $name || !$requirement->matches($project->manifest->version)
 			|| str_starts_with($plan->version($package), '0.0.0-commit.')
 			|| (isset($metadata['version']) && $plan->version($metadata) !== $project->manifest->version)) {
@@ -208,11 +209,11 @@ final class SharedVirionConfigResolver
 			throw new BuildException($this->translator->translate('virions.local.layout_mismatch', ['name' => $project->manifest->name]));
 		}
 		$platform = array_filter(
-			$plan->object($metadata['require'] ?? [], $project->packageRoot . '/composer.json'),
+			$plan->object($metadata['require'] ?? [], $project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST),
 			static fn(string $name) : bool => !str_contains($name, '/') && !str_starts_with($name, 'composer-'),
 			ARRAY_FILTER_USE_KEY,
 		);
-		(new VirionPlatformRequirements())->validate($platform, $project->packageRoot . '/composer.json');
+		(new VirionPlatformRequirements())->validate($platform, $project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST);
 		return true;
 	}
 

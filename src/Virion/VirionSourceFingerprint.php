@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -40,7 +41,7 @@ final class VirionSourceFingerprint
 				throw new VirionException("Refusing symbolic link in prepared source {$entry->getPathname()}.");
 			}
 			if ($entry->isFile()) {
-				$hash = hash_file('sha256', $entry->getPathname());
+				$hash = hash_file(HashAlgorithm::SHA256, $entry->getPathname());
 				if ($hash === false) {
 					throw new VirionException("Cannot hash prepared source {$entry->getPathname()}.");
 				}
@@ -48,6 +49,6 @@ final class VirionSourceFingerprint
 			}
 		}
 		ksort($files, SORT_STRING);
-		return hash('sha256', json_encode($files, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+		return hash(HashAlgorithm::SHA256, json_encode($files, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
 	}
 }

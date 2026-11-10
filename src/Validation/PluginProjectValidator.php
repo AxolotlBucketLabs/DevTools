@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Validation;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use function explode;
@@ -47,7 +48,7 @@ final class PluginProjectValidator
 			return $result;
 		}
 
-		$manifestPath = $projectRoot . DIRECTORY_SEPARATOR . 'plugin.yml';
+		$manifestPath = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST;
 		if (!is_file($manifestPath)) {
 			$result->error(
 				'plugin.manifest_missing',
@@ -82,7 +83,7 @@ final class PluginProjectValidator
 			return $result;
 		}
 
-		$src = $projectRoot . DIRECTORY_SEPARATOR . 'src';
+		$src = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		if (!is_dir($src)) {
 			$result->error('plugin.src_missing', 'The plugin source directory is missing.', $src, 'Create src/ and place the main class in it.');
 

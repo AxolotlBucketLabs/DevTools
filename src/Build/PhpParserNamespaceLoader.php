@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use Closure;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
 use function array_pop;
-use function bin2hex;
 use function dirname;
 use function explode;
 use function file_get_contents;
@@ -20,7 +21,6 @@ use function is_dir;
 use function is_file;
 use function mkdir;
 use function preg_match_all;
-use function random_bytes;
 use function register_shutdown_function;
 use function rmdir;
 use function rtrim;
@@ -38,6 +38,10 @@ use const DIRECTORY_SEPARATOR;
 
 final class PhpParserNamespaceLoader
 {
+	private const TEMPORARY_PATH_ATTEMPTS = 5;
+	private const TEMPORARY_PATH_PREFIX = 'devtools-parser-';
+	private const PRIVATE_DIRECTORY_PERMISSIONS = 0700;
+
 	private const PREFIX = 'AxolotlBucketLabs\\DevTools\\Vendor\\PhpParser\\';
 
 	/** @var (Closure(string): void)|null */
@@ -65,12 +69,12 @@ final class PhpParserNamespaceLoader
 				return;
 			}
 			$relative = str_replace('\\', '/', $relative);
-			if (!is_file($sourceRoot . '/' . $relative . '.php')) {
+			if (!is_file($sourceRoot . '/' . $relative . ArtifactFile::PHP_SOURCE_EXTENSION)) {
 				return;
 			}
 			$temporaryRoot = self::temporaryRoot();
 			self::prepareSource($sourceRoot, $temporaryRoot, $relative);
-			require($temporaryRoot . DIRECTORY_SEPARATOR . $relative . '.php');
+			require($temporaryRoot . DIRECTORY_SEPARATOR . $relative . ArtifactFile::PHP_SOURCE_EXTENSION);
 		};
 		self::$sourceRoot = $sourceRoot;
 		self::$autoloader = $loader;
@@ -100,9 +104,9 @@ final class PhpParserNamespaceLoader
 			return self::$temporaryRoot;
 		}
 
-		for ($attempt = 0; $attempt < 5; ++$attempt) {
-			$candidate = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-parser-' . bin2hex(random_bytes(12));
-			if (mkdir($candidate, 0700)) {
+		for ($attempt = 0; $attempt < self::TEMPORARY_PATH_ATTEMPTS; ++$attempt) {
+			$candidate = sys_get_temp_dir() . DIRECTORY_SEPARATOR . self::TEMPORARY_PATH_PREFIX . RandomToken::snapshotSuffix();
+			if (mkdir($candidate, self::PRIVATE_DIRECTORY_PERMISSIONS)) {
 				return self::$temporaryRoot = $candidate;
 			}
 		}
@@ -112,8 +116,8 @@ final class PhpParserNamespaceLoader
 
 	private static function prepareSource(string $sourceRoot, string $temporaryRoot, string $relative) : void
 	{
-		$sourcePath = $sourceRoot . '/' . $relative . '.php';
-		$temporaryPath = $temporaryRoot . '/' . $relative . '.php';
+		$sourcePath = $sourceRoot . '/' . $relative . ArtifactFile::PHP_SOURCE_EXTENSION;
+		$temporaryPath = $temporaryRoot . '/' . $relative . ArtifactFile::PHP_SOURCE_EXTENSION;
 		if (is_file($temporaryPath)) {
 			return;
 		}
@@ -129,8 +133,8 @@ final class PhpParserNamespaceLoader
 			$base = str_replace('\\', '/', dirname($relative));
 			foreach ($matches[1] as $required) {
 				$required = str_replace('\\', '/', (string) $required);
-				if (str_ends_with($required, '.php')) {
-					$required = substr($required, 0, -4);
+				if (str_ends_with($required, ArtifactFile::PHP_SOURCE_EXTENSION)) {
+					$required = substr($required, 0, -strlen(ArtifactFile::PHP_SOURCE_EXTENSION));
 				}
 				$requires[] = self::resolveRelative($base, $required);
 			}
@@ -144,7 +148,7 @@ final class PhpParserNamespaceLoader
 			$source,
 		);
 		$parent = dirname($temporaryPath);
-		if (!is_dir($parent) && !mkdir($parent, 0700, true)) {
+		if (!is_dir($parent) && !mkdir($parent, self::PRIVATE_DIRECTORY_PERMISSIONS, true)) {
 			throw new RuntimeException("Cannot create isolated PHP-Parser directory {$parent}.");
 		}
 		if (file_put_contents($temporaryPath, $source) === false) {

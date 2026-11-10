@@ -18,8 +18,9 @@ use function trim;
 
 final class VirionVersionConstraint
 {
+	private const COMMIT_REFERENCE_LENGTH = 40;
 	private const VERSION_PATTERN = '(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?';
-	private const COMMIT_VERSION_PATTERN = '/^0\.0\.0-commit\.[a-fA-F0-9]{40}$/D';
+	private const COMMIT_VERSION_PATTERN = '/^0\.0\.0-commit\.[a-fA-F0-9]{' . self::COMMIT_REFERENCE_LENGTH . '}$/D';
 
 	/** @var list<string> */
 	private readonly array $tokens;

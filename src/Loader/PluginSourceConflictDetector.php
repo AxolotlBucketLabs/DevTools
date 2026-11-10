@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Loader;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
@@ -68,17 +69,17 @@ final class PluginSourceConflictDetector
 				if ($entry->isDir() && $this->isExcludedFolder($path, $excludedFolder)) {
 					continue;
 				}
-				if ($entry->isDir() && is_file($path . DIRECTORY_SEPARATOR . 'plugin.yml')) {
-					$name = $this->manifestReader->read($path . DIRECTORY_SEPARATOR . 'plugin.yml')->description->getName();
+				if ($entry->isDir() && is_file($path . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST)) {
+					$name = $this->manifestReader->read($path . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST)->description->getName();
 					$key = strtolower($name);
 					$names[$key] = $name;
 					$folders[$key][] = $path;
 				} elseif ($entry->isFile() && strtolower($entry->getExtension()) === 'phar') {
 					$phar = new Phar($path);
-					if (!isset($phar['plugin.yml'])) {
+					if (!isset($phar[ArtifactFile::PLUGIN_MANIFEST])) {
 						continue;
 					}
-					$name = $this->manifestReader->read('phar://' . str_replace('\\', '/', realpath($path) ?: $path) . '/plugin.yml')->description->getName();
+					$name = $this->manifestReader->read('phar://' . str_replace('\\', '/', realpath($path) ?: $path) . '/' . ArtifactFile::PLUGIN_MANIFEST)->description->getName();
 					$key = strtolower($name);
 					$names[$key] = $name;
 					$phars[$key][] = $path;
@@ -126,7 +127,7 @@ final class PluginSourceConflictDetector
 	 */
 	public function detectVirionConflicts(string $pluginRoot, array $virionAntigens, array $virionClasses) : array
 	{
-		$sourceRoot = $pluginRoot . DIRECTORY_SEPARATOR . 'src';
+		$sourceRoot = $pluginRoot . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY;
 		if (!is_dir($sourceRoot)) {
 			return [];
 		}

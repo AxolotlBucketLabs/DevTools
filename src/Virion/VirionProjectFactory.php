@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use Phar;
 use Throwable;
-use function bin2hex;
 use function copy;
 use function explode;
 use function file_exists;
 use function is_dir;
 use function is_file;
-use function random_bytes;
 use function realpath;
 use function str_ends_with;
 use function str_replace;
@@ -24,6 +24,9 @@ use const DIRECTORY_SEPARATOR;
 
 final class VirionProjectFactory
 {
+	private const SNAPSHOT_ATTEMPTS = 5;
+	private const SNAPSHOT_PREFIX = 'devtools-virion-';
+
 	public function __construct(private readonly VirionManifestReader $manifestReader) {}
 
 	public function open(string $location, bool $snapshotPhar = false) : VirionProject
@@ -31,7 +34,7 @@ final class VirionProjectFactory
 		if (Filesystem::isLink($location)) {
 			throw new VirionException("Refusing symbolic-link virion path: {$location}");
 		}
-		$isPhar = is_file($location) && str_ends_with(strtolower($location), '.phar');
+		$isPhar = is_file($location) && str_ends_with(strtolower($location), ArtifactFile::PHAR_EXTENSION);
 		$temporaryPath = null;
 		$originalRoot = '';
 		if ($isPhar) {
@@ -71,7 +74,7 @@ final class VirionProjectFactory
 		}
 
 		try {
-			$manifestPath = $root . '/virion.yml';
+			$manifestPath = $root . '/' . ArtifactFile::VIRION_MANIFEST;
 			if (!is_file($manifestPath)) {
 				throw new VirionException("Cannot load virion at {$location}: virion.yml is missing.");
 			}
@@ -79,7 +82,7 @@ final class VirionProjectFactory
 				throw new VirionException("Cannot load virion at {$location}: virion.yml may not be a symbolic link.");
 			}
 			$manifest = $this->manifestReader->read($manifestPath);
-			$source = $root . '/src';
+			$source = $root . '/' . ArtifactFile::SOURCE_DIRECTORY;
 			if (!$isPhar && Filesystem::isLink($source)) {
 				throw new VirionException("Cannot load {$manifest->name}: source directory may not be a symbolic link: {$source}.");
 			}
@@ -124,7 +127,7 @@ final class VirionProjectFactory
 		if (!is_dir($location) || Filesystem::isLink($location)) {
 			return null;
 		}
-		$manifestPath = $location . DIRECTORY_SEPARATOR . 'virion.yml';
+		$manifestPath = $location . DIRECTORY_SEPARATOR . ArtifactFile::VIRION_MANIFEST;
 		if (!is_file($manifestPath) || Filesystem::isLink($manifestPath)) {
 			return null;
 		}
@@ -138,8 +141,8 @@ final class VirionProjectFactory
 
 	private function createSnapshot(string $source) : string
 	{
-		for ($attempt = 0; $attempt < 5; ++$attempt) {
-			$target = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'devtools-virion-' . bin2hex(random_bytes(12)) . '.phar';
+		for ($attempt = 0; $attempt < self::SNAPSHOT_ATTEMPTS; ++$attempt) {
+			$target = sys_get_temp_dir() . DIRECTORY_SEPARATOR . self::SNAPSHOT_PREFIX . RandomToken::snapshotSuffix() . ArtifactFile::PHAR_EXTENSION;
 			if (file_exists($target)) {
 				continue;
 			}

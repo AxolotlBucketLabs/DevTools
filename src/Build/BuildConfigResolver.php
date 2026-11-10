@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Build;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -29,6 +31,8 @@ use const JSON_THROW_ON_ERROR;
 
 final class BuildConfigResolver
 {
+	private const POGGIT_LIBRARY_SOURCE_FIELD = 'src';
+
 	public function __construct(private readonly YamlReader $yamlReader) {}
 
 	public function resolve(string $projectRoot, string $pluginName) : BuildConfig
@@ -39,7 +43,7 @@ final class BuildConfigResolver
 		$includePaths = [];
 		$importPoggitLibraries = true;
 
-		$localPath = $projectRoot . DIRECTORY_SEPARATOR . 'devtools.yml';
+		$localPath = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::DEVTOOLS_CONFIG;
 		if (is_file($localPath)) {
 			$local = $this->yamlReader->read($localPath);
 			foreach (array_keys($local) as $key) {
@@ -59,14 +63,14 @@ final class BuildConfigResolver
 			$this->addPathList($local['include-paths'] ?? [], $includePaths, $localPath);
 		}
 
-		$composerPath = $projectRoot . DIRECTORY_SEPARATOR . 'composer.json';
+		$composerPath = $projectRoot . DIRECTORY_SEPARATOR . ArtifactFile::COMPOSER_MANIFEST;
 		if (is_file($composerPath)) {
 			$contents = file_get_contents($composerPath);
 			if ($contents === false) {
 				throw new BuildException("Cannot read {$composerPath}.");
 			}
 			try {
-				$composer = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+				$composer = json_decode($contents, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			} catch (JsonException $error) {
 				throw new BuildException("Cannot parse {$composerPath}: {$error->getMessage()}", 0, $error);
 			}
@@ -92,7 +96,7 @@ final class BuildConfigResolver
 						throw new BuildException("The libs declaration for {$pluginName} in {$poggitPath} must be a list.");
 					}
 					foreach ($libs as $lib) {
-						$source = is_array($lib) ? ($lib['src'] ?? null) : $lib;
+						$source = is_array($lib) ? ($lib[self::POGGIT_LIBRARY_SOURCE_FIELD] ?? null) : $lib;
 						if (!is_string($source) || trim($source) === '') {
 							throw new BuildException("A lib entry for {$pluginName} in {$poggitPath} has no src value.");
 						}

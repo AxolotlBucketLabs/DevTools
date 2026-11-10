@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Build;
 
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use Throwable;
 use function array_map;
-use function bin2hex;
 use function file_exists;
 use function is_file;
-use function random_bytes;
 use function rename;
 use function str_replace;
 use function strtolower;
@@ -63,7 +62,7 @@ final class ArtifactSetInstaller
 				if (!file_exists($output)) {
 					continue;
 				}
-				$backup = $output . '.backup-' . bin2hex(random_bytes(8));
+				$backup = $output . '.backup-' . RandomToken::pathSuffix();
 				if (!rename($output, $backup)) {
 					throw new BuildException("Cannot move existing output aside before replacing the artifact set: {$output}");
 				}

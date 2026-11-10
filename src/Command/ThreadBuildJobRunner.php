@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\JsonLimits;
+use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\Server;
 use pocketmine\snooze\SleeperHandler;
 use pocketmine\snooze\SleeperHandlerEntry;
 use function array_merge;
-use function bin2hex;
 use function json_decode;
 use function json_encode;
-use function random_bytes;
 use const JSON_THROW_ON_ERROR;
 
 final class ThreadBuildJobRunner implements BuildJobRunner
@@ -31,7 +32,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 		private readonly string $virionsDirectory,
 		private readonly string $buildDirectory,
 		private readonly ?DebugLogger $debug = null,
-		private readonly string $locale = 'eng',
+		private readonly string $locale = Translator::DEFAULT_LOCALE,
 	) {
 		$this->tickSleeper = $server->getTickSleeper();
 		$requests = new ThreadSafeArray();
@@ -55,7 +56,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 			return false;
 		}
 
-		$jobId = bin2hex(random_bytes(8));
+		$jobId = RandomToken::pathSuffix();
 		$payload = array_merge($payload, [
 			'pluginsDirectory' => $this->pluginsDirectory,
 			'virionsDirectory' => $this->virionsDirectory,
@@ -97,7 +98,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 	{
 		while (($response = $this->worker->takeResponse()) !== null) {
 			/** @var array{jobId: string, success: bool, messages: list<string>, debug?: list<string>} $result */
-			$result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+			$result = json_decode($response, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			$jobId = $result['jobId'];
 			$callback = $this->callbacks[$jobId] ?? null;
 			unset($this->callbacks[$jobId]);

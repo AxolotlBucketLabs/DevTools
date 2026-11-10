@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Loader;
 
+use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
@@ -52,7 +53,7 @@ final class FolderPluginLoader implements PluginLoader
 			return false;
 		}
 
-		return is_file($path . DIRECTORY_SEPARATOR . 'plugin.yml') || is_dir($path . DIRECTORY_SEPARATOR . 'src');
+		return is_file($path . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST) || is_dir($path . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY);
 	}
 
 	public function loadPlugin(string $file) : void
@@ -94,7 +95,7 @@ final class FolderPluginLoader implements PluginLoader
 			);
 		}
 
-		$manifest = $this->manifestReader->read($root . DIRECTORY_SEPARATOR . 'plugin.yml');
+		$manifest = $this->manifestReader->read($root . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 		if ($this->virionConflictChecker !== null) {
 			$conflicts = ($this->virionConflictChecker)($root);
 			if ($conflicts !== []) {
@@ -105,7 +106,7 @@ final class FolderPluginLoader implements PluginLoader
 		}
 		$this->classLoader->addPath(
 			$manifest->description->getSrcNamespacePrefix(),
-			$root . DIRECTORY_SEPARATOR . 'src',
+			$root . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY,
 		);
 		$this->registeredPaths[$normalized] = true;
 		$this->debug?->debug("Registered folder plugin {$manifest->description->getName()}.");
@@ -116,10 +117,10 @@ final class FolderPluginLoader implements PluginLoader
 		if (!$this->canLoadPlugin($file)) {
 			return null;
 		}
-		if (!is_file($file . DIRECTORY_SEPARATOR . 'plugin.yml')) {
+		if (!is_file($file . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST)) {
 			throw new PluginDescriptionParseException(
 				"This folder contains src/ and looks like a plugin, but plugin.yml is missing.\n"
-				. "The expected file is {$file}" . DIRECTORY_SEPARATOR . "plugin.yml\n"
+				. "The expected file is {$file}" . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST . "\n"
 				. 'Create plugin.yml next with name, version, main, and api fields.',
 			);
 		}
@@ -144,7 +145,7 @@ final class FolderPluginLoader implements PluginLoader
 			throw new PluginDescriptionParseException($dependencyFailure);
 		}
 
-		return $this->manifestReader->read($file . DIRECTORY_SEPARATOR . 'plugin.yml')->description;
+		return $this->manifestReader->read($file . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST)->description;
 	}
 
 	public function getAccessProtocol() : string
