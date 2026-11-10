@@ -2,6 +2,8 @@
 
 This page gives a short human-readable summary of public projects whose default-branch workflows reference DevTools. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
 
+The stable release represented by this inventory is DevTools `v4.0.0`. Repositories in AxolotlBucketLabs use the `v4.0.0` release. External consumers may use the maintained `@latest` channel or an exact release commit according to their compatibility policy.
+
 ## Inventory
 
 The table below summarizes the repository totals stored in `ecosystem.json`.

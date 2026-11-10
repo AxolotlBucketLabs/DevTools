@@ -34,9 +34,9 @@
     ]
   },
   "devtools": {
-    "stable_version": "v3.3.1",
-    "stable_commit": "84c5ad18bef199f146364d114967d83be9668598",
-    "reference_policy": "@v3 or the exact release commit"
+    "stable_version": "v4.0.0",
+    "stable_commit": "559f744a156a9e8e9c845c72ff4ad08e133bdaa7",
+    "reference_policy": "AxolotlBucketLabs repositories use @v4.0.0. External consumers may use @latest or an exact release commit."
   },
   "summary": {
     "total_repositories": 143,
