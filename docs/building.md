@@ -66,7 +66,7 @@ Virion discovery prefers a source folder over a same-name PHAR, records the PHAR
 
 ## What the builder validates
 
-Before installing output, DevTools validates the plugin manifest and main class declaration, local configuration, declared virions and versions, namespace safety, PHP syntax, and standalone references. It stages source without changing it, AST-shades virions into a deterministic plugin-private namespace, creates a SHA-256 PHAR, reopens it, and checks the manifest, main source declaration, shaded roots, and signature. Virion output may not be placed inside the project's `src/` or `resources/` directories.
+Before installing output, DevTools validates the plugin manifest and main class declaration, local configuration, declared virions and versions, namespace safety, PHP syntax, and standalone references. It stages source without changing it, AST-shades virions into a deterministic plugin-private namespace, writes a ZIP-based PHAR with sorted entries and normalized file metadata, reopens it, and checks the manifest, main source declaration, shaded roots, and SHA-256 signature. Virion output may not be placed inside the project's `src/` or `resources/` directories.
 
 The default package includes `plugin.yml`, `src/`, `resources/`, common license and notice files, declared virions, and explicit `include-paths`. It excludes `.git`, `.github`, IDE files, tests, caches, logs, `build/`, ordinary development `vendor/`, temporary files, and undeclared project files. PHP include files with `.php`, `.inc` or `.phtml` extensions are transformed and validated wherever they are staged.
 
@@ -99,7 +99,7 @@ composer build
 composer artifact
 ```
 
-The self-build is `build/DevTools.phar`. Official release automation renames it to `DevTools-<version>.phar` and publishes `SHA256SUMS.txt` after all checks pass.
+The self-build is `build/DevTools.phar`. Its archive entries use stable ordering, timestamps and permissions, so repeated builds with the same staged bytes and toolchain are expected to produce the same PHAR checksum. This does not yet claim byte-for-byte equality across different PHP or Phar implementations. Official release automation renames it to `DevTools-<version>.phar` and publishes `SHA256SUMS.txt` after all checks pass.
 
 DevTools has no declared runtime virions. Its self-build therefore ignores unrelated virions found in the server's `virions/` directory, so an installed development virion cannot change the result of `composer check`. Normal plugin builds still reject unproven dynamic class references when local virions are available.
 

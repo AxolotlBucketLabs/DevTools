@@ -48,6 +48,7 @@ final class VirionBuilder
 		private readonly ?DebugLogger $debug = null,
 		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
 		private readonly PreparedVirionProvenance $provenance = new PreparedVirionProvenance(),
+		private readonly PharArchiveWriter $archiveWriter = new PharArchiveWriter(),
 	) {}
 
 	public function build(
@@ -194,13 +195,7 @@ final class VirionBuilder
 
 	private function writePhar(string $stage, string $path) : void
 	{
-		$phar = new Phar($path);
-		$phar->startBuffering();
-		$phar->buildFromDirectory($stage);
-		$phar->setStub("<?php __HALT_COMPILER();\n");
-		$phar->setSignatureAlgorithm(Phar::SHA256);
-		$phar->stopBuffering();
-		unset($phar);
+		$this->archiveWriter->write($stage, $path);
 	}
 
 	private function validatePhar(string $path, string $name, ?string $provenance) : void

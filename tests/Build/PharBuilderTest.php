@@ -264,6 +264,21 @@ PHP,
 		self::assertSame($hash, hash_file('sha256', $first->outputPath));
 	}
 
+	public function test_repeated_builds_of_unchanged_plugin_have_the_same_hash() : void
+	{
+		$project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+		$virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+		$this->copyFixture('SharedVirion', 'virions/SharedVirion');
+		$output = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build';
+		$builder = $this->builder();
+
+		$first = $builder->build($project, $virions, $output);
+		$firstHash = hash_file('sha256', $first->outputPath);
+		$second = $builder->build($project, $virions, $output, true);
+
+		self::assertSame($firstHash, hash_file('sha256', $second->outputPath));
+	}
+
 	public function test_explicit_overwrite_replaces_completed_output_and_cleans_backups() : void
 	{
 		$project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');

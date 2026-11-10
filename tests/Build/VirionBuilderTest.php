@@ -97,6 +97,19 @@ final class VirionBuilderTest extends TestCase
 		self::assertSame($hash, hash_file('sha256', $first->outputPath));
 	}
 
+	public function test_repeated_builds_of_unchanged_virion_have_the_same_hash() : void
+	{
+		$project = $this->copyFixture('SharedVirion');
+		$output = $this->temporaryDirectory . '/build';
+		$builder = $this->virionBuilder();
+
+		$first = $builder->build($project, $output);
+		$firstHash = hash_file('sha256', $first->outputPath);
+		$second = $builder->build($project, $output, true);
+
+		self::assertSame($firstHash, hash_file('sha256', $second->outputPath));
+	}
+
 	public function test_explicit_overwrite_installs_new_virion_and_cleans_backups() : void
 	{
 		$project = $this->copyFixture('SharedVirion');
