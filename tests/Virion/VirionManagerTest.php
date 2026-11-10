@@ -42,6 +42,36 @@ use const JSON_THROW_ON_ERROR;
 
 final class VirionManagerTest extends TestCase
 {
+	public function test_selection_diagnostics_keep_their_phases_across_repeated_discovery() : void
+	{
+		$directory = $this->temporaryDirectory . '/virions';
+		$incompatible = $this->graphVirion('AIncompatible');
+		file_put_contents($incompatible . '/virion.yml', "name: AIncompatible\nversion: 1.0.0\nantigen: GraphAudit\\AIncompatible\napi: 99.0.0\n");
+		foreach (['Old' => '1.0.0', 'Recent' => '2.0.0'] as $name => $version) {
+			$project = $this->graphVirion($name, [], 'GraphAudit\\Versioned');
+			file_put_contents($project . '/virion.yml', "name: ZSelected\nversion: {$version}\nantigen: GraphAudit\\Versioned\napi: 5.0.0\n");
+		}
+		$registry = new VirionRegistry();
+		$registrar = new FakeClassLoaderRegistrar();
+		$manager = $this->manager($registrar, $registry);
+		$requirements = [new VirionRequirement('Missing', '*', 'FixturePlugin')];
+
+		$manager->discoverAndLoad($directory, $requirements);
+
+		$missing = [null, VirionStatus::FAILED, "Required virion Missing is missing. The project requests * from FixturePlugin. Add a compatible package to {$directory}."];
+		$old = $directory . DIRECTORY_SEPARATOR . 'Old';
+		$expected = [
+			['AIncompatible', VirionStatus::FAILED, 'Cannot load AIncompatible: it declares API 99.0.0, but this server provides 5.44.0.'],
+			['ZSelected', VirionStatus::SKIPPED, "Skipped ZSelected 1.0.0 at {$old}: a higher compatible version 2.0.0 was selected."],
+			['ZSelected', VirionStatus::LOADED, 'Loaded ZSelected 2.0.0 (GraphAudit\\Versioned).'],
+			$missing,
+		];
+		self::assertSame($expected, $this->diagnostics($registry));
+		$manager->discoverAndLoad($directory, $requirements);
+		self::assertSame([...$expected, $missing], $this->diagnostics($registry));
+		self::assertCount(1, $registrar->registrations);
+	}
+
 	public function test_cycle_inspection_failure_preserves_diagnostic_order_across_discovery() : void
 	{
 		$a = $this->graphVirion('A', ['B']);

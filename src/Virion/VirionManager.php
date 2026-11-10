@@ -7,9 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Virion;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use pocketmine\plugin\ApiVersion;
 use Throwable;
-use function array_filter;
 use function array_map;
-use function array_values;
 use function class_exists;
 use function count;
 use function defined;
@@ -17,7 +15,6 @@ use function enum_exists;
 use function function_exists;
 use function implode;
 use function interface_exists;
-use function ksort;
 use function ltrim;
 use function realpath;
 use function str_contains;
@@ -25,7 +22,6 @@ use function str_replace;
 use function str_starts_with;
 use function strtolower;
 use function trait_exists;
-use const SORT_STRING;
 
 final class VirionManager
 {
@@ -36,6 +32,7 @@ final class VirionManager
 	private array $graphLoadStates = [];
 
 	private readonly VirionGraphPreflight $graphPreflight;
+	private readonly VirionSelectionPlanner $selectionPlanner;
 
 	/** @var array<string, true> */
 	private array $graphReadyProjects = [];
@@ -46,11 +43,12 @@ final class VirionManager
 		private readonly VirionClassScanner $classScanner,
 		private readonly ClassLoaderRegistrar $registrar,
 		private readonly VirionRegistry $registry,
-		private readonly VirionProjectSelector $selector,
+		VirionProjectSelector $selector,
 		private readonly string $serverApiVersion,
 		private readonly ?DebugLogger $debug = null,
 	) {
 		$this->graphPreflight = new VirionGraphPreflight($this->inspectProject(...));
+		$this->selectionPlanner = new VirionSelectionPlanner($selector, $this->assertCompatible(...));
 	}
 
 	/**
@@ -61,14 +59,6 @@ final class VirionManager
 	public function discoverAndLoad(string $directory, array $requirements = [], array $requirementAliases = [], array $skippedLocations = []) : VirionRegistry
 	{
 		$this->debug?->debug('Loading shared virions from ' . $directory . ' with ' . count($requirements) . ' project requirement(s).');
-		/** @var array<string, list<VirionRequirement>> $requirementsByName */
-		$requirementsByName = [];
-		$hasComposerRequirements = false;
-		foreach ($requirements as $requirement) {
-			$requirementsByName[VirionName::key($requirement->name)][] = $requirement;
-			$hasComposerRequirements = $hasComposerRequirements || $requirement->composerPackageSha256 !== null;
-		}
-
 		/** @var array<string, list<array{string, VirionProject}>> $projectsByName */
 		$projectsByName = [];
 		/** @var array<string, string> $invalidFolderFailures */
@@ -79,7 +69,7 @@ final class VirionManager
 			try {
 				$project = $this->projectFactory->open($location);
 				if (isset($skippedLocations[$project->location])) {
-					$this->recordUnloaded($location, $project, VirionStatus::SKIPPED, $skippedLocations[$project->location]);
+					$this->recordUnloaded(new VirionRegistryEntry($location, $project->manifest, VirionStatus::SKIPPED, $skippedLocations[$project->location]));
 					continue;
 				}
 				if ($requirementAliases !== [] && $project->manifest->requirements !== []) {
@@ -113,159 +103,33 @@ final class VirionManager
 				$this->load($location);
 			}
 		}
-		foreach ($invalidFolderFailures as $nameKey => $errorMessage) {
-			if (!isset($projectsByName[$nameKey])) {
-				continue;
-			}
-			$hasFolder = false;
-			foreach ($projectsByName[$nameKey] as [, $candidate]) {
-				if (!$candidate->phar) {
-					$hasFolder = true;
-					break;
-				}
-			}
-			if ($hasFolder) {
-				continue;
-			}
-			foreach ($projectsByName[$nameKey] as [$location, $candidate]) {
-				$this->recordUnloaded(
-					$location,
-					$candidate,
-					VirionStatus::SKIPPED,
-					"Skipped {$candidate->manifest->name} {$candidate->manifest->version} at {$location}: a development folder with the same name could not be loaded. {$errorMessage}",
-				);
-			}
-			unset($projectsByName[$nameKey], $requirementsByName[$nameKey]);
-		}
-		ksort($projectsByName, SORT_STRING);
-		$hasTransitive = false;
-		$available = [];
-		/** @var array<string, array{string, VirionProject}> $selectedProjects */
-		$selectedProjects = [];
-		/** @var array<string, list<array{type: 'selected'|'skipped', location: string, project: VirionProject, message?: string}>> $selectionActions */
-		$selectionActions = [];
-		foreach ($projectsByName as $nameKey => $candidates) {
-			foreach ($this->preferredCandidates($candidates) as [, $project]) {
-				$hasTransitive = $hasTransitive || $project->manifest->requirements !== [];
-				try {
-					$this->assertCompatible($project->manifest);
-					$available[$nameKey][] = $project;
-				} catch (VirionException) {
-				}
+		$plan = $this->selectionPlanner->plan($projectsByName, $requirements, $directory, $invalidFolderFailures, $requirementAliases !== []);
+		foreach ($plan->beforeLoad as $entry) {
+			if ($entry->manifest === null) {
+				$this->registry->record($entry);
+			} else {
+				$this->recordUnloaded($entry);
 			}
 		}
-		if ($hasTransitive || $hasComposerRequirements || $requirementAliases !== []) {
-			$graphRequirements = $requirements;
-			foreach ($available as $nameKey => $projects) {
-				if (!isset($requirementsByName[$nameKey])) {
-					$graphRequirements[] = new VirionRequirement($projects[0]->manifest->name, '*', $directory);
-				}
-			}
-			try {
-				foreach ((new VirionDependencyResolver($this->selector))->resolve($available, $graphRequirements) as $selected) {
-					$requirementsByName[VirionName::key($selected->manifest->name)][] = new VirionRequirement($selected->manifest->name, $selected->manifest->version, 'resolved shared dependency graph');
-				}
-			} catch (VirionException $error) {
-				if ($projectsByName === []) {
-					$this->registry->record(new VirionRegistryEntry($directory, null, VirionStatus::FAILED, $error->getMessage()));
-				}
-				foreach ($projectsByName as $candidates) {
-					foreach ($candidates as [$location, $project]) {
-						$this->recordUnloaded($location, $project, VirionStatus::CONFLICT, $error->getMessage());
-					}
-				}
-				return $this->registry;
-			}
+		if ($plan->blocked) {
+			return $this->registry;
 		}
-		foreach ($projectsByName as $nameKey => $candidates) {
-			$preferredCandidates = $this->preferredCandidates($candidates);
-			$compatibleCandidates = [];
-			foreach ($preferredCandidates as [$location, $candidateProject]) {
-				try {
-					$this->assertCompatible($candidateProject->manifest);
-					$compatibleCandidates[] = [$location, $candidateProject];
-				} catch (VirionException $error) {
-					$this->recordUnloaded(
-						$location,
-						$candidateProject,
-						VirionStatus::FAILED,
-						$error->getMessage(),
-					);
-				}
-			}
-			if ($compatibleCandidates === []) {
-				$this->recordPreferredPhars($candidates);
-				unset($requirementsByName[$nameKey]);
-				continue;
-			}
-			$projects = [];
-			foreach ($compatibleCandidates as [, $candidateProject]) {
-				$projects[] = $candidateProject;
-			}
-			$name = $projects[0]->manifest->name;
-			$nameRequirements = $requirementsByName[$nameKey] ?? [];
-			try {
-				$selected = $this->selector->select($name, $projects, $nameRequirements);
-			} catch (VirionException $error) {
-				foreach ($compatibleCandidates as [$location, $project]) {
-					$this->recordUnloaded($location, $project, VirionStatus::CONFLICT, $error->getMessage());
-				}
-				unset($requirementsByName[$nameKey]);
-				continue;
-			}
-
-			foreach ($compatibleCandidates as [$location, $project]) {
-				if ($project === $selected) {
-					$selectedProjects[$nameKey] = [$location, $selected];
-					$selectionActions[$nameKey][] = [
-						'type' => 'selected',
-						'location' => $location,
-						'project' => $project,
-					];
-					continue;
-				}
-				$reason = $project->phar && $this->hasFolderCandidate($candidates)
-					? 'a development folder for this virion name is preferred over a packaged PHAR'
-					: ($this->satisfies($project, $nameRequirements)
-						? "a higher compatible version {$selected->manifest->version} was selected"
-						: 'it does not satisfy ' . $this->selector->describeRequirements($nameRequirements));
-				$selectionActions[$nameKey][] = [
-					'type' => 'skipped',
-					'location' => $location,
-					'project' => $project,
-					'message' => "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: {$reason}.",
-				];
-			}
-			$this->recordPreferredPhars($candidates);
-			unset($requirementsByName[$nameKey]);
-		}
-
+		$selectedProjects = $plan->selectedProjects;
 		$preflight = $this->graphPreflight->check($selectedProjects, $this->registry->entries(), $this->registry->loaded());
 		$this->graphReadyProjects = $preflight->readyProjects;
 		foreach ($preflight->failures as $failure) {
 			$this->processedLocations[$this->canonicalLocation($failure->location)] = true;
 			$this->registry->record($failure);
 		}
-		foreach ($projectsByName as $nameKey => $_candidates) {
-			foreach ($selectionActions[$nameKey] ?? [] as $action) {
-				if ($action['type'] === 'selected') {
-					$this->loadSelectedProject($nameKey, $selectedProjects);
-					continue;
-				}
-				$this->recordUnloaded($action['location'], $action['project'], VirionStatus::SKIPPED, $action['message'] ?? '');
+		foreach ($plan->actions as $action) {
+			if ($action['type'] === 'selected') {
+				$this->loadSelectedProject(VirionName::key($action['project']->manifest->name), $selectedProjects);
+				continue;
 			}
+			$this->recordUnloaded(new VirionRegistryEntry($action['location'], $action['project']->manifest, VirionStatus::SKIPPED, $action['message']));
 		}
-
-		foreach ($requirementsByName as $missingRequirements) {
-			$first = $missingRequirements[0];
-			$this->registry->record(new VirionRegistryEntry(
-				$directory,
-				null,
-				VirionStatus::FAILED,
-				"Required virion {$first->name} is missing. The project requests "
-				. $this->selector->describeRequirements($missingRequirements)
-				. ". Add a compatible package to {$directory}.",
-			));
+		foreach ($plan->afterLoad as $entry) {
+			$this->registry->record($entry);
 		}
 
 		$this->debug?->debug('Shared virion loading finished with ' . count($this->registry->loaded()) . ' loaded virion(s) and ' . count($this->registry->entries()) . ' registry entr' . (count($this->registry->entries()) === 1 ? 'y' : 'ies') . '.');
@@ -527,75 +391,13 @@ final class VirionManager
 		return str_contains($message, 'already') || str_contains($message, 'conflict');
 	}
 
-	/** @param list<VirionRequirement> $requirements */
-	private function satisfies(VirionProject $project, array $requirements) : bool
+	private function recordUnloaded(VirionRegistryEntry $entry) : void
 	{
-		foreach ($requirements as $requirement) {
-			if (!$requirement->matches($project->manifest->version)) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	private function recordUnloaded(
-		string $location,
-		VirionProject $project,
-		VirionStatus $status,
-		string $message,
-	) : void {
-		$locationKey = $this->canonicalLocation($location);
+		$locationKey = $this->canonicalLocation($entry->location);
 		if (isset($this->processedLocations[$locationKey])) {
 			return;
 		}
 		$this->processedLocations[$locationKey] = true;
-		$this->registry->record(new VirionRegistryEntry($location, $project->manifest, $status, $message));
-	}
-
-	/** @param list<array{string, VirionProject}> $candidates */
-	private function hasFolderCandidate(array $candidates) : bool
-	{
-		foreach ($candidates as [, $candidate]) {
-			if (!$candidate->phar) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/** @param list<array{string, VirionProject}> $candidates
-	 * @return list<array{string, VirionProject}>
-	 */
-	private function preferredCandidates(array $candidates) : array
-	{
-		if (!$this->hasFolderCandidate($candidates)) {
-			return $candidates;
-		}
-
-		return array_values(array_filter(
-			$candidates,
-			static fn(array $candidate) : bool => !$candidate[1]->phar,
-		));
-	}
-
-	/** @param list<array{string, VirionProject}> $candidates */
-	private function recordPreferredPhars(array $candidates) : void
-	{
-		if (!$this->hasFolderCandidate($candidates)) {
-			return;
-		}
-		foreach ($candidates as [$location, $project]) {
-			if (!$project->phar) {
-				continue;
-			}
-			$this->recordUnloaded(
-				$location,
-				$project,
-				VirionStatus::SKIPPED,
-				"Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: a development folder for this virion name is preferred over a packaged PHAR.",
-			);
-		}
+		$this->registry->record($entry);
 	}
 }
