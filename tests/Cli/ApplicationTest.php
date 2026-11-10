@@ -203,6 +203,15 @@ final class ApplicationTest extends TestCase
 		[$code, $failed] = $this->cli(['build', '--project=' . $project]);
 		self::assertSame(1, $code);
 		self::assertSame('operation.build_failed', $failed['diagnostics'][0]['code']);
+		self::assertSame([
+			'project' => $project,
+			'plugin' => ['name' => 'BuildFixture', 'version' => '1.0.0'],
+			'dependencies' => [['name' => 'SharedVirion', 'version' => '1.0.0', 'antigen' => 'Shared\\Virion', 'source' => realpath($project . '/virions/SharedVirion')]],
+		], $failed['data']);
+		self::assertSame([
+			'structure' => 'passed', 'dependencies' => 'passed', 'artifact' => 'failed',
+			'static_analysis' => 'not_run', 'runtime' => 'not_run',
+		], $failed['checks']);
 		self::assertSame($built['data']['sha256'], hash_file('sha256', $artifact));
 		file_put_contents($project . '/src/Main.php', '<?php invalid syntax');
 		[$code] = $this->cli(['build', '--project=' . $project, '--overwrite']);
