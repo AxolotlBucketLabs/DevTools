@@ -103,7 +103,7 @@ jobs:
       - name: Build and analyze DevTools-owned example PHAR with the pinned stable builder
         if: steps.release.outputs.candidate == 'true'
         id: build
-        uses: AxolotlBucketLabs/DevTools@559f744a156a9e8e9c845c72ff4ad08e133bdaa7 # v4.0.0
+        uses: AxolotlBucketLabs/DevTools@281364d985c8366ac06756c6270489d097561628 # v4.0.1
         with:
           project: examples/HelloShared
           virions: examples
