@@ -5,6 +5,8 @@ set -euo pipefail
 PHP_VERSION="${1:-}"
 PM_VERSION_MAJOR="${2:-5}"
 INSTALL_PATH="${3:-.php-bin}"
+COMPOSER_VERSION='2.11.1'
+COMPOSER_SHA256='6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c'
 
 if [[ ! "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
   echo "PHP version must use the major.minor format." >&2
@@ -15,8 +17,8 @@ if [[ ! "$PM_VERSION_MAJOR" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
-if ! command -v curl >/dev/null 2>&1 || ! command -v node >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
-  echo "The PHP setup fallback requires curl, Node.js, and tar." >&2
+if ! command -v curl >/dev/null 2>&1 || ! command -v node >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1 || ! command -v sha256sum >/dev/null 2>&1; then
+  echo "The PHP setup fallback requires curl, Node.js, tar, and sha256sum." >&2
   exit 2
 fi
 
@@ -42,16 +44,27 @@ echo "The direct PHP release download was unavailable; retrying through the GitH
 release_json="$(curl --fail --silent --show-error --location \
   --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 120 \
   "${API_HEADERS[@]}" "$RELEASE_URL")"
-asset_url="$(node -e 'const fs = require("fs"); const name = process.argv[1]; const release = JSON.parse(fs.readFileSync(0, "utf8")); const asset = release.assets.find((candidate) => candidate.name === name); process.stdout.write(asset?.url ?? "");' "$ASSET_NAME" <<<"$release_json")"
-if [[ -z "$asset_url" || "$asset_url" == 'null' ]]; then
+asset_details="$(node -e 'const fs = require("fs"); const name = process.argv[1]; const release = JSON.parse(fs.readFileSync(0, "utf8")); const asset = release.assets.find((candidate) => candidate.name === name); if (!asset || typeof asset.url !== "string" || typeof asset.digest !== "string") process.exit(1); process.stdout.write(`${asset.url}\t${asset.digest}\n`);' "$ASSET_NAME" <<<"$release_json")" || {
   echo "Could not find ${ASSET_NAME} in ${RELEASE_TAG}." >&2
   exit 1
+}
+IFS=$'\t' read -r asset_url asset_digest <<<"$asset_details"
+if [[ ! "$asset_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+  echo "The GitHub release does not provide a valid SHA-256 digest for ${ASSET_NAME}." >&2
+  exit 1
 fi
+expected_asset_digest="${asset_digest#sha256:}"
 
 tarball="${TEMP_DIRECTORY}/${ASSET_NAME}"
 curl --fail --silent --show-error --location \
   --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 300 \
   "${DOWNLOAD_HEADERS[@]}" -H 'Accept: application/octet-stream' "$asset_url" -o "$tarball"
+actual_asset_digest="$(sha256sum "$tarball")"
+actual_asset_digest="${actual_asset_digest%% *}"
+if [[ "$actual_asset_digest" != "$expected_asset_digest" ]]; then
+  echo "SHA-256 verification failed for ${ASSET_NAME}." >&2
+  exit 1
+fi
 
 mkdir -p "$INSTALL_PATH"
 tar -xzf "$tarball" -C "$INSTALL_PATH"
@@ -75,7 +88,13 @@ fi
 composer_path="${INSTALL_PATH}/bin/php7/bin/composer"
 curl --fail --silent --show-error --location \
   --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 120 \
-  'https://getcomposer.org/download/latest-2.x/composer.phar' -o "$composer_path"
+  "https://getcomposer.org/download/${COMPOSER_VERSION}/composer.phar" -o "$composer_path"
+actual_composer_digest="$(sha256sum "$composer_path")"
+actual_composer_digest="${actual_composer_digest%% *}"
+if [[ "$actual_composer_digest" != "$COMPOSER_SHA256" ]]; then
+  echo "SHA-256 verification failed for Composer ${COMPOSER_VERSION}." >&2
+  exit 1
+fi
 chmod +x "$composer_path"
 echo "${INSTALL_PATH}/bin/php7/bin" >> "${GITHUB_PATH:?GITHUB_PATH is required in GitHub Actions}"
 echo "Axolotl-PM PHP ${PHP_VERSION} was installed through the GitHub release API."
