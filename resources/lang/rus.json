@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Тип артефакта {detected} не соответствует запрошенному типу {type}.",
     "cli.local_path_only": "CLI-пути должны быть локальными путями файловой системы, а не URL потоков.",
     "worker.path_missing": "Отсутствует путь worker {key}.",
-    "extract.phar_not_found": "PHAR {selection} не найден. Проверьте путь или каталог build/."
+    "extract.phar_not_found": "PHAR {selection} не найден. Проверьте путь или каталог build/.",
+    "runtime.plugin_load_failed": "Не удалось загрузить плагин из папки {project}. {error}",
+    "virions.load_failed_detail": "Не удалось загрузить virion. {detail}",
+    "virions.conflict_detail": "Обнаружен конфликт virion. {detail}",
+    "virions.skipped_detail": "Кандидат virion пропущен. {detail}",
+    "validation.error": "Ошибка [{code}]: {message}",
+    "validation.warning": "Предупреждение [{code}]: {message}",
+    "validation.notice": "Примечание [{code}]: {message}",
+    "validation.related_file": "Связанный файл: {path}.",
+    "validation.suggestion": "Рекомендуемое действие: {suggestion}",
+    "virions.requirement_missing": "Требуемый virion {name} отсутствует. Запрошенные требования: {requirements}. Добавьте совместимый пакет в выбранный каталог virions.",
+    "virions.requirement_version_mismatch": "Требуемый virion {name} загружен с несовместимой версией. Загружена: {loaded}. Запрошена: {requirements}."
 }

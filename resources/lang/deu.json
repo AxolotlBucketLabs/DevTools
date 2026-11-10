@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Der Artefakttyp {detected} stimmt nicht mit dem angeforderten Typ {type} überein.",
     "cli.local_path_only": "CLI-Pfade müssen lokale Dateisystempfade und dürfen keine Stream-URLs sein.",
     "worker.path_missing": "Der Worker-Pfad {key} fehlt.",
-    "extract.phar_not_found": "PHAR {selection} wurde nicht gefunden. Prüfe den Pfad oder den build/-Ordner."
+    "extract.phar_not_found": "PHAR {selection} wurde nicht gefunden. Prüfe den Pfad oder den build/-Ordner.",
+    "runtime.plugin_load_failed": "Das Ordner-Plugin {project} konnte nicht geladen werden. {error}",
+    "virions.load_failed_detail": "Das Virion konnte nicht geladen werden. {detail}",
+    "virions.conflict_detail": "Es wurde ein Virion-Konflikt erkannt. {detail}",
+    "virions.skipped_detail": "Der Virion-Kandidat wurde übersprungen. {detail}",
+    "validation.error": "Fehler [{code}]: {message}",
+    "validation.warning": "Warnung [{code}]: {message}",
+    "validation.notice": "Hinweis [{code}]: {message}",
+    "validation.related_file": "Zugehörige Datei: {path}.",
+    "validation.suggestion": "Vorgeschlagene Aktion: {suggestion}",
+    "virions.requirement_missing": "Das erforderliche Virion {name} fehlt. Angefordert: {requirements}. Füge ein kompatibles Paket zum ausgewählten Virions-Verzeichnis hinzu.",
+    "virions.requirement_version_mismatch": "Das erforderliche Virion {name} wurde nicht mit einer kompatiblen Version geladen. Geladen: {loaded}. Angefordert: {requirements}."
 }

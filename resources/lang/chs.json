@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "工件类型 {detected} 与请求的类型 {type} 不匹配。",
     "cli.local_path_only": "CLI 路径必须是本地文件系统路径，不能是流 URL。",
     "worker.path_missing": "缺少 worker 路径 {key}。",
-    "extract.phar_not_found": "找不到 PHAR {selection}。请检查路径或 build/ 目录。"
+    "extract.phar_not_found": "找不到 PHAR {selection}。请检查路径或 build/ 目录。",
+    "runtime.plugin_load_failed": "无法加载文件夹插件 {project}。{error}",
+    "virions.load_failed_detail": "无法加载 virion。{detail}",
+    "virions.conflict_detail": "检测到 virion 冲突。{detail}",
+    "virions.skipped_detail": "已跳过此 virion 候选项。{detail}",
+    "validation.error": "错误 [{code}]：{message}",
+    "validation.warning": "警告 [{code}]：{message}",
+    "validation.notice": "提示 [{code}]：{message}",
+    "validation.related_file": "相关文件：{path}。",
+    "validation.suggestion": "建议操作：{suggestion}",
+    "virions.requirement_missing": "缺少所需的 virion {name}。请求的依赖：{requirements}。请将兼容的软件包添加到所选的 virions 目录。",
+    "virions.requirement_version_mismatch": "virion {name} 未以兼容版本加载。已加载：{loaded}。请求：{requirements}。"
 }

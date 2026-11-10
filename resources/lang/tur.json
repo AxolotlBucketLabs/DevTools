@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Yapıt türü {detected}, istenen {type} türüyle eşleşmiyor.",
     "cli.local_path_only": "CLI yolları akış URL'leri değil, yerel dosya sistemi yolları olmalıdır.",
     "worker.path_missing": "Worker yolu {key} eksik.",
-    "extract.phar_not_found": "{selection} PHAR'ı bulunamadı. Yolu veya build/ dizinini kontrol edin."
+    "extract.phar_not_found": "{selection} PHAR'ı bulunamadı. Yolu veya build/ dizinini kontrol edin.",
+    "runtime.plugin_load_failed": "Klasör eklentisi {project} yüklenemedi. {error}",
+    "virions.load_failed_detail": "Virion yüklenemedi. {detail}",
+    "virions.conflict_detail": "Virion çakışması algılandı. {detail}",
+    "virions.skipped_detail": "Virion adayı atlandı. {detail}",
+    "validation.error": "Hata [{code}]: {message}",
+    "validation.warning": "Uyarı [{code}]: {message}",
+    "validation.notice": "Bilgi [{code}]: {message}",
+    "validation.related_file": "İlgili dosya: {path}.",
+    "validation.suggestion": "Önerilen işlem: {suggestion}",
+    "virions.requirement_missing": "Gerekli virion {name} bulunamadı. İstenen gereksinimler: {requirements}. Seçili virions dizinine uyumlu bir paket ekleyin.",
+    "virions.requirement_version_mismatch": "Gerekli virion {name} uyumlu bir sürümle yüklenmedi. Yüklenen: {loaded}. İstenen: {requirements}."
 }

@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Типът на артефакта {detected} не съвпада с искания тип {type}.",
     "cli.local_path_only": "CLI пътищата трябва да са локални файлови пътища, а не stream URL адреси.",
     "worker.path_missing": "Липсва worker път {key}.",
-    "extract.phar_not_found": "PHAR {selection} не е намерен. Проверете пътя или директорията build/."
+    "extract.phar_not_found": "PHAR {selection} не е намерен. Проверете пътя или директорията build/.",
+    "runtime.plugin_load_failed": "Папковият плъгин {project} не можа да бъде зареден. {error}",
+    "virions.load_failed_detail": "Вирионът не можа да бъде зареден. {detail}",
+    "virions.conflict_detail": "Открит е конфликт с вирион. {detail}",
+    "virions.skipped_detail": "Кандидатът за вирион беше пропуснат. {detail}",
+    "validation.error": "Грешка [{code}]: {message}",
+    "validation.warning": "Предупреждение [{code}]: {message}",
+    "validation.notice": "Бележка [{code}]: {message}",
+    "validation.related_file": "Свързан файл: {path}.",
+    "validation.suggestion": "Предложено действие: {suggestion}",
+    "virions.requirement_missing": "Изискваният virion {name} липсва. Заявени изисквания: {requirements}. Добавете съвместим пакет в избраната директория за virions.",
+    "virions.requirement_version_mismatch": "Изискваният virion {name} не е зареден със съвместима версия. Заредена: {loaded}. Заявено: {requirements}."
 }

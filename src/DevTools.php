@@ -58,6 +58,8 @@ final class DevTools extends PluginBase
 			: null);
 		$debug->debug('Starting DevTools runtime initialization.');
 		$this->registerBuildDependencyAutoloader();
+		$server = $this->getServer();
+		$this->translator = $this->createTranslator($server);
 
 		$filesystem = new Filesystem();
 		$yaml = new YamlReader();
@@ -67,8 +69,6 @@ final class DevTools extends PluginBase
 		$pluginDiscovery = new FolderPluginDiscovery();
 		$sourceConflictDetector = new PluginSourceConflictDetector($manifestReader, null, $debug);
 
-		$server = $this->getServer();
-		$this->translator = $this->createTranslator($server);
 		$pluginsDirectory = $server->getPluginPath();
 		$ownSourceProject = Path::join($pluginsDirectory, $this->getDescription()->getName());
 		$virionsDirectory = $server->getDataPath() . 'virions';
@@ -98,7 +98,7 @@ final class DevTools extends PluginBase
 			$pluginDiscovery,
 			$manifestReader,
 			$sharedConfigResolver,
-			new VirionRequirementChecker($registry, $selector),
+			new VirionRequirementChecker($registry, $selector, $this->translator),
 			function (string $message) : void {
 				$this->getLogger()->warning($message);
 			},
@@ -141,6 +141,7 @@ final class DevTools extends PluginBase
 				$virionConflictChecker,
 				$dependencies,
 				$debug,
+				$this->translator,
 			),
 		);
 

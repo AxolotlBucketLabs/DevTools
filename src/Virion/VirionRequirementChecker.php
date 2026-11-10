@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+use AxolotlBucketLabs\DevTools\Support\Translator;
+
 final class VirionRequirementChecker
 {
+	private readonly Translator $translator;
+
 	public function __construct(
 		private readonly VirionRegistry $registry,
 		private readonly VirionProjectSelector $selector,
-	) {}
+		?Translator $translator = null,
+	) {
+		$this->translator = $translator ?? Translator::fromResources();
+	}
 
 	/** @param list<VirionRequirement> $requirements */
 	public function failure(array $requirements) : ?string
@@ -17,17 +25,22 @@ final class VirionRequirementChecker
 		foreach ($requirements as $requirement) {
 			$entry = $this->registry->findByName($requirement->name);
 			if ($entry === null) {
-				return "Required virion {$requirement->name} is missing. Requested: "
-					. $this->selector->describeRequirements($requirements)
-					. '. Add a compatible package to the selected virions directory.';
+				return $this->translator->translate(
+					TranslationKeys::VIRIONS_REQUIREMENT_MISSING,
+					['name' => $requirement->name, 'requirements' => $this->selector->describeRequirements($requirements)],
+				);
 			}
 
 			$manifest = $entry->requireManifest();
 			if (!$requirement->matches($manifest->version)) {
-				return "Required virion {$requirement->name} was not loaded with a compatible version. "
-					. "Loaded {$manifest->version}; requested "
-					. $this->selector->describeRequirements([$requirement])
-					. '.';
+				return $this->translator->translate(
+					TranslationKeys::VIRIONS_REQUIREMENT_VERSION_MISMATCH,
+					[
+						'name' => $requirement->name,
+						'loaded' => $manifest->version,
+						'requirements' => $this->selector->describeRequirements([$requirement]),
+					],
+				);
 			}
 		}
 

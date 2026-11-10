@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Artifacttype {detected} komt niet overeen met het gevraagde type {type}.",
     "cli.local_path_only": "CLI-paden moeten lokale bestandssysteempaden zijn en geen stream-URL's.",
     "worker.path_missing": "Workerpad {key} ontbreekt.",
-    "extract.phar_not_found": "PHAR {selection} is niet gevonden. Controleer het pad of de map build/."
+    "extract.phar_not_found": "PHAR {selection} is niet gevonden. Controleer het pad of de map build/.",
+    "runtime.plugin_load_failed": "Mapplugin {project} kon niet worden geladen. {error}",
+    "virions.load_failed_detail": "De virion kon niet worden geladen. {detail}",
+    "virions.conflict_detail": "Er is een virionconflict gevonden. {detail}",
+    "virions.skipped_detail": "De virionkandidaat is overgeslagen. {detail}",
+    "validation.error": "Fout [{code}]: {message}",
+    "validation.warning": "Waarschuwing [{code}]: {message}",
+    "validation.notice": "Melding [{code}]: {message}",
+    "validation.related_file": "Bijbehorend bestand: {path}.",
+    "validation.suggestion": "Voorgestelde actie: {suggestion}",
+    "virions.requirement_missing": "De vereiste virion {name} ontbreekt. Vereist: {requirements}. Voeg een compatibel pakket toe aan de geselecteerde virions-map.",
+    "virions.requirement_version_mismatch": "De vereiste virion {name} is niet geladen met een compatibele versie. Geladen: {loaded}. Vereist: {requirements}."
 }

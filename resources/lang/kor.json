@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "아티팩트 유형 {detected}이(가) 요청된 유형 {type}과(와) 일치하지 않습니다.",
     "cli.local_path_only": "CLI 경로는 스트림 URL이 아닌 로컬 파일 시스템 경로여야 합니다.",
     "worker.path_missing": "worker 경로 {key}가 없습니다.",
-    "extract.phar_not_found": "PHAR {selection}을(를) 찾을 수 없습니다. 경로 또는 build/ 디렉터리를 확인하세요."
+    "extract.phar_not_found": "PHAR {selection}을(를) 찾을 수 없습니다. 경로 또는 build/ 디렉터리를 확인하세요.",
+    "runtime.plugin_load_failed": "폴더 플러그인 {project}을(를) 불러오지 못했습니다. {error}",
+    "virions.load_failed_detail": "virion을 불러오지 못했습니다. {detail}",
+    "virions.conflict_detail": "virion 충돌이 감지되었습니다. {detail}",
+    "virions.skipped_detail": "이 virion 후보를 건너뛰었습니다. {detail}",
+    "validation.error": "오류 [{code}]: {message}",
+    "validation.warning": "경고 [{code}]: {message}",
+    "validation.notice": "알림 [{code}]: {message}",
+    "validation.related_file": "관련 파일: {path}.",
+    "validation.suggestion": "권장 작업: {suggestion}",
+    "virions.requirement_missing": "필수 virion {name}을(를) 찾을 수 없습니다. 요청된 요구 사항: {requirements}. 선택한 virions 디렉터리에 호환되는 패키지를 추가하세요.",
+    "virions.requirement_version_mismatch": "필수 virion {name}이(가) 호환되는 버전으로 로드되지 않았습니다. 로드된 버전: {loaded}. 요청된 버전: {requirements}."
 }

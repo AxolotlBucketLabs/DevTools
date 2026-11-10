@@ -11,6 +11,7 @@ use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifest;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
@@ -72,6 +73,7 @@ final class PharBuilder
 		private readonly ?DebugLogger $debug = null,
 		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
 		private readonly PharArchiveWriter $archiveWriter = new PharArchiveWriter(),
+		private readonly ?Translator $translator = null,
 	) {
 		$this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
 	}
@@ -89,7 +91,7 @@ final class PharBuilder
 			$messages = [];
 			foreach ($validation->issues() as $issue) {
 				if ($issue->severity->value === 'error') {
-					$messages[] = $issue->format();
+					$messages[] = $issue->format($this->translator);
 				}
 			}
 			throw new BuildException("Cannot build plugin.\n\n" . implode("\n\n", $messages));

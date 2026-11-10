@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "アーティファクトの種類 {detected} は要求された種類 {type} と一致しません。",
     "cli.local_path_only": "CLI パスにはストリーム URL ではなくローカルファイルシステムのパスを指定してください。",
     "worker.path_missing": "worker パス {key} がありません。",
-    "extract.phar_not_found": "PHAR {selection} が見つかりません。パスまたは build/ ディレクトリを確認してください。"
+    "extract.phar_not_found": "PHAR {selection} が見つかりません。パスまたは build/ ディレクトリを確認してください。",
+    "runtime.plugin_load_failed": "フォルダープラグイン {project} を読み込めませんでした。{error}",
+    "virions.load_failed_detail": "virion を読み込めませんでした。{detail}",
+    "virions.conflict_detail": "virion の競合が検出されました。{detail}",
+    "virions.skipped_detail": "この virion 候補はスキップされました。{detail}",
+    "validation.error": "エラー [{code}]：{message}",
+    "validation.warning": "警告 [{code}]：{message}",
+    "validation.notice": "通知 [{code}]：{message}",
+    "validation.related_file": "関連ファイル：{path}。",
+    "validation.suggestion": "推奨する対応：{suggestion}",
+    "virions.requirement_missing": "必要な virion {name} が見つかりません。要求された依存関係：{requirements}。選択した virions ディレクトリに互換パッケージを追加してください。",
+    "virions.requirement_version_mismatch": "必要な virion {name} は互換性のあるバージョンで読み込まれていません。読み込み済み：{loaded}、要求：{requirements}。"
 }

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Validation;
 
-use function ucfirst;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 
 final class ValidationIssue
 {
@@ -16,14 +17,20 @@ final class ValidationIssue
 		public readonly ?string $suggestion = null,
 	) {}
 
-	public function format() : string
+	public function format(?Translator $translator = null) : string
 	{
-		$text = ucfirst($this->severity->value) . " [{$this->code}] {$this->message}";
+		$translator ??= Translator::fromResources();
+		$severityKey = match ($this->severity) {
+			Severity::ERROR => TranslationKeys::VALIDATION_ERROR,
+			Severity::WARNING => TranslationKeys::VALIDATION_WARNING,
+			Severity::NOTICE => TranslationKeys::VALIDATION_NOTICE,
+		};
+		$text = $translator->translate($severityKey, ['code' => $this->code, 'message' => $this->message]);
 		if ($this->path !== null) {
-			$text .= "\nThe related file is {$this->path}.";
+			$text .= "\n" . $translator->translate(TranslationKeys::VALIDATION_RELATED_FILE, ['path' => $this->path]);
 		}
 		if ($this->suggestion !== null) {
-			$text .= "\n{$this->suggestion}";
+			$text .= "\n" . $translator->translate(TranslationKeys::VALIDATION_SUGGESTION, ['suggestion' => $this->suggestion]);
 		}
 
 		return $text;

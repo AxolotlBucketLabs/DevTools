@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
-
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use function count;
 use function implode;
@@ -43,7 +42,7 @@ final class VirionStartupReporter
 			}
 			$messages[] = [
 				'level' => 'warning',
-				'message' => $entry->message,
+				'message' => $this->formatDiagnostic($entry),
 				'details' => [],
 			];
 		}
@@ -54,7 +53,7 @@ final class VirionStartupReporter
 			$details = [];
 			foreach ($entries as $entry) {
 				$versions[] = $entry->requireManifest()->version;
-				$details[] = $entry->message;
+				$details[] = $this->formatDiagnostic($entry);
 			}
 			$messages[] = [
 				'level' => 'warning',
@@ -64,5 +63,24 @@ final class VirionStartupReporter
 		}
 
 		return $messages;
+	}
+
+	public function formatDiagnostic(VirionRegistryEntry $entry) : string
+	{
+		$key = match ($entry->status) {
+			VirionStatus::FAILED => TranslationKeys::VIRIONS_LOAD_FAILED_DETAIL,
+			VirionStatus::CONFLICT => TranslationKeys::VIRIONS_CONFLICT_DETAIL,
+			VirionStatus::SKIPPED => TranslationKeys::VIRIONS_SKIPPED_DETAIL,
+			VirionStatus::LOADED => TranslationKeys::VIRIONS_LOADED,
+		};
+		if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
+			return $this->translator->translate($key, [
+				'name' => $entry->manifest->name,
+				'version' => $entry->manifest->version,
+				'antigen' => $entry->manifest->antigen,
+			]);
+		}
+
+		return $this->translator->translate($key, ['detail' => $entry->message]);
 	}
 }

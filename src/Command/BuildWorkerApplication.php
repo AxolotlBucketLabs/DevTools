@@ -103,6 +103,7 @@ final class BuildWorkerApplication
 			new \AxolotlBucketLabs\DevTools\Build\NamespaceShader(),
 			$sourceInspector,
 			$debug,
+			translator: $this->translator,
 		);
 		$virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner, $debug);
 
@@ -197,7 +198,7 @@ final class BuildWorkerApplication
 			$result = $check->validation;
 			$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_CHECKING, ['project' => $project]);
 			foreach ($result->issues() as $issue) {
-				$messages[] = $issue->format();
+				$messages[] = $issue->format($this->translator);
 			}
 			if ($result->hasErrors()) {
 				continue;

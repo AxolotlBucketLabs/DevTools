@@ -65,6 +65,7 @@ final class TranslationKeys
 	public const RUNTIME_LANGUAGE_FALLBACK = 'runtime.language_fallback';
 	public const RUNTIME_NOT_STARTED = 'runtime.not_started';
 	public const RUNTIME_PLUGIN_MANIFEST_FAILED = 'runtime.plugin_manifest_failed';
+	public const RUNTIME_PLUGIN_LOAD_FAILED = 'runtime.plugin_load_failed';
 	public const RUNTIME_READY = 'runtime.ready';
 	public const RUNTIME_SHARED_REQUIREMENTS_FAILED = 'runtime.shared_requirements_failed';
 	public const STATUS_SUMMARY = 'status.summary';
@@ -73,7 +74,17 @@ final class TranslationKeys
 	public const SUMMARY_PLUGIN_OUTPUT = 'summary.plugin_output';
 	public const SUMMARY_SHADED = 'summary.shaded';
 	public const SUMMARY_VIRION_OUTPUT = 'summary.virion_output';
+	public const VALIDATION_ERROR = 'validation.error';
+	public const VALIDATION_WARNING = 'validation.warning';
+	public const VALIDATION_NOTICE = 'validation.notice';
+	public const VALIDATION_RELATED_FILE = 'validation.related_file';
+	public const VALIDATION_SUGGESTION = 'validation.suggestion';
 	public const VIRIONS_LOADED = 'virions.loaded';
+	public const VIRIONS_CONFLICT_DETAIL = 'virions.conflict_detail';
+	public const VIRIONS_LOAD_FAILED_DETAIL = 'virions.load_failed_detail';
+	public const VIRIONS_REQUIREMENT_MISSING = 'virions.requirement_missing';
+	public const VIRIONS_REQUIREMENT_VERSION_MISMATCH = 'virions.requirement_version_mismatch';
+	public const VIRIONS_SKIPPED_DETAIL = 'virions.skipped_detail';
 	public const VIRIONS_LOCAL_AMBIGUOUS_PACKAGE = 'virions.local.ambiguous_package';
 	public const VIRIONS_LOCAL_LAYOUT_MISMATCH = 'virions.local.layout_mismatch';
 	public const VIRIONS_LOCAL_METADATA_MISMATCH = 'virions.local.metadata_mismatch';

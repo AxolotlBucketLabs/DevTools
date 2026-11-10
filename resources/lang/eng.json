@@ -82,5 +82,16 @@
     "cli.artifact_type_mismatch": "Artifact type {detected} does not match requested type {type}.",
     "cli.local_path_only": "CLI paths must be local filesystem paths, not stream URLs.",
     "worker.path_missing": "Missing worker path {key}.",
-    "extract.phar_not_found": "Cannot find PHAR {selection}. Check the path or the build/ directory."
+    "extract.phar_not_found": "Cannot find PHAR {selection}. Check the path or the build/ directory.",
+    "runtime.plugin_load_failed": "Could not load folder plugin {project}. {error}",
+    "virions.load_failed_detail": "The virion could not be loaded. {detail}",
+    "virions.conflict_detail": "A virion conflict was detected. {detail}",
+    "virions.skipped_detail": "The virion candidate was skipped. {detail}",
+    "validation.error": "Error [{code}]: {message}",
+    "validation.warning": "Warning [{code}]: {message}",
+    "validation.notice": "Notice [{code}]: {message}",
+    "validation.related_file": "Related file: {path}.",
+    "validation.suggestion": "Suggested action: {suggestion}",
+    "virions.requirement_missing": "Required virion {name} is missing. Requested: {requirements}. Add a compatible package to the selected virions directory.",
+    "virions.requirement_version_mismatch": "Required virion {name} was not loaded at a compatible version. Loaded: {loaded}. Requested: {requirements}."
 }

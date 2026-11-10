@@ -11,6 +11,7 @@ use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
 use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
@@ -220,6 +221,7 @@ final class DevToolsCommandHandler
 
 			return true;
 		}
+		$reporter = new VirionStartupReporter($this->translator);
 		foreach ($entries as $entry) {
 			$name = $entry->manifest === null ? basename($entry->location) : $entry->manifest->name;
 			$statusKey = match ($entry->status) {
@@ -229,7 +231,7 @@ final class DevToolsCommandHandler
 				VirionStatus::CONFLICT => TranslationKeys::VIRIONS_STATUS_CONFLICT,
 			};
 			$status = $this->translate($statusKey);
-			$message = $entry->message;
+			$message = $reporter->formatDiagnostic($entry);
 			if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
 				$message = $this->translate(TranslationKeys::VIRIONS_LOADED, ['name' => $name, 'version' => $entry->manifest->version, 'antigen' => $entry->manifest->antigen]);
 			}

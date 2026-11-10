@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Il tipo di artefatto {detected} non corrisponde al tipo richiesto {type}.",
     "cli.local_path_only": "I percorsi CLI devono essere percorsi del filesystem locale, non URL di stream.",
     "worker.path_missing": "Percorso worker mancante: {key}.",
-    "extract.phar_not_found": "PHAR {selection} non trovato. Controlla il percorso o la directory build/."
+    "extract.phar_not_found": "PHAR {selection} non trovato. Controlla il percorso o la directory build/.",
+    "runtime.plugin_load_failed": "Impossibile caricare il plugin dalla cartella {project}. {error}",
+    "virions.load_failed_detail": "Impossibile caricare il virion. {detail}",
+    "virions.conflict_detail": "È stato rilevato un conflitto tra virion. {detail}",
+    "virions.skipped_detail": "La versione candidata del virion è stata ignorata. {detail}",
+    "validation.error": "Errore [{code}]: {message}",
+    "validation.warning": "Avviso [{code}]: {message}",
+    "validation.notice": "Nota [{code}]: {message}",
+    "validation.related_file": "File correlato: {path}.",
+    "validation.suggestion": "Azione suggerita: {suggestion}",
+    "virions.requirement_missing": "Il virion richiesto {name} non è presente. Requisiti: {requirements}. Aggiungi un pacchetto compatibile alla directory virions selezionata.",
+    "virions.requirement_version_mismatch": "Il virion richiesto {name} non è stato caricato con una versione compatibile. Caricata: {loaded}. Richiesta: {requirements}."
 }

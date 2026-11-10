@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Artefakta tips {detected} neatbilst pieprasītajam tipam {type}.",
     "cli.local_path_only": "CLI ceļiem jābūt lokāliem failu sistēmas ceļiem, nevis straumju URL.",
     "worker.path_missing": "Trūkst worker ceļa {key}.",
-    "extract.phar_not_found": "PHAR {selection} nav atrasts. Pārbaudiet ceļu vai build/ direktoriju."
+    "extract.phar_not_found": "PHAR {selection} nav atrasts. Pārbaudiet ceļu vai build/ direktoriju.",
+    "runtime.plugin_load_failed": "Neizdevās ielādēt mapes spraudni {project}. {error}",
+    "virions.load_failed_detail": "Neizdevās ielādēt virion. {detail}",
+    "virions.conflict_detail": "Atrasts virion konflikts. {detail}",
+    "virions.skipped_detail": "Virion kandidāts tika izlaists. {detail}",
+    "validation.error": "Kļūda [{code}]: {message}",
+    "validation.warning": "Brīdinājums [{code}]: {message}",
+    "validation.notice": "Piezīme [{code}]: {message}",
+    "validation.related_file": "Saistītais fails: {path}.",
+    "validation.suggestion": "Ieteicamā darbība: {suggestion}",
+    "virions.requirement_missing": "Trūkst nepieciešamā virion {name}. Pieprasītās prasības: {requirements}. Pievienojiet saderīgu pakotni izvēlētajai virions mapei.",
+    "virions.requirement_version_mismatch": "Nepieciešamais virion {name} netika ielādēts ar saderīgu versiju. Ielādēta: {loaded}. Pieprasīta: {requirements}."
 }

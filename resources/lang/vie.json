@@ -83,5 +83,16 @@
     "cli.artifact_type_mismatch": "Loại artifact {detected} không khớp với loại được yêu cầu {type}.",
     "cli.local_path_only": "CLI path phải là đường dẫn filesystem local, không phải stream URL.",
     "worker.path_missing": "Thiếu worker path {key}.",
-    "extract.phar_not_found": "Không tìm thấy PHAR {selection}. Hãy kiểm tra path hoặc thư mục build/."
+    "extract.phar_not_found": "Không tìm thấy PHAR {selection}. Hãy kiểm tra path hoặc thư mục build/.",
+    "runtime.plugin_load_failed": "Không thể nạp plugin dạng folder {project}. {error}",
+    "virions.load_failed_detail": "Không thể nạp virion. {detail}",
+    "virions.conflict_detail": "Phát hiện xung đột virion. {detail}",
+    "virions.skipped_detail": "Đã bỏ qua bản virion này. {detail}",
+    "validation.error": "Lỗi [{code}]: {message}",
+    "validation.warning": "Cảnh báo [{code}]: {message}",
+    "validation.notice": "Ghi chú [{code}]: {message}",
+    "validation.related_file": "File liên quan: {path}.",
+    "validation.suggestion": "Đề xuất xử lý: {suggestion}",
+    "virions.requirement_missing": "Thiếu virion bắt buộc {name}. Yêu cầu: {requirements}. Hãy thêm package tương thích vào thư mục virions đã chọn.",
+    "virions.requirement_version_mismatch": "Virion bắt buộc {name} không được nạp với phiên bản tương thích. Đã nạp: {loaded}. Yêu cầu: {requirements}."
 }
