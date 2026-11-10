@@ -15,6 +15,7 @@ use function dirname;
 use function is_string;
 use function json_decode;
 use function json_encode;
+use const JSON_INVALID_UTF8_SUBSTITUTE;
 use const JSON_THROW_ON_ERROR;
 
 final class BuildWorkerThread extends Thread
@@ -91,7 +92,7 @@ final class BuildWorkerThread extends Thread
 				'messages' => ["DevTools worker failed.\n{$error->getMessage()}"],
 			];
 		}
-		$this->responses[] = json_encode($result, JSON_THROW_ON_ERROR);
+		$this->responses[] = json_encode($result, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
 		$notifier->wakeupSleeper();
 	}
 }
