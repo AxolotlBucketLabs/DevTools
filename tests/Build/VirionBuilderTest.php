@@ -12,13 +12,18 @@ use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
+use AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint;
 use Phar;
 use function file_get_contents;
 use function file_put_contents;
 use function glob;
 use function hash_file;
+use function json_encode;
+use const JSON_PRETTY_PRINT;
+use const JSON_THROW_ON_ERROR;
 
 final class VirionBuilderTest extends TestCase
 {
@@ -132,6 +137,39 @@ final class VirionBuilderTest extends TestCase
 		self::assertSame([], glob($output . '/.*.tmp.phar'));
 	}
 
+	public function test_provenance_failure_is_wrapped_without_changing_the_diagnostic() : void
+	{
+		$project = $this->copyFixture('SharedVirion');
+		$output = $this->temporaryDirectory . '/build';
+		file_put_contents($project . '/devtools-provenance.json', '{}');
+
+		try {
+			$this->virionBuilder()->build($project, $output);
+			self::fail('Expected unverified manifest metadata to be rejected.');
+		} catch (BuildException $error) {
+			self::assertSame('Prepared manifest for SharedVirion changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.', $error->getMessage());
+			self::assertInstanceOf(VirionException::class, $error->getPrevious());
+		}
+		self::assertFileDoesNotExist($output . '/SharedVirion.phar');
+		self::assertSame([], glob($output . '/.devtools-virion-stage-*'));
+		self::assertSame([], glob($output . '/.*.tmp.phar'));
+	}
+
+	public function test_prepared_content_without_package_pin_preserves_provenance_bytes() : void
+	{
+		$root = $this->copyFixture('SharedVirion');
+		$project = (new VirionProjectFactory(new VirionManifestReader(new YamlReader())))->open($root);
+		$metadata = json_encode([
+			'manifestSha256' => hash_file('sha256', $project->manifest->path),
+			'sourceSha256' => (new VirionSourceFingerprint())->hash($project->sourceRoot),
+		], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . "\n";
+		file_put_contents($root . '/devtools-provenance.json', $metadata);
+
+		$result = $this->virionBuilder()->build($root, $this->temporaryDirectory . '/build');
+
+		self::assertSame($metadata, file_get_contents('phar://' . $result->outputPath . '/devtools-provenance.json'));
+	}
+
 	public function test_project_role_detector_identifies_dual_role_projects() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'dual');
@@ -178,7 +216,7 @@ final class VirionBuilderTest extends TestCase
 			"name: RootClass\nversion: 1.0.0\nantigen: Shared\\Virion\\Greeting\napi: 5.0.0\n",
 		);
 
-		$this->expectException(\AxolotlBucketLabs\DevTools\Virion\VirionException::class);
+		$this->expectException(VirionException::class);
 		$this->expectExceptionMessage('must be below antigen');
 		(new VirionBuilder(
 			$this->filesystem,
@@ -187,6 +225,7 @@ final class VirionBuilderTest extends TestCase
 			new VirionClassScanner(new PhpSourceInspector()),
 		))->build($project, $this->temporaryDirectory . '/build');
 	}
+
 	private function virionBuilder() : VirionBuilder
 	{
 		$reader = new VirionManifestReader(new YamlReader());

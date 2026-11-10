@@ -7,10 +7,12 @@ namespace AxolotlBucketLabs\DevTools\Build;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Virion\PreparedVirionProvenance;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProject;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
-use AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint;
 use FilesystemIterator;
 use Phar;
 use RecursiveDirectoryIterator;
@@ -45,6 +47,7 @@ final class VirionBuilder
 		private readonly VirionClassScanner $classScanner,
 		private readonly ?DebugLogger $debug = null,
 		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
+		private readonly PreparedVirionProvenance $provenance = new PreparedVirionProvenance(),
 	) {}
 
 	public function build(
@@ -103,7 +106,7 @@ final class VirionBuilder
 		$failure = null;
 		$result = null;
 		try {
-			$provenance = $this->stage($projectRoot, $stage, $project->manifest->antigen, $project->manifest->name, $project->sourceRoot);
+			$provenance = $this->stage($projectRoot, $stage, $project);
 			$this->filesystem->assertPortableTree($stage);
 			$fileCount = $this->countFiles($stage);
 			$this->writePhar($stage, $temporaryPhar);
@@ -140,8 +143,10 @@ final class VirionBuilder
 		return $result;
 	}
 
-	private function stage(string $projectRoot, string $stage, string $antigen, string $name, string $sourceRoot) : ?string
+	private function stage(string $projectRoot, string $stage, VirionProject $project) : ?string
 	{
+		$antigen = $project->manifest->antigen;
+		$name = $project->manifest->name;
 		$this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $stage . DIRECTORY_SEPARATOR . 'virion.yml');
 		$source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
 		$antigenSource = $source . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $antigen);
@@ -177,7 +182,11 @@ final class VirionBuilder
 		if (!is_file($provenance)) {
 			return null;
 		}
-		$this->assertProvenance($provenance, $projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $sourceRoot, $name);
+		try {
+			$this->provenance->verify($project);
+		} catch (VirionException $error) {
+			throw new BuildException($error->getMessage(), 0, $error);
+		}
 		$this->filesystem->copyFile($provenance, $stage . DIRECTORY_SEPARATOR . 'devtools-provenance.json');
 
 		return $provenance;
@@ -219,18 +228,6 @@ final class VirionBuilder
 			throw new BuildException("Generated virion {$name} PHAR has no SHA-256 signature.");
 		}
 		unset($phar);
-	}
-
-	private function assertProvenance(string $provenance, string $manifest, string $sourceRoot, string $name) : void
-	{
-		$metadata = (new ComposerVirionPlan())->readJson($provenance);
-		$manifestHash = hash_file('sha256', $manifest);
-		if ($manifestHash === false || ($metadata['manifestSha256'] ?? null) !== $manifestHash) {
-			throw new BuildException("Prepared manifest for {$name} changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.");
-		}
-		if (($metadata['sourceSha256'] ?? null) !== (new VirionSourceFingerprint())->hash($sourceRoot)) {
-			throw new BuildException("Prepared source for {$name} changed after preparation. Run prepare into a new directory from the reviewed installed package.");
-		}
 	}
 
 	private function countFiles(string $directory) : int
