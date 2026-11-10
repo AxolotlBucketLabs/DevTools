@@ -19,7 +19,7 @@ use const JSON_THROW_ON_ERROR;
 
 final class RepositoryMetadataTest extends TestCase
 {
-	private const VERSION = '3.3.1';
+	private const VERSION = '4.0.0';
 	private const COMPATIBILITY_BUILDER_VERSION = '3.3.1';
 	private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 
@@ -276,7 +276,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringContainsString('Composer-prepared virion example', $examplesReadme);
 		self::assertIsString($exampleContents);
 		self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
-		self::assertStringContainsString('uses: AxolotlBucketLabs/DevTools@v3', $exampleContents);
+		self::assertStringContainsString('uses: AxolotlBucketLabs/DevTools@v4', $exampleContents);
 		self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
 		self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
 		self::assertStringNotContainsString('retention-days', $exampleContents);
@@ -302,7 +302,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringContainsString('(dependencies.md)', $agentGuide);
 		self::assertStringContainsString('(github-actions.md)', $agentGuide);
 		self::assertIsString($agentTemplate);
-		self::assertStringContainsString('build-plugin.yml@v3` by default', $agentTemplate);
+		self::assertStringContainsString('build-plugin.yml@v4` by default', $agentTemplate);
 		self::assertStringContainsString('Do not guess virion repositories', $agentTemplate);
 		self::assertStringContainsString('Upload exactly one artifact', $agentTemplate);
 	}

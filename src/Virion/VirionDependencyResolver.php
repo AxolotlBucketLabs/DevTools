@@ -4,16 +4,10 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
-use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use function array_intersect_key;
 use function array_map;
 use function array_pop;
 use function array_values;
-use function file_get_contents;
-use function hash_file;
-use function is_array;
-use function is_file;
-use function json_decode;
 use function json_encode;
 use function ksort;
 use function str_starts_with;
@@ -21,7 +15,10 @@ use const JSON_THROW_ON_ERROR;
 
 final class VirionDependencyResolver
 {
-	public function __construct(private readonly VirionProjectSelector $selector) {}
+	public function __construct(
+		private readonly VirionProjectSelector $selector,
+		private readonly PreparedVirionProvenance $provenance = new PreparedVirionProvenance(),
+	) {}
 
 	/**
 	 * @param array<string, list<VirionProject>> $available
@@ -74,18 +71,7 @@ final class VirionDependencyResolver
 						if ($constraint->composerPackageSha256 === null) {
 							continue;
 						}
-						$path = $project->packageRoot . '/devtools-provenance.json';
-						$contents = is_file($path) && !Filesystem::isLink($path) ? file_get_contents($path) : false;
-						$provenance = $contents === false ? null : json_decode($contents, true);
-						if (!is_array($provenance) || ($provenance['composerPackageSha256'] ?? null) !== $constraint->composerPackageSha256) {
-							throw new VirionException("Prepared virion {$constraint->name} does not match this composer.lock. Run prepare into a new directory and use that --virions directory.");
-						}
-						if (($provenance['manifestSha256'] ?? null) !== hash_file('sha256', $project->manifest->path)) {
-							throw new VirionException("Prepared manifest for {$constraint->name} changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.");
-						}
-						if (($provenance['sourceSha256'] ?? null) !== (new VirionSourceFingerprint())->hash($project->sourceRoot)) {
-							throw new VirionException("Prepared source for {$constraint->name} changed after preparation. Run prepare into a new directory from the reviewed installed package.");
-						}
+						$this->provenance->verify($project, $constraint);
 					}
 				}
 				return array_values($selected);

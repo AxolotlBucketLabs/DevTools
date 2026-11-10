@@ -7,10 +7,12 @@ namespace AxolotlBucketLabs\DevTools\Build;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
+use AxolotlBucketLabs\DevTools\Virion\PreparedVirionProvenance;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
+use AxolotlBucketLabs\DevTools\Virion\VirionException;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionProject;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
-use AxolotlBucketLabs\DevTools\Virion\VirionSourceFingerprint;
 use FilesystemIterator;
 use Phar;
 use RecursiveDirectoryIterator;
@@ -19,7 +21,6 @@ use SplFileInfo;
 use Throwable;
 use function bin2hex;
 use function count;
-use function file_exists;
 use function hash;
 use function hash_equals;
 use function hash_file;
@@ -30,10 +31,8 @@ use function is_file;
 use function preg_match;
 use function random_bytes;
 use function realpath;
-use function rename;
 use function str_replace;
 use function str_starts_with;
-use function unlink;
 use const DIRECTORY_SEPARATOR;
 
 final class VirionBuilder
@@ -47,6 +46,8 @@ final class VirionBuilder
 		private readonly VirionProjectFactory $projectFactory,
 		private readonly VirionClassScanner $classScanner,
 		private readonly ?DebugLogger $debug = null,
+		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
+		private readonly PreparedVirionProvenance $provenance = new PreparedVirionProvenance(),
 	) {}
 
 	public function build(
@@ -96,7 +97,7 @@ final class VirionBuilder
 			throw new BuildException("Cannot derive a safe virion artifact name from {$safeName}.");
 		}
 		$outputPath = Path::join($outputDirectory, $safeName . '.phar');
-		$this->assertOutputDestination($outputPath, $overwrite);
+		$this->installer->assertDestinations([$outputPath], $overwrite);
 
 		$nonce = bin2hex(random_bytes(8));
 		$stage = Path::join($outputDirectory, '.devtools-virion-stage-' . $nonce);
@@ -105,12 +106,12 @@ final class VirionBuilder
 		$failure = null;
 		$result = null;
 		try {
-			$provenance = $this->stage($projectRoot, $stage, $project->manifest->antigen, $project->manifest->name, $project->sourceRoot);
+			$provenance = $this->stage($projectRoot, $stage, $project);
 			$this->filesystem->assertPortableTree($stage);
 			$fileCount = $this->countFiles($stage);
 			$this->writePhar($stage, $temporaryPhar);
 			$this->validatePhar($temporaryPhar, $project->manifest->name, $provenance);
-			$this->installOutput($temporaryPhar, $outputPath, $overwrite);
+			$this->installer->install([['temporary' => $temporaryPhar, 'output' => $outputPath]], $overwrite);
 			$result = new VirionBuildResult($project->manifest, $outputPath, $fileCount);
 			$this->debug?->debug("Installed virion PHAR at {$outputPath}.");
 		} catch (Throwable $error) {
@@ -142,8 +143,10 @@ final class VirionBuilder
 		return $result;
 	}
 
-	private function stage(string $projectRoot, string $stage, string $antigen, string $name, string $sourceRoot) : ?string
+	private function stage(string $projectRoot, string $stage, VirionProject $project) : ?string
 	{
+		$antigen = $project->manifest->antigen;
+		$name = $project->manifest->name;
 		$this->filesystem->copyFile($projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $stage . DIRECTORY_SEPARATOR . 'virion.yml');
 		$source = $projectRoot . DIRECTORY_SEPARATOR . 'src';
 		$antigenSource = $source . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $antigen);
@@ -179,7 +182,11 @@ final class VirionBuilder
 		if (!is_file($provenance)) {
 			return null;
 		}
-		$this->assertProvenance($provenance, $projectRoot . DIRECTORY_SEPARATOR . 'virion.yml', $sourceRoot, $name);
+		try {
+			$this->provenance->verify($project);
+		} catch (VirionException $error) {
+			throw new BuildException($error->getMessage(), 0, $error);
+		}
 		$this->filesystem->copyFile($provenance, $stage . DIRECTORY_SEPARATOR . 'devtools-provenance.json');
 
 		return $provenance;
@@ -221,49 +228,6 @@ final class VirionBuilder
 			throw new BuildException("Generated virion {$name} PHAR has no SHA-256 signature.");
 		}
 		unset($phar);
-	}
-
-	private function assertProvenance(string $provenance, string $manifest, string $sourceRoot, string $name) : void
-	{
-		$metadata = (new ComposerVirionPlan())->readJson($provenance);
-		$manifestHash = hash_file('sha256', $manifest);
-		if ($manifestHash === false || ($metadata['manifestSha256'] ?? null) !== $manifestHash) {
-			throw new BuildException("Prepared manifest for {$name} changed or lacks verification metadata. Run prepare into a new directory from the reviewed installed package.");
-		}
-		if (($metadata['sourceSha256'] ?? null) !== (new VirionSourceFingerprint())->hash($sourceRoot)) {
-			throw new BuildException("Prepared source for {$name} changed after preparation. Run prepare into a new directory from the reviewed installed package.");
-		}
-	}
-
-	private function installOutput(string $temporary, string $output, bool $overwrite) : void
-	{
-		$this->assertOutputDestination($output, $overwrite);
-		$backup = null;
-		if (file_exists($output)) {
-			$backup = $output . '.backup-' . bin2hex(random_bytes(4));
-			if (!rename($output, $backup)) {
-				throw new BuildException("Cannot move existing output aside before replacement: {$output}");
-			}
-		}
-		if (!rename($temporary, $output)) {
-			if ($backup !== null && !rename($backup, $output)) {
-				throw new BuildException("Cannot install completed virion PHAR or restore the previous output. The previous output remains at {$backup}.");
-			}
-			throw new BuildException("Cannot move completed virion PHAR to {$output}.");
-		}
-		if ($backup !== null && file_exists($backup) && !unlink($backup)) {
-			throw new BuildException('Virion build succeeded, but the old backup could not be removed: ' . $backup);
-		}
-	}
-
-	private function assertOutputDestination(string $output, bool $overwrite) : void
-	{
-		if (Filesystem::isLink($output) || (file_exists($output) && !is_file($output))) {
-			throw new BuildException("Build output is not a regular file: {$output}.");
-		}
-		if (file_exists($output) && !$overwrite) {
-			throw new BuildException("Refusing to replace existing build {$output}. Run the build again with overwrite explicitly enabled.");
-		}
 	}
 
 	private function countFiles(string $directory) : int

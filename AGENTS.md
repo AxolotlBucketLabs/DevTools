@@ -4,6 +4,7 @@
 
 - Read `PROJECT_MAP.md` first.
 - `src/Loader/` owns folder discovery and loading.
+- `src/Runtime/` collects startup dependency requirements and warnings before loader registration.
 - `src/Virion/` owns manifests, discovery, conflicts and class-loader registration.
 - `src/Build/` owns declarations, staging, AST shading, PHAR creation and extraction.
 - `src/Validation/` owns reusable plugin validation results.
@@ -15,6 +16,13 @@
 
 - Commands contain no loading, shading, archive, or validation algorithms.
 - Build code must work without a running `Server`.
+- Runtime composition may use Build declarations and Loader metadata. Loader must not depend on Build or Runtime.
+- `ProjectDoctor` owns structure and dependency checks shared by the CLI and worker.
+- `VirionSelectionPlanner` owns candidate preference, version selection and selection diagnostics. The manager applies its plan.
+- `VirionGraphPreflight` owns selected-graph checks. Runtime inspection and registration stay in `VirionManager`.
+- `VirionClassScanner` owns source layout and declaration validation. Callers retain their runtime and artifact checks.
+- `ArtifactSetInstaller` owns artifact replacement and rollback for all builders.
+- `PreparedVirionProvenance` owns prepared-content verification for selection and packaging.
 - PocketMine runtime calls stay in `DevTools`, Loader, the registrar, and Command.
 - Support must not depend on business modules.
 - Loader owns folder plugins. Virion owns shared libraries. Build owns artifacts.

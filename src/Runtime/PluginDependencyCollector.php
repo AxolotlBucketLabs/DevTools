@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AxolotlBucketLabs\DevTools\Runtime;
+
+use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
+use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
+use AxolotlBucketLabs\DevTools\Loader\PluginDependencyIndex;
+use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\Translator;
+use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
+use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
+use Closure;
+use Throwable;
+use function count;
+use const DIRECTORY_SEPARATOR;
+
+final class PluginDependencyCollector
+{
+	/** @param Closure(string): void $warning */
+	public function __construct(
+		private readonly FolderPluginDiscovery $discovery,
+		private readonly PluginManifestReader $manifestReader,
+		private readonly SharedVirionConfigResolver $resolver,
+		private readonly VirionRequirementChecker $checker,
+		private readonly Closure $warning,
+		private readonly Translator $translator,
+		private readonly ?DebugLogger $debug = null,
+	) {}
+
+	public function collect(string $pluginsDirectory, string $virionsDirectory) : PluginDependencyIndex
+	{
+		$requirementsByProject = [];
+		$configurationFailures = [];
+		$projects = $this->discovery->discover($pluginsDirectory);
+		$this->debug?->debug('Discovered ' . count($projects) . ' development plugin folder(s).');
+		foreach ($projects as $project) {
+			try {
+				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+			} catch (Throwable $error) {
+				($this->warning)($this->translator->translate('runtime.plugin_manifest_failed', ['project' => $project, 'error' => $error->getMessage()]));
+				continue;
+			}
+			try {
+				$requirements = $this->resolver->resolve($project, $manifest->description->getName(), $virionsDirectory);
+				$requirementsByProject[$project] = $requirements;
+			} catch (Throwable $error) {
+				$configurationFailures[$project] = $error->getMessage();
+				($this->warning)($this->translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]));
+			}
+		}
+		return new PluginDependencyIndex($requirementsByProject, $configurationFailures, $this->checker);
+	}
+}

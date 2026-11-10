@@ -72,7 +72,6 @@
     "cli.project_missing": "Projekta direktorija {project} nepastāv.",
     "cli.artifact_type_missing": "Artefakta tipu nevarēja noteikt.",
     "cli.dual_artifact_type_required": "Divu lomu artefakta izvilkšanai nepieciešams --type=plugin vai --type=virion.",
-    "cli.both_roles_required": "Abu lomu būvēšanai nepieciešams projekts ar plugin.yml un virion.yml. Izvēlētais projekts ir {project}.",
     "cli.path_option_invalid": "Ceļa opcija {option} ir dublēta vai nederīga.",
     "cli.unknown_argument": "Nezināma komanda vai arguments {argument}.",
     "cli.command_required": "Norādiet komandu.",

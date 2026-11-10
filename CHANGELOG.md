@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+## 4.0.0 - 2026-11-10
+
+### Changed
+
+- Move startup dependency collection out of the plugin entry point and replace loader failure callbacks with a typed per-project index.
+- Separate candidate selection, graph preflight and cycle analysis from shared virion registration while preserving folder precedence, compatible cycles and ordered failures.
+- Share project doctor checks between CLI preflight and server commands, and replace the worker's dependency lookup array with typed properties.
+- Use one artifact installer for plugin, virion and paired builds, and one prepared-content verifier for dependency selection and virion packaging.
+- Separate CLI operation branches while keeping failure phases, output data and the existing command and workflow syntax.
+- Remove duplicate class checks from build and runtime callers while retaining scanner validation and runtime symbol checks.
+- Use one translated dual-role rejection message for CLI and server commands across all 14 locales.
+
+### Breaking changes
+
+- Direct PHP callers must use `DualArtifactBuilder::prepare()` and pass its `DualArtifactProject` to `build()`. Manifest validation and artifact naming now belong to the builder.
+- Construct `Cli\Application` with `ProjectDoctor` and the required dual builder. Construct `FolderPluginLoader` with `PluginDependencyIndex` instead of failure callbacks.
+- Artifact replacement failures use the common installer's diagnostics. Catch `BuildException` instead of matching former builder-specific messages. See [migration](docs/migration.md#direct-php-integrations).
+
 ## 3.3.1 - 2026-11-10
 
 - Complete the 14 locale catalogs and localize the remaining user-facing CLI and runtime messages.

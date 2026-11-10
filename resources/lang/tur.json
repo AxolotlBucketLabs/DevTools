@@ -72,7 +72,6 @@
     "cli.project_missing": "{project} proje dizini mevcut değil.",
     "cli.artifact_type_missing": "Yapıt türü algılanamadı.",
     "cli.dual_artifact_type_required": "İki rollü bir yapıtı çıkarmak için --type=plugin veya --type=virion gerekir.",
-    "cli.both_roles_required": "Her iki rolü de derlemek için plugin.yml ve virion.yml içeren bir proje gerekir. Seçilen proje: {project}.",
     "cli.path_option_invalid": "{option} yol seçeneği yineleniyor veya geçersiz.",
     "cli.unknown_argument": "Bilinmeyen komut veya bağımsız değişken: {argument}.",
     "cli.command_required": "Bir komut belirtin.",

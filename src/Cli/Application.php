@@ -5,24 +5,20 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Cli;
 
 use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
-use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
 use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
 use AxolotlBucketLabs\DevTools\Build\ProjectRole;
-use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
-use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Translator;
-use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
-use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use InvalidArgumentException;
 use Throwable;
@@ -53,8 +49,7 @@ final class Application
 {
 	public function __construct(
 		private readonly string $version,
-		private readonly PluginManifestReader $manifestReader,
-		private readonly PluginProjectValidator $validator,
+		private readonly ProjectDoctor $doctor,
 		private readonly BuildConfigResolver $configResolver,
 		private readonly VirionResolver $resolver,
 		private readonly PharBuilder $builder,
@@ -64,8 +59,7 @@ final class Application
 		private readonly ArtifactInspector $inspector,
 		private readonly ComposerVirionPreparer $preparer,
 		private readonly VirionManifestReader $virionManifestReader,
-		private readonly ProjectRoleDetector $roleDetector,
-		private readonly ?DualArtifactBuilder $dualArtifactBuilder = null,
+		private readonly DualArtifactBuilder $dualArtifactBuilder,
 		private readonly ?DebugLogger $debug = null,
 		private readonly ?Translator $translator = null,
 	) {}
@@ -116,100 +110,22 @@ final class Application
 					$data = $this->inspector->inspect($this->absolute($this->required($options, 'artifact'), $project));
 					$checks['artifact'] = 'passed';
 				} elseif ($command === 'extract') {
-					$artifact = $this->absolute($this->required($options, 'artifact'), $project);
-					$destination = $this->absolute($this->required($options, 'out'), $project);
-					$format = $options['format'] ?? 'folder';
-					$artifactType = $options['type'] ?? 'auto';
-					$checks['artifact'] = 'failed';
-					$inspection = $this->inspector->inspect($artifact);
-					$checks['artifact'] = 'passed';
-					$detected = $inspection['type'] ?? null;
-					if (!is_string($detected)) {
-						throw new LocalizedException('cli.artifact_type_missing', usageError: true);
-					}
-					if ($artifactType === 'auto') {
-						if ($detected === ProjectRole::DUAL->value) {
-							throw new LocalizedException('cli.dual_artifact_type_required', usageError: true);
-						}
-						$artifactType = $detected;
-					} else {
-						$this->assertArtifactType($inspection, $artifactType);
-					}
-					if ($format === 'folder') {
-						$files = $this->extractor->extract(new PharArchiveReader($artifact), $destination, $overwrite);
-						$data = ['destination' => realpath($destination), 'format' => $format, 'files' => $files];
-					} else {
-						$files = $this->zipWriter->write(new PharArchiveReader($artifact), $destination, $overwrite);
-						$data = ['destination' => realpath($destination), 'format' => $format, 'files' => $files];
-					}
+					$data = $this->extractArtifact($project, $options, $overwrite, $checks);
+				} elseif ($command === 'build' && $type === 'virion') {
+					$data = $this->buildVirion($project, $options, $overwrite, $checks);
+				} elseif ($command === 'build' && $type === 'both') {
+					$data = $this->buildBoth($project, $virions, $options, $overwrite, $checks);
 				} else {
-					if ($command === 'build' && $type === 'virion') {
-						$checks['structure'] = 'failed';
-						$this->virionManifestReader->read($project . '/virion.yml');
-						$checks['structure'] = 'passed';
-						$checks['artifact'] = 'failed';
-						$result = $this->virionBuilder->build($project, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
-						$data = $this->inspector->inspect($result->outputPath) + ['project' => $project];
-						$checks['artifact'] = 'passed';
-					} elseif ($command === 'build' && $type === 'both') {
-						$checks['structure'] = 'failed';
-						$role = $this->roleDetector->detect($project);
-						if ($role !== ProjectRole::DUAL) {
-							throw new LocalizedException('cli.both_roles_required', ['project' => $project]);
-						}
-						$pluginManifest = $this->manifestReader->read($project . '/plugin.yml');
-						$virionManifest = $this->virionManifestReader->read($project . '/virion.yml');
-						$checks['structure'] = 'passed';
-						$checks['dependencies'] = 'failed';
-						$config = $this->configResolver->resolve($project, $pluginManifest->description->getName());
-						$virionsResolved = $this->resolver->resolve($config->virions, $virions);
-						$checks['dependencies'] = 'passed';
-						$output = $this->absolute($options['out'] ?? 'build', $project);
-						$checks['artifact'] = 'failed';
-						$dualArtifactBuilder = $this->dualArtifactBuilder ?? new DualArtifactBuilder(
-							new Filesystem(),
-							$this->builder,
-							$this->virionBuilder,
-							new ArtifactSetInstaller(),
-						);
-						$artifacts = $dualArtifactBuilder->build(
-							$project,
-							$virions,
-							$output,
-							$overwrite,
-							$pluginManifest->description->getName() . '-plugin',
-							$virionManifest->name . '-virion',
-						);
-						$data = [
-							'project' => $project,
-							'artifacts' => [$this->inspector->inspect($artifacts['plugin']), $this->inspector->inspect($artifacts['virion'])],
-						];
-						$checks['artifact'] = 'passed';
+					$summary = $this->checkPlugin($project, $virions, $checks, $diagnostics);
+					if ($summary === null) {
+						$exit = 1;
 					} else {
-						$validation = $this->validator->validate($project);
-						foreach ($validation->issues() as $issue) {
-							$diagnostics[] = ['code' => $issue->code, 'severity' => $issue->severity->value, 'message' => $issue->message, 'file' => $issue->path, 'line' => null, 'suggestion' => $issue->suggestion];
-						}
-						$checks['structure'] = $validation->hasErrors() ? 'failed' : 'passed';
-						if ($validation->hasErrors()) {
-							$exit = 1;
-						} else {
-							$manifest = $this->manifestReader->read($project . '/plugin.yml');
-							$checks['dependencies'] = 'failed';
-							$config = $this->configResolver->resolve($project, $manifest->description->getName());
-							$virionsResolved = $this->resolver->resolve($config->virions, $virions);
-							$checks['dependencies'] = 'passed';
-							$data = [
-								'project' => $project,
-								'plugin' => ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()],
-								'dependencies' => array_map(static fn($virion) : array => ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location], $virionsResolved),
-							];
-							if ($command === 'build') {
-								$checks['artifact'] = 'failed';
-								$result = $this->builder->build($project, $virions, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
-								$data = $this->inspector->inspect($result->outputPath) + ['dependencies' => $result->dependencies, 'shaded_namespaces' => (object) $result->shadedVirions];
-								$checks['artifact'] = 'passed';
-							}
+						$data = $summary;
+						if ($command === 'build') {
+							$checks['artifact'] = 'failed';
+							$result = $this->builder->build($project, $virions, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
+							$data = $this->inspector->inspect($result->outputPath) + ['dependencies' => $result->dependencies, 'shaded_namespaces' => (object) $result->shadedVirions];
+							$checks['artifact'] = 'passed';
 						}
 					}
 				}
@@ -251,6 +167,119 @@ final class Application
 		}
 
 		return $exit;
+	}
+
+	/**
+	 * @param array<string, string> $options
+	 * @param array<string, string> $checks
+	 * @return array<string, mixed>
+	 */
+	private function extractArtifact(string $project, array $options, bool $overwrite, array &$checks) : array
+	{
+		$artifact = $this->absolute($this->required($options, 'artifact'), $project);
+		$destination = $this->absolute($this->required($options, 'out'), $project);
+		$format = $options['format'] ?? 'folder';
+		$artifactType = $options['type'] ?? 'auto';
+		$checks['artifact'] = 'failed';
+		$inspection = $this->inspector->inspect($artifact);
+		$checks['artifact'] = 'passed';
+		$detected = $inspection['type'] ?? null;
+		if (!is_string($detected)) {
+			throw new LocalizedException('cli.artifact_type_missing', usageError: true);
+		}
+		if ($artifactType === 'auto') {
+			if ($detected === ProjectRole::DUAL->value) {
+				throw new LocalizedException('cli.dual_artifact_type_required', usageError: true);
+			}
+			$artifactType = $detected;
+		} else {
+			$this->assertArtifactType($inspection, $artifactType);
+		}
+		if ($format === 'folder') {
+			$files = $this->extractor->extract(new PharArchiveReader($artifact), $destination, $overwrite);
+		} else {
+			$files = $this->zipWriter->write(new PharArchiveReader($artifact), $destination, $overwrite);
+		}
+
+		return ['destination' => realpath($destination), 'format' => $format, 'files' => $files];
+	}
+
+	/**
+	 * @param array<string, string> $options
+	 * @param array<string, string> $checks
+	 * @return array<string, mixed>
+	 */
+	private function buildVirion(string $project, array $options, bool $overwrite, array &$checks) : array
+	{
+		$checks['structure'] = 'failed';
+		$this->virionManifestReader->read($project . '/virion.yml');
+		$checks['structure'] = 'passed';
+		$checks['artifact'] = 'failed';
+		$result = $this->virionBuilder->build($project, $this->absolute($options['out'] ?? 'build', $project), $overwrite);
+		$data = $this->inspector->inspect($result->outputPath) + ['project' => $project];
+		$checks['artifact'] = 'passed';
+
+		return $data;
+	}
+
+	/**
+	 * @param array<string, string> $options
+	 * @param array<string, string> $checks
+	 * @return array<string, mixed>
+	 */
+	private function buildBoth(string $project, string $virions, array $options, bool $overwrite, array &$checks) : array
+	{
+		$checks['structure'] = 'failed';
+		$dualProject = $this->dualArtifactBuilder->prepare($project);
+		$checks['structure'] = 'passed';
+		$checks['dependencies'] = 'failed';
+		$config = $this->configResolver->resolve($project, $dualProject->pluginName);
+		$this->resolver->resolve($config->virions, $virions);
+		$checks['dependencies'] = 'passed';
+		$output = $this->absolute($options['out'] ?? 'build', $project);
+		$checks['artifact'] = 'failed';
+		$artifacts = $this->dualArtifactBuilder->build(
+			$dualProject,
+			$virions,
+			$output,
+			$overwrite,
+		);
+		$data = [
+			'project' => $project,
+			'artifacts' => [$this->inspector->inspect($artifacts['plugin']), $this->inspector->inspect($artifacts['virion'])],
+		];
+		$checks['artifact'] = 'passed';
+
+		return $data;
+	}
+
+	/**
+	 * @param array<string, string>                                                                                        $checks
+	 * @param list<array{code: string, severity: string, message: string, file: ?string, line: ?int, suggestion: ?string}> $diagnostics
+	 * @return array<string, mixed>|null
+	 */
+	private function checkPlugin(string $project, string $virions, array &$checks, array &$diagnostics) : ?array
+	{
+		$check = $this->doctor->check($project, $virions, $project . '/plugin.yml');
+		$validation = $check->validation;
+		foreach ($validation->issues() as $issue) {
+			$diagnostics[] = ['code' => $issue->code, 'severity' => $issue->severity->value, 'message' => $issue->message, 'file' => $issue->path, 'line' => null, 'suggestion' => $issue->suggestion];
+		}
+		$checks['structure'] = $validation->hasErrors() ? 'failed' : 'passed';
+		$checks['dependencies'] = $check->dependencyStatus;
+		if ($validation->hasErrors()) {
+			return null;
+		}
+		if ($check->error !== null) {
+			throw $check->error;
+		}
+		$manifest = $check->requireManifest();
+
+		return [
+			'project' => $project,
+			'plugin' => ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()],
+			'dependencies' => array_map(static fn($virion) : array => ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location], $check->virions),
+		];
 	}
 
 	/** @param list<string> $arguments

@@ -10,6 +10,7 @@ use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
 use AxolotlBucketLabs\DevTools\Build\NamespaceShader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
 use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
@@ -56,8 +57,7 @@ try {
 	$version = $reader->read(dirname(__DIR__) . '/plugin.yml')->description->getVersion();
 	$application = new Application(
 		$version,
-		$reader,
-		$validator,
+		new ProjectDoctor($validator, $reader, $config, $resolver),
 		$config,
 		$resolver,
 		$pluginBuilder,
@@ -67,12 +67,14 @@ try {
 		new ArtifactInspector($reader, $virionManifestReader),
 		new ComposerVirionPreparer($filesystem),
 		$virionManifestReader,
-		new ProjectRoleDetector(),
 		new DualArtifactBuilder(
 			$filesystem,
 			$pluginBuilder,
 			$virionBuilder,
 			new ArtifactSetInstaller(),
+			$reader,
+			$virionManifestReader,
+			new ProjectRoleDetector(),
 		),
 		$debug,
 		Translator::fromResources(),

@@ -36,7 +36,6 @@ use function preg_match;
 use function preg_replace;
 use function random_bytes;
 use function realpath;
-use function rename;
 use function str_replace;
 use function str_starts_with;
 use function strlen;
@@ -44,7 +43,6 @@ use function strrpos;
 use function strtolower;
 use function substr;
 use function trim;
-use function unlink;
 use const DIRECTORY_SEPARATOR;
 use const PATHINFO_EXTENSION;
 
@@ -64,6 +62,7 @@ final class PharBuilder
 		private readonly NamespaceShader $namespaceShader,
 		?PhpSourceInspector $sourceInspector = null,
 		private readonly ?DebugLogger $debug = null,
+		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
 	) {
 		$this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
 	}
@@ -140,7 +139,7 @@ final class PharBuilder
 			throw new BuildException("Cannot derive a safe plugin artifact name from {$artifactName}.");
 		}
 		$outputPath = Path::join($outputDirectory, $artifactName . '.phar');
-		$this->assertOutputDestination($outputPath, $overwrite);
+		$this->installer->assertDestinations([$outputPath], $overwrite);
 
 		$nonce = bin2hex(random_bytes(8));
 		$stage = Path::join($outputDirectory, '.devtools-stage-' . $nonce);
@@ -163,7 +162,7 @@ final class PharBuilder
 			$this->debug?->debug("Staged {$fileCount} file(s) for {$manifest->description->getName()}.");
 			$this->writePhar($stage, $temporaryPhar);
 			$this->validatePhar($temporaryPhar, $manifest, $shaded);
-			$this->installOutput($temporaryPhar, $outputPath, $overwrite);
+			$this->installer->install([['temporary' => $temporaryPhar, 'output' => $outputPath]], $overwrite);
 
 			$result = new BuildResult($manifest->description->getName(), $outputPath, $fileCount, $shaded, $dependencies);
 			$this->debug?->debug("Installed plugin PHAR at {$outputPath}.");
@@ -293,12 +292,6 @@ final class PharBuilder
 			$classes = $this->virionClassScanner->scan($virion);
 			if ($classes === []) {
 				throw new BuildException("Virion {$virion->manifest->name} contains no PHP classes.");
-			}
-			foreach ($classes as $class) {
-				$prefix = $virion->manifest->antigen;
-				if (!str_starts_with(strtolower($class), strtolower($prefix) . '\\')) {
-					throw new BuildException("Virion {$virion->manifest->name} declares class {$class} outside antigen {$prefix}.");
-				}
 			}
 
 			$targetNamespace = $shaded[$virion->manifest->antigen];
@@ -481,40 +474,6 @@ final class PharBuilder
 			throw new BuildException('Generated PHAR has no SHA-256 signature.');
 		}
 		unset($phar);
-	}
-
-	private function installOutput(string $temporary, string $output, bool $overwrite) : void
-	{
-		$this->assertOutputDestination($output, $overwrite);
-		$backup = null;
-		if (file_exists($output)) {
-			$backup = $output . '.backup-' . bin2hex(random_bytes(4));
-			if (!rename($output, $backup)) {
-				throw new BuildException("Cannot move existing output aside before replacement: {$output}");
-			}
-		}
-
-		if (!rename($temporary, $output)) {
-			if ($backup !== null && !rename($backup, $output)) {
-				throw new BuildException(
-					"Cannot install completed PHAR or restore the previous output. The previous output remains at {$backup}.",
-				);
-			}
-			throw new BuildException("Cannot move completed PHAR to {$output}.");
-		}
-		if ($backup !== null && file_exists($backup) && !unlink($backup)) {
-			throw new BuildException("Build succeeded, but the old backup could not be removed: {$backup}");
-		}
-	}
-
-	private function assertOutputDestination(string $output, bool $overwrite) : void
-	{
-		if (Filesystem::isLink($output) || (file_exists($output) && !is_file($output))) {
-			throw new BuildException("Build output is not a regular file: {$output}. Choose a different output directory or move the existing path.");
-		}
-		if (file_exists($output) && !$overwrite) {
-			throw new BuildException("Refusing to replace existing build {$output}. Run the build again with overwrite explicitly enabled.");
-		}
 	}
 
 	private function countFiles(string $directory) : int

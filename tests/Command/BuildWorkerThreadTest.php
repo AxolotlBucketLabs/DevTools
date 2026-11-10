@@ -12,8 +12,10 @@ use pocketmine\snooze\SleeperHandler;
 use pocketmine\thread\ThreadSafeClassLoader;
 use RuntimeException;
 use function constant;
+use function count;
 use function defined;
 use function dirname;
+use function file_put_contents;
 use function implode;
 use function is_file;
 use function is_string;
@@ -34,6 +36,16 @@ final class BuildWorkerThreadTest extends TestCase
 
 		$this->copyFixture('BuildPlugin', 'plugins/BuildFixture');
 		$this->copyFixture('SharedVirion', 'virions/SharedVirion');
+		$dual = $this->copyFixture('ValidPlugin', 'plugins/Dual');
+		$this->filesystem->ensureDirectory($dual . '/src/Fixture/Library');
+		file_put_contents(
+			$dual . '/src/Fixture/Library/Library.php',
+			"<?php\nnamespace Fixture\\Library;\nfinal class Library {}\n",
+		);
+		file_put_contents(
+			$dual . '/virion.yml',
+			"name: DualLibrary\nversion: 1.0.0\nantigen: Fixture\\Library\napi: 5.0.0\n",
+		);
 
 		$requests = new ThreadSafeArray();
 		$responses = new ThreadSafeArray();
@@ -47,25 +59,29 @@ final class BuildWorkerThreadTest extends TestCase
 		$worker->setClassLoaders([$loader]);
 		$worker->start();
 
-		$worker->submitRequest(json_encode([
-			'jobId' => 'thread-test',
-			'operation' => 'build',
-			'payload' => [
-				'target' => 'plugin',
-				'selection' => 'BuildFixture',
-				'overwrite' => false,
-				'pluginsDirectory' => $this->temporaryDirectory . '/plugins',
-				'virionsDirectory' => $this->temporaryDirectory . '/virions',
-				'buildDirectory' => $this->temporaryDirectory . '/build',
-			],
-		], JSON_THROW_ON_ERROR));
+		foreach ([['thread-plugin', 'plugin', 'BuildFixture'], ['thread-dual', 'both', 'FixturePlugin']] as [$jobId, $target, $selection]) {
+			$worker->submitRequest(json_encode([
+				'jobId' => $jobId,
+				'operation' => 'build',
+				'payload' => [
+					'target' => $target,
+					'selection' => $selection,
+					'overwrite' => false,
+					'pluginsDirectory' => $this->temporaryDirectory . '/plugins',
+					'virionsDirectory' => $this->temporaryDirectory . '/virions',
+					'buildDirectory' => $this->temporaryDirectory . '/build',
+				],
+			], JSON_THROW_ON_ERROR));
+		}
 
-		$response = null;
+		$completed = [];
 		for ($attempt = 0; $attempt < 2_000; ++$attempt) {
 			$candidate = $worker->takeResponse();
 			if (is_string($candidate)) {
-				$response = $candidate;
-				break;
+				$completed[] = $candidate;
+				if (count($completed) === 2) {
+					break;
+				}
 			}
 			usleep(10_000);
 		}
@@ -74,12 +90,19 @@ final class BuildWorkerThreadTest extends TestCase
 		$worker->join();
 		$sleeper->removeNotifier($entry->getNotifierId());
 
-		if ($response === null) {
-			throw new RuntimeException('The dedicated build worker did not return a result.');
+		if (count($completed) !== 2) {
+			throw new RuntimeException('The dedicated build worker did not return both results.');
 		}
-		/** @var array{success: bool, messages: list<string>} $result */
-		$result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-		self::assertTrue($result['success'], implode("\n", $result['messages']));
+		$jobIds = [];
+		foreach ($completed as $response) {
+			/** @var array{jobId: string, success: bool, messages: list<string>} $result */
+			$result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+			self::assertTrue($result['success'], implode("\n", $result['messages']));
+			$jobIds[] = $result['jobId'];
+		}
+		self::assertSame(['thread-plugin', 'thread-dual'], $jobIds);
 		self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.phar');
+		self::assertFileExists($this->temporaryDirectory . '/build/FixturePlugin-plugin.phar');
+		self::assertFileExists($this->temporaryDirectory . '/build/DualLibrary-virion.phar');
 	}
 }

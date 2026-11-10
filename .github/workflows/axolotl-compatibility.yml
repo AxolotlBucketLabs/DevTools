@@ -100,7 +100,7 @@ jobs:
           set -euo pipefail
           find examples/HelloShared/src examples/SharedGreeting/src -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Build and analyze DevTools-owned example PHAR with the current stable builder
+      - name: Build and analyze DevTools-owned example PHAR with the pinned stable builder
         if: steps.release.outputs.candidate == 'true'
         id: build
         uses: AxolotlBucketLabs/DevTools@84c5ad18bef199f146364d114967d83be9668598 # v3.3.1
