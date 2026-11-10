@@ -25,6 +25,8 @@ flowchart TB
         Loader["FolderPluginLoader"]
         Validation["PluginProjectValidator"]
         Manager["VirionManager"]
+        Preflight["VirionGraphPreflight"]
+        Doctor["ProjectDoctor"]
         Resolver["BuildConfigResolver<br/>and VirionResolver"]
         Builder["PharBuilder"]
         Shader["NamespaceShader"]
@@ -49,6 +51,9 @@ flowchart TB
     Plugin --> Resolver
     Config --> Resolver
     Manager --> ClassLoader
+    Manager --> Preflight
+    Commands --> Doctor
+    CLI --> Doctor
     Commands --> Builder
     CLI --> Builder
     Actions --> CLI
@@ -74,17 +79,25 @@ The loader validates the project first, then maps either the manifest's `src-nam
 
 ## Shared virions at startup
 
-Before the folder loader is registered, the composition root gathers each folder project's local virion requirements and `VirionManager` scans root `virions/`. `VirionProjectFactory` normalizes source and PHAR layouts. The manifest reader checks `name`, semantic `version`, `antigen`, and compatibility. The class scanner parses declarations without executing them.
+Before the folder loader is registered, `PluginDependencyCollector` resolves each folder project's requirements and records manifest or configuration warnings. It returns a `PluginDependencyIndex` with normalized project keys. The same index provides requirements to shared virion loading and checks each plugin against the populated registry during discovery and direct loading. Collection stays in Runtime so Loader does not depend on Build declarations.
+
+`VirionManager` scans root `virions/`. `VirionProjectFactory` normalizes source and PHAR layouts. The manifest reader checks `name`, semantic `version`, `antigen`, and compatibility. The class scanner parses declarations without executing them.
 
 `VirionProjectSelector` filters server-incompatible candidates and chooses the unique highest semantic version satisfying every plugin constraint. The registry records loaded, skipped, failed, and conflicting candidates. It rejects duplicate selected versions, antigen overlap, and class conflicts deterministically. Valid antigen and source paths are added to the server's shared `ThreadSafeClassLoader`. Compatible servers supply the same thread-safe object to async workers, including workers created later, so no separate per-worker SPL loader or worker-start task is needed when that capability is present.
 
+`VirionGraphPreflight` owns dependency traversal, failure propagation, cycle analysis and selected-symbol conflict checks. It receives runtime symbol inspection from the manager and returns readiness plus ordered failures. `VirionManager` retains process-level checks, registry mutation and class-loader registration. Preflight caches retain the manager's lifetime, and compatible cycles remain supported.
+
 ## Standalone PHAR builds
+
+`ProjectDoctor` owns the structure, manifest and dependency checks shared by CLI preflight and the worker's doctor operation. Its result retains validation issues, resolved virions and the original dependency exception. Each adapter formats that result for its existing output contract. Worker requests remain serialized data, while the worker application constructs and accesses its dependencies through typed properties.
 
 `BuildConfigResolver` reads only local metadata. `PharBuilder` validates the project and stages selected input in `build/.devtools-stage-*`. Default project roots are explicit (`plugin.yml`, `src/`, `resources/`). Additional runtime paths and virions must be declared.
 
 For each virion, a deterministic plugin-private namespace is derived from plugin name, virion name, and antigen. `NamespaceShader` parses every staged PHP file, resolves names, rejects unsafe dynamic references and ambiguous grouped imports, and rewrites static references. A second AST pass rejects any remaining locally available virion namespace, including undeclared dependencies. Virion code, resources and legal notices are copied into the artifact. Source is never modified.
 
-The builder writes a temporary SHA-256 PHAR, reopens it, verifies the manifest, main class path, shaded roots, and signature, then installs it. Existing output moves to a temporary backup only when overwrite was explicit and is restored if installation fails.
+The builder writes a temporary SHA-256 PHAR, reopens it and verifies the manifest, main class path, shaded roots and signature. `ArtifactSetInstaller` owns destination checks, replacement, backup and rollback for single and paired artifacts. Builders retain staging, content validation and cleanup.
+
+`PreparedVirionProvenance` verifies prepared manifest and source hashes for both dependency selection and virion packaging. Composer-pinned selection also checks the expected package fingerprint. Ordinary local virions without provenance keep their existing loading and packaging behavior.
 
 For dual-role builds, `DualArtifactBuilder::prepare()` verifies that both manifests exist and parses their identities into a `DualArtifactProject`. The CLI and server worker pass that value to `build()`. The module owns the `-plugin` and `-virion` output names, staging and paired installation. The CLI performs dependency checks between preparation and building so malformed manifests remain structure failures, missing dependencies remain dependency failures and build errors remain artifact failures in JSON output.
 
@@ -96,6 +109,6 @@ The GitHub Action has a separate opt-in pre-build gate. With no `phpstan` input 
 
 ## Dependency direction
 
-Loader depends on Validation and Support. Virion depends on Support. Build depends on Validation, Virion metadata, Support and the PHP parser. Command and the composition root connect these services. Support has no dependency on a business module.
+Loader depends on Validation, Virion metadata and Support. Runtime collects Build declarations into the loader's dependency index. Virion depends on Support. Build depends on Validation, Virion metadata, Support and the PHP parser. Command and the composition root connect these services. Support has no dependency on a business module.
 
 No module calls Command or the composition root. Build has no `Server` dependency.

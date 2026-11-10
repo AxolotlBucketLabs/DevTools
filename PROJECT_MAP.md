@@ -8,6 +8,7 @@ DevTools has three core workflows. It loads folder plugins, loads shared develop
 | --- | --- | --- | --- |
 | `src/DevTools.php` | Start DevTools and connect its runtime modules | Axolotl-PM and the modules below | Module tests and runtime smoke tests |
 | `src/Loader/` | Discover and load folder plugins | Validation, Support and Axolotl-PM loader APIs | `tests/Loader/` |
+| `src/Runtime/` | Collect startup requirements and build the per-project dependency index | Build declarations, Loader, Validation, Virion metadata and Support | `tests/Loader/PluginDependencyIndexTest.php` and runtime smoke tests |
 | `src/Virion/` | Read manifests, select compatible packages, detect conflicts and register shared classes | Support and Axolotl-PM class loader APIs | `tests/Virion/` |
 | `src/Build/` | Resolve declarations, stage files, shade libraries, build and extract PHARs | Validation, Virion metadata, Support and `nikic/php-parser` | `tests/Build/` |
 | `src/Validation/` | Read plugin manifests and produce reusable diagnostics | Support and Axolotl-PM manifest types | `tests/Validation/` |
@@ -16,6 +17,8 @@ DevTools has three core workflows. It loads folder plugins, loads shared develop
 | `src/Support/` | Provide filesystem, path, YAML, PHP source and message localization utilities | PHP and required extensions | Tests in the owning modules |
 
 Build code works without a running server. Commands orchestrate services rather than duplicating their algorithms. Support does not depend on business modules.
+
+`PluginDependencyCollector` prepares startup requirements. `PluginDependencyIndex` supplies the loader's project-scoped failure checks. `VirionGraphPreflight` owns cycle and graph conflict decisions. `ProjectDoctor` provides the shared structure and dependency check. `PreparedVirionProvenance` verifies prepared content, and `ArtifactSetInstaller` installs both single and paired artifacts.
 
 ## Entry points and tooling
 

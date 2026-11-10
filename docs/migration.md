@@ -37,7 +37,7 @@ Unsupported Composer package layouts and dynamic class references fail explicitl
 
 ## Direct PHP integrations
 
-The dual artifact PHP interface has changed. CLI commands, server commands and GitHub workflow inputs keep their existing syntax.
+Direct PHP integrations must update the constructors and dual-build calls below. CLI commands, server commands and GitHub workflow inputs keep their existing syntax.
 
 `DualArtifactBuilder` now requires `PluginManifestReader`, `VirionManifestReader` and `ProjectRoleDetector` after its existing constructor dependencies. Call `prepare()` with the project root, then pass the returned `DualArtifactProject` to `build()` instead of a root string and two output names.
 
@@ -48,9 +48,15 @@ $artifacts = $dualArtifactBuilder->build($project, $virionsDirectory, $outputDir
 
 The builder derives `<plugin-name>-plugin.phar` and `<virion-name>-virion.phar` from the manifests. For custom pair names, build both artifacts into a private staging directory with `PharBuilder` and `VirionBuilder`, then install them together with `ArtifactSetInstaller::install()`.
 
-For `Cli\Application` construction, remove the `ProjectRoleDetector` argument and supply a `DualArtifactBuilder` as the required argument after `VirionManifestReader`. The optional fallback builder has been removed.
+For `Cli\Application` construction, replace its `PluginManifestReader` and `PluginProjectValidator` arguments with a `ProjectDoctor`. Remove the `ProjectRoleDetector` argument and supply a `DualArtifactBuilder` as the required argument after `VirionManifestReader`. The optional fallback builder has been removed.
 
 The CLI uses `build.both_required` for dual-role rejection, matching the server worker. Custom translation catalogs can remove the unused `cli.both_roles_required` entry.
+
+`FolderPluginLoader` now accepts one `PluginDependencyIndex` in place of its configuration and dependency failure callbacks. Collect the index through `Runtime\PluginDependencyCollector` before shared virion loading, then pass that same index to the loader after the registry is populated. The optional debug argument follows the index.
+
+`BuildWorkerApplication::run()` retains its serialized request and result contract. Its dependency lookup array has been removed internally. Standalone builder constructors accept optional installer and provenance dependencies with working defaults.
+
+Installation failures now use the common installer's diagnostics. Overwrite protection, rejection of unsafe destinations and restoration of previous artifacts retain their existing behavior. Direct PHP integrations should catch `BuildException` rather than match the former builder-specific replacement messages.
 
 ## Publication
 
