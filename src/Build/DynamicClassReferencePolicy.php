@@ -41,7 +41,8 @@ use function in_array;
 use function is_int;
 use function is_string;
 use function ltrim;
-use function str_contains;
+use function preg_match;
+use function preg_quote;
 use function str_starts_with;
 use function strlen;
 use function strtolower;
@@ -55,6 +56,8 @@ use function substr;
  */
 final class DynamicClassReferencePolicy
 {
+	private const ALLOW_DYNAMIC_CLASS_ANNOTATION = '@devtools-allow-dynamic-class';
+
 	public static function resolvedName(Name $name) : string
 	{
 		$resolved = $name->getAttribute('resolvedName');
@@ -328,7 +331,10 @@ final class DynamicClassReferencePolicy
 			return false;
 		}
 
-		return str_contains($comment->getText(), '@devtools-allow-dynamic-class $' . $variable);
+		$pattern = '/(?:^|[\s*])' . preg_quote(self::ALLOW_DYNAMIC_CLASS_ANNOTATION, '/')
+			. '[ \t]+\$' . preg_quote($variable, '/') . '(?![\p{L}\p{N}_])/u';
+
+		return preg_match($pattern, $comment->getText()) === 1;
 	}
 
 	public static function allowsGuarded(Node $node, Expr $class) : bool
