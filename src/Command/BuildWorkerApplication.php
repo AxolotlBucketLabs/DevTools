@@ -322,7 +322,7 @@ final class BuildWorkerApplication
 		$baseDirectory = $extractType === ExtractType::VIRION ? $this->virionsDirectory : $this->pluginsDirectory;
 		$base = realpath($baseDirectory);
 		if ($base === false) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DIRECTORY, ['type' => $type, 'directory' => $baseDirectory]));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DIRECTORY, ['type' => $extractType->value, 'directory' => $baseDirectory]));
 		}
 		$destination = Path::join($base, $name);
 		if (dirname($destination) !== $base) {
