@@ -41,7 +41,13 @@ final class VirionBuilderTest extends TestCase
 		))->build($project, $this->temporaryDirectory . '/build');
 
 		self::assertFileExists($result->outputPath);
+		$manifest = file_get_contents($project . '/virion.yml');
+		self::assertIsString($manifest);
 		$phar = new Phar($result->outputPath);
+		$signature = $phar->getSignature();
+		self::assertNotFalse($signature);
+		self::assertSame('SHA-256', $signature['hash_type']);
+		self::assertSame($manifest, $phar['virion.yml']->getContent());
 		self::assertTrue(isset($phar['virion.yml']));
 		self::assertTrue(isset($phar['src/Shared/Virion/Greeting.php']));
 		self::assertFalse(isset($phar['plugin.yml']));
@@ -97,6 +103,34 @@ final class VirionBuilderTest extends TestCase
 		self::assertSame($hash, hash_file('sha256', $first->outputPath));
 	}
 
+	public function test_repeated_builds_of_unchanged_virion_have_the_same_hash() : void
+	{
+		$project = $this->copyFixture('SharedVirion');
+		$output = $this->temporaryDirectory . '/build';
+		$builder = $this->virionBuilder();
+
+		$first = $builder->build($project, $output, false, 'first');
+		$firstHash = hash_file('sha256', $first->outputPath);
+		$second = $builder->build($project, $output, false, 'second');
+		$firstPhar = new Phar($first->outputPath);
+		$secondPhar = new Phar($second->outputPath);
+		$manifest = file_get_contents($project . '/virion.yml');
+		self::assertIsString($manifest);
+
+		self::assertSame($firstHash, hash_file('sha256', $second->outputPath));
+		foreach ([$firstPhar, $secondPhar] as $phar) {
+			$signature = $phar->getSignature();
+			self::assertNotFalse($signature);
+			self::assertSame('SHA-256', $signature['hash_type']);
+			self::assertSame($manifest, $phar['virion.yml']->getContent());
+			self::assertStringContainsString('class Greeting', $phar['src/Shared/Virion/Greeting.php']->getContent());
+		}
+		self::assertSame(
+			$firstPhar['virion.yml']->getContent(),
+			$secondPhar['virion.yml']->getContent(),
+		);
+	}
+
 	public function test_explicit_overwrite_installs_new_virion_and_cleans_backups() : void
 	{
 		$project = $this->copyFixture('SharedVirion');
@@ -113,6 +147,8 @@ final class VirionBuilderTest extends TestCase
 		self::assertSame([], glob($output . '/*.backup-*'));
 		self::assertSame([], glob($output . '/.devtools-virion-stage-*'));
 		self::assertSame([], glob($output . '/.*.tmp.phar'));
+		self::assertSame([], glob($output . '/.devtools-archive-*.zip'));
+		self::assertSame([], glob($output . '/.devtools-archive-*.phar'));
 	}
 
 	public function test_staging_failure_preserves_existing_virion_and_cleans_temporary_files() : void

@@ -63,6 +63,7 @@ final class PharBuilder
 		?PhpSourceInspector $sourceInspector = null,
 		private readonly ?DebugLogger $debug = null,
 		private readonly ArtifactSetInstaller $installer = new ArtifactSetInstaller(),
+		private readonly PharArchiveWriter $archiveWriter = new PharArchiveWriter(),
 	) {
 		$this->sourceInspector = $sourceInspector ?? new PhpSourceInspector();
 	}
@@ -430,13 +431,7 @@ final class PharBuilder
 
 	private function writePhar(string $stage, string $path) : void
 	{
-		$phar = new Phar($path);
-		$phar->startBuffering();
-		$phar->buildFromDirectory($stage);
-		$phar->setStub("<?php __HALT_COMPILER();\n");
-		$phar->setSignatureAlgorithm(Phar::SHA256);
-		$phar->stopBuffering();
-		unset($phar);
+		$this->archiveWriter->write($stage, $path);
 	}
 
 	/** @param array<string, string> $shaded */

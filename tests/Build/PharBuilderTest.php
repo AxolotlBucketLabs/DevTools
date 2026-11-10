@@ -88,7 +88,13 @@ final class PharBuilderTest extends TestCase
 		self::assertFileExists($result->outputPath);
 		self::assertCount(1, $result->shadedVirions);
 		$target = $result->shadedVirions['Shared\Virion'];
+		$manifest = file_get_contents($project . DIRECTORY_SEPARATOR . 'plugin.yml');
+		self::assertIsString($manifest);
 		$phar = new Phar($result->outputPath);
+		$signature = $phar->getSignature();
+		self::assertNotFalse($signature);
+		self::assertSame('SHA-256', $signature['hash_type']);
+		self::assertSame($manifest, $phar['plugin.yml']->getContent());
 		self::assertTrue(isset($phar['plugin.yml']));
 		self::assertTrue(isset($phar['LICENSE']));
 		self::assertSame('resource included', trim($phar['resources/message.txt']->getContent()));
@@ -264,6 +270,34 @@ PHP,
 		self::assertSame($hash, hash_file('sha256', $first->outputPath));
 	}
 
+	public function test_repeated_builds_of_unchanged_plugin_have_the_same_hash() : void
+	{
+		$project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
+		$virions = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'virions';
+		$this->copyFixture('SharedVirion', 'virions/SharedVirion');
+		$output = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'build';
+		$builder = $this->builder();
+
+		$first = $builder->build($project, $virions, $output, false, 'first');
+		$firstHash = hash_file('sha256', $first->outputPath);
+		$second = $builder->build($project, $virions, $output, false, 'second');
+		$firstPhar = new Phar($first->outputPath);
+		$secondPhar = new Phar($second->outputPath);
+
+		self::assertSame($firstHash, hash_file('sha256', $second->outputPath));
+		foreach ([$firstPhar, $secondPhar] as $phar) {
+			$signature = $phar->getSignature();
+			self::assertNotFalse($signature);
+			self::assertSame('SHA-256', $signature['hash_type']);
+			self::assertSame('resource included', trim($phar['resources/message.txt']->getContent()));
+			self::assertStringContainsString('Fixture\\Build', $phar['src/Main.php']->getContent());
+		}
+		self::assertSame(
+			$firstPhar['plugin.yml']->getContent(),
+			$secondPhar['plugin.yml']->getContent(),
+		);
+	}
+
 	public function test_explicit_overwrite_replaces_completed_output_and_cleans_backups() : void
 	{
 		$project = $this->copyFixture('BuildPlugin', 'plugins/BuildPlugin');
@@ -283,6 +317,8 @@ PHP,
 		unset($phar);
 		self::assertSame([], glob($output . DIRECTORY_SEPARATOR . '*.backup-*') ?: []);
 		self::assertSame([], glob($output . DIRECTORY_SEPARATOR . '.devtools-stage-*') ?: []);
+		self::assertSame([], glob($output . DIRECTORY_SEPARATOR . '.devtools-archive-*.zip') ?: []);
+		self::assertSame([], glob($output . DIRECTORY_SEPARATOR . '.devtools-archive-*.phar') ?: []);
 	}
 
 	public function test_output_inside_source_is_rejected() : void

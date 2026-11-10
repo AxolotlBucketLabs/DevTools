@@ -20,6 +20,7 @@
         "php": "^8.4",
         "ext-json": "*",
         "ext-phar": "*",
+        "ext-zip": "*",
         "ext-yaml": "*",
         "nikic/php-parser": "^5.6"
     },
