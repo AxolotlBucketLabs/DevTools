@@ -50,7 +50,7 @@ final class VirionManager
 		private readonly string $serverApiVersion,
 		private readonly ?DebugLogger $debug = null,
 	) {
-		$this->graphPreflight = new VirionGraphPreflight($this->inspectSelectedProject(...));
+		$this->graphPreflight = new VirionGraphPreflight($this->inspectProject(...));
 	}
 
 	/**
@@ -337,7 +337,7 @@ final class VirionManager
 		return $loaded;
 	}
 
-	private function inspectSelectedProject(VirionProject $project) : VirionSourceSymbols
+	private function inspectProject(VirionProject $project) : VirionSourceSymbols
 	{
 		$this->assertCompatible($project->manifest);
 		$symbols = $this->classScanner->scanSymbols($project);
@@ -430,29 +430,8 @@ final class VirionManager
 		try {
 			$project = $this->projectFactory->open($location);
 			$manifest = $project->manifest;
-			$this->assertCompatible($manifest);
-			$symbols = $this->classScanner->scanSymbols($project);
+			$symbols = $this->inspectProject($project);
 			$classes = $symbols->classes;
-			if ($classes === []) {
-				throw new VirionException("Cannot load {$manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
-			}
-			$projectClasses = [];
-			foreach ($classes as $class) {
-				$classKey = strtolower($class);
-				if (isset($projectClasses[$classKey])) {
-					throw new VirionException("Cannot load {$manifest->name}: class {$class} is declared more than once.");
-				}
-				$projectClasses[$classKey] = true;
-				if (!str_starts_with($class, $manifest->antigen . '\\')) {
-					throw new VirionException("Cannot load {$manifest->name}: class {$class} is outside antigen {$manifest->antigen}.");
-				}
-				$this->assertClassIsNotLoaded($class, $manifest->name);
-				$existingClass = $this->registry->findByClass($class);
-				if ($existingClass !== null) {
-					throw new VirionException("Class {$class} is already provided by {$existingClass->requireManifest()->name}.");
-				}
-			}
-			$this->assertPreflightSymbolsAvailable($project, $symbols);
 
 			$existingName = $this->registry->findByName($manifest->name);
 			if ($existingName !== null) {

@@ -293,12 +293,6 @@ final class PharBuilder
 			if ($classes === []) {
 				throw new BuildException("Virion {$virion->manifest->name} contains no PHP classes.");
 			}
-			foreach ($classes as $class) {
-				$prefix = $virion->manifest->antigen;
-				if (!str_starts_with(strtolower($class), strtolower($prefix) . '\\')) {
-					throw new BuildException("Virion {$virion->manifest->name} declares class {$class} outside antigen {$prefix}.");
-				}
-			}
 
 			$targetNamespace = $shaded[$virion->manifest->antigen];
 			$targetRelative = $targetNamespace;
