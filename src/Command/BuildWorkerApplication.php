@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+
 use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
 use AxolotlBucketLabs\DevTools\Build\BuildException;
@@ -27,6 +28,7 @@ use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -141,11 +143,11 @@ final class BuildWorkerApplication
 		try {
 			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : Translator::DEFAULT_LOCALE);
 			if (!in_array($operation, ['doctor', 'build', 'extract'], true)) {
-				throw new BuildException($translator->translate('worker.unknown_operation', ['operation' => $operation]));
+				throw new BuildException($translator->translate(TranslationKeys::WORKER_UNKNOWN_OPERATION, ['operation' => $operation]));
 			}
 			foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
 				if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
-					throw new LocalizedException('worker.path_missing', ['key' => $key]);
+					throw new LocalizedException(TranslationKeys::WORKER_PATH_MISSING, ['key' => $key]);
 				}
 			}
 			$application = new self($payload['pluginsDirectory'], $payload['virionsDirectory'], $payload['buildDirectory'], $debug, $translator);
@@ -162,7 +164,7 @@ final class BuildWorkerApplication
 
 			return [
 				'success' => false,
-				'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', [
+				'messages' => [($translator ?? Translator::fromResources())->translate(TranslationKeys::COMMAND_FAILED, [
 					'error' => $error instanceof LocalizedException
 						? $error->render($translator ?? Translator::fromResources())
 						: $error->getMessage(),
@@ -180,20 +182,20 @@ final class BuildWorkerApplication
 	{
 		$selection = $payload['selection'] ?? null;
 		if ($selection !== null && !is_string($selection)) {
-			throw new BuildException($this->translator->translate('doctor.invalid_selection'));
+			throw new BuildException($this->translator->translate(TranslationKeys::DOCTOR_INVALID_SELECTION));
 		}
 		$projects = $selection === null
 			? $this->pluginDiscovery->discover($this->pluginsDirectory)
 			: [$this->projectLocator->locate($selection, $this->pluginsDirectory)];
 		if ($projects === []) {
-			return [$this->translator->translate('doctor.none', ['directory' => $this->pluginsDirectory])];
+			return [$this->translator->translate(TranslationKeys::DOCTOR_NONE, ['directory' => $this->pluginsDirectory])];
 		}
 
 		$messages = [];
 		foreach ($projects as $project) {
 			$check = $this->projectDoctor->check($project, $this->virionsDirectory);
 			$result = $check->validation;
-			$messages[] = $this->translator->translate('doctor.checking', ['project' => $project]);
+			$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_CHECKING, ['project' => $project]);
 			foreach ($result->issues() as $issue) {
 				$messages[] = $issue->format();
 			}
@@ -201,9 +203,9 @@ final class BuildWorkerApplication
 				continue;
 			}
 			if ($check->error !== null) {
-				$messages[] = $this->translator->translate('doctor.failed', ['project' => $project, 'error' => $check->error->getMessage()]);
+				$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_FAILED, ['project' => $project, 'error' => $check->error->getMessage()]);
 			} else {
-				$messages[] = $this->translator->translate('doctor.passed', ['count' => count($check->virions)]);
+				$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_PASSED, ['count' => count($check->virions)]);
 			}
 		}
 
@@ -221,7 +223,7 @@ final class BuildWorkerApplication
 		$overwrite = $payload['overwrite'] ?? false;
 		$buildTarget = is_string($target) ? BuildTarget::tryFrom($target) : null;
 		if ($buildTarget === null || !is_string($selection) || !is_bool($overwrite)) {
-			throw new BuildException($this->translator->translate('worker.invalid_build_payload'));
+			throw new BuildException($this->translator->translate(TranslationKeys::WORKER_INVALID_BUILD_PAYLOAD));
 		}
 
 		if ($buildTarget === BuildTarget::VIRION) {
@@ -229,9 +231,9 @@ final class BuildWorkerApplication
 			$result = $this->virionBuilder->build($project, $this->buildDirectory, $overwrite);
 
 			return [
-				$this->translator->translate('build.virion', ['name' => $result->manifest->name]),
-				$this->translator->translate('summary.files', ['count' => $result->fileCount]),
-				$this->translator->translate('summary.output', ['path' => $result->outputPath]),
+				$this->translator->translate(TranslationKeys::BUILD_VIRION, ['name' => $result->manifest->name]),
+				$this->translator->translate(TranslationKeys::SUMMARY_FILES, ['count' => $result->fileCount]),
+				$this->translator->translate(TranslationKeys::SUMMARY_OUTPUT, ['path' => $result->outputPath]),
 			];
 		}
 
@@ -246,19 +248,19 @@ final class BuildWorkerApplication
 			);
 
 			return [
-				$this->translator->translate('build.dual'),
-				$this->translator->translate('summary.plugin_output', ['path' => $artifacts['plugin']]),
-				$this->translator->translate('summary.virion_output', ['path' => $artifacts['virion']]),
+				$this->translator->translate(TranslationKeys::BUILD_DUAL),
+				$this->translator->translate(TranslationKeys::SUMMARY_PLUGIN_OUTPUT, ['path' => $artifacts['plugin']]),
+				$this->translator->translate(TranslationKeys::SUMMARY_VIRION_OUTPUT, ['path' => $artifacts['virion']]),
 			];
 		}
 
 		$result = $this->builder->build($project, $this->virionsDirectory, $this->buildDirectory, $overwrite);
 
 		return [
-			$this->translator->translate('build.plugin', ['name' => $result->pluginName]),
-			$this->translator->translate('summary.files', ['count' => $result->fileCount]),
-			$this->translator->translate('summary.shaded', ['count' => count($result->shadedVirions)]),
-			$this->translator->translate('summary.output', ['path' => $result->outputPath]),
+			$this->translator->translate(TranslationKeys::BUILD_PLUGIN, ['name' => $result->pluginName]),
+			$this->translator->translate(TranslationKeys::SUMMARY_FILES, ['count' => $result->fileCount]),
+			$this->translator->translate(TranslationKeys::SUMMARY_SHADED, ['count' => count($result->shadedVirions)]),
+			$this->translator->translate(TranslationKeys::SUMMARY_OUTPUT, ['path' => $result->outputPath]),
 		];
 	}
 
@@ -273,7 +275,7 @@ final class BuildWorkerApplication
 		$type = $payload['type'] ?? ExtractType::AUTO->value;
 		$overwrite = $payload['overwrite'] ?? false;
 		if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
-			throw new BuildException($this->translator->translate('worker.invalid_extract_payload'));
+			throw new BuildException($this->translator->translate(TranslationKeys::WORKER_INVALID_EXTRACT_PAYLOAD));
 		}
 
 		$path = self::locatePhar($selection, $this->pluginsDirectory, $this->virionsDirectory, $this->buildDirectory);
@@ -282,22 +284,22 @@ final class BuildWorkerApplication
 		$extractType = ExtractType::tryFrom($type);
 		$projectRole = is_string($detectedType) ? ProjectRole::tryFrom($detectedType) : null;
 		if (!is_string($detectedType) || $projectRole === null) {
-			throw new BuildException($this->translator->translate('extract.artifact_type'));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_ARTIFACT_TYPE));
 		}
 		if ($type === BuildTarget::BOTH->value) {
-			throw new BuildException($this->translator->translate('extract.dual'));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DUAL));
 		}
 		if ($extractType === null || $extractFormat === null) {
-			throw new BuildException($this->translator->translate('extract.usage'));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_USAGE));
 		}
 		if ($extractType === ExtractType::AUTO) {
 			if ($projectRole === ProjectRole::DUAL) {
-				throw new BuildException($this->translator->translate('extract.dual'));
+				throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DUAL));
 			}
 			$extractType = ExtractType::from($projectRole->value);
 		}
 		if (!ArtifactInspector::roleMatches($detectedType, $extractType->value)) {
-			throw new BuildException($this->translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $extractType->value]));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_MISMATCH, ['detected' => $detectedType, 'requested' => $extractType->value]));
 		}
 
 		$name = basename($path);
@@ -305,7 +307,7 @@ final class BuildWorkerApplication
 			$name = substr($name, 0, -strlen(ArtifactFile::PHAR_EXTENSION));
 		}
 		if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
-			throw new BuildException($this->translator->translate('extract.safe_name', ['path' => $path]));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_SAFE_NAME, ['path' => $path]));
 		}
 		Path::normalizeRelative($name);
 
@@ -313,21 +315,21 @@ final class BuildWorkerApplication
 			$destination = Path::join(realpath($this->buildDirectory) ?: $this->buildDirectory, $name . ArtifactFile::ZIP_EXTENSION);
 			$count = $this->zipWriter->write(new PharArchiveReader($path), $destination, $overwrite);
 
-			return [$this->translator->translate('extract.archived', ['count' => $count, 'path' => $destination])];
+			return [$this->translator->translate(TranslationKeys::EXTRACT_ARCHIVED, ['count' => $count, 'path' => $destination])];
 		}
 
 		$baseDirectory = $extractType === ExtractType::VIRION ? $this->virionsDirectory : $this->pluginsDirectory;
 		$base = realpath($baseDirectory);
 		if ($base === false) {
-			throw new BuildException($this->translator->translate('extract.directory', ['type' => $type, 'directory' => $baseDirectory]));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DIRECTORY, ['type' => $type, 'directory' => $baseDirectory]));
 		}
 		$destination = Path::join($base, $name);
 		if (dirname($destination) !== $base) {
-			throw new BuildException($this->translator->translate('extract.outside', ['path' => $base]));
+			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_OUTSIDE, ['path' => $base]));
 		}
 		$count = $this->extractor->extract(new PharArchiveReader($path), $destination, $overwrite);
 
-		return [$this->translator->translate('extract.extracted', ['count' => $count, 'path' => $destination])];
+		return [$this->translator->translate(TranslationKeys::EXTRACT_EXTRACTED, ['count' => $count, 'path' => $destination])];
 	}
 
 	private static function locatePhar(string $selection, string $pluginsDirectory, string $virionsDirectory, string $buildDirectory) : string
@@ -352,6 +354,6 @@ final class BuildWorkerApplication
 			}
 		}
 
-		throw new LocalizedException('extract.phar_not_found', ['selection' => $selection]);
+		throw new LocalizedException(TranslationKeys::EXTRACT_PHAR_NOT_FOUND, ['selection' => $selection]);
 	}
 }

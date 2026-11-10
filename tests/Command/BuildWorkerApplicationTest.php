@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Tests\Command;
 
 use AxolotlBucketLabs\DevTools\Command\BuildWorkerApplication;
+
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use function file_put_contents;
@@ -33,7 +35,7 @@ final class BuildWorkerApplicationTest extends TestCase
 		self::assertSame('Checking ' . $missing, $result['messages'][2]);
 		self::assertStringContainsString('Dependency check failed for ' . $missing, $result['messages'][3]);
 		self::assertSame('Checking ' . $valid, $result['messages'][4]);
-		self::assertSame(Translator::fromResources()->translate('doctor.passed', ['count' => 0]), $result['messages'][5]);
+		self::assertSame(Translator::fromResources()->translate(TranslationKeys::DOCTOR_PASSED, ['count' => 0]), $result['messages'][5]);
 		self::assertDirectoryDoesNotExist($this->temporaryDirectory . '/build');
 	}
 
@@ -50,9 +52,9 @@ final class BuildWorkerApplicationTest extends TestCase
 
 		self::assertTrue($result['success']);
 		self::assertSame([
-			$translator->translate('doctor.checking', ['project' => $project]),
+			$translator->translate(TranslationKeys::DOCTOR_CHECKING, ['project' => $project]),
 			$validator->validate($project)->issues()[0]->format(),
-			$translator->translate('doctor.passed', ['count' => 1]),
+			$translator->translate(TranslationKeys::DOCTOR_PASSED, ['count' => 1]),
 		], $result['messages']);
 	}
 
@@ -66,9 +68,9 @@ final class BuildWorkerApplicationTest extends TestCase
 		$result = BuildWorkerApplication::run('doctor', $this->paths() + ['selection' => 'FixturePlugin', 'locale' => 'vie']);
 
 		self::assertTrue($result['success']);
-		self::assertSame($translator->translate('doctor.checking', ['project' => $project]), $result['messages'][0]);
+		self::assertSame($translator->translate(TranslationKeys::DOCTOR_CHECKING, ['project' => $project]), $result['messages'][0]);
 		self::assertStringContainsString('Unknown key "unknown"', $result['messages'][1]);
-		self::assertStringNotContainsString('command.failed', implode("\n", $result['messages']));
+		self::assertStringNotContainsString(TranslationKeys::COMMAND_FAILED, implode("\n", $result['messages']));
 		self::assertCount(2, $result['messages']);
 	}
 
@@ -80,7 +82,7 @@ final class BuildWorkerApplicationTest extends TestCase
 
 		self::assertSame([
 			'success' => true,
-			'messages' => [Translator::fromResources()->translate('doctor.none', ['directory' => $this->temporaryDirectory . '/plugins'])],
+			'messages' => [Translator::fromResources()->translate(TranslationKeys::DOCTOR_NONE, ['directory' => $this->temporaryDirectory . '/plugins'])],
 			'debug' => [],
 		], $result);
 	}
@@ -92,8 +94,8 @@ final class BuildWorkerApplicationTest extends TestCase
 			$result = BuildWorkerApplication::run($operation, ['selection' => false, 'locale' => 'vie']);
 
 			self::assertFalse($result['success']);
-			self::assertSame([$translator->translate('command.failed', [
-				'error' => $translator->translate('worker.path_missing', ['key' => 'pluginsDirectory']),
+			self::assertSame([$translator->translate(TranslationKeys::COMMAND_FAILED, [
+				'error' => $translator->translate(TranslationKeys::WORKER_PATH_MISSING, ['key' => 'pluginsDirectory']),
 			])], $result['messages']);
 		}
 	}

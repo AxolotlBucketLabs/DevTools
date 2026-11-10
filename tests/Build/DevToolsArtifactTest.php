@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use Phar;
@@ -32,7 +34,7 @@ final class DevToolsArtifactTest extends TestCase
 			self::assertTrue(isset($phar["resources/lang/{$locale}.json"]));
 			$catalog = json_decode($phar["resources/lang/{$locale}.json"]->getContent(), true, \AxolotlBucketLabs\DevTools\Support\JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
 			self::assertIsArray($catalog);
-			self::assertSame(Translator::fromResources($locale)->translate('virions.local.metadata_mismatch'), $catalog['virions.local.metadata_mismatch'] ?? null);
+			self::assertSame(Translator::fromResources($locale)->translate(TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH), $catalog[TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH] ?? null);
 		}
 
 		foreach (['vendor/phpunit/phpunit/src/Runner.php', 'vendor/axolotl-pm/pocketmine-mp/src/Server.php', 'vendor/composer/autoload_real.php'] as $extra) {

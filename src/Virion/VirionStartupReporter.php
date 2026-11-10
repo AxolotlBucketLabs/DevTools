@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Virion;
 
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use function count;
 use function implode;
@@ -30,7 +32,7 @@ final class VirionStartupReporter
 				$manifest = $entry->requireManifest();
 				$messages[] = [
 					'level' => 'info',
-					'message' => $this->translator->translate('virions.loaded', ['name' => $manifest->name, 'version' => $manifest->version, 'antigen' => $manifest->antigen]),
+					'message' => $this->translator->translate(TranslationKeys::VIRIONS_LOADED, ['name' => $manifest->name, 'version' => $manifest->version, 'antigen' => $manifest->antigen]),
 					'details' => [],
 				];
 				continue;
@@ -56,7 +58,7 @@ final class VirionStartupReporter
 			}
 			$messages[] = [
 				'level' => 'warning',
-				'message' => $this->translator->translate(count($entries) === 1 ? 'virions.skipped_one' : 'virions.skipped_many', ['name' => $manifest->name, 'versions' => implode(', ', $versions)]),
+				'message' => $this->translator->translate(count($entries) === 1 ? TranslationKeys::VIRIONS_SKIPPED_ONE : TranslationKeys::VIRIONS_SKIPPED_MANY, ['name' => $manifest->name, 'versions' => implode(', ', $versions)]),
 				'details' => $details,
 			];
 		}

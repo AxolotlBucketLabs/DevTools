@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
 use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
+
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
 use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
@@ -37,7 +39,7 @@ final class DualArtifactBuilderTest extends TestCase
 				self::fail('A single-role project must not be prepared for a dual build.');
 			} catch (LocalizedException $error) {
 				self::assertSame(
-					Translator::fromResources()->translate('build.both_required', ['project' => $project]),
+					Translator::fromResources()->translate(TranslationKeys::BUILD_BOTH_REQUIRED, ['project' => $project]),
 					$error->render(Translator::fromResources()),
 				);
 			}

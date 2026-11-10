@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
@@ -130,7 +132,7 @@ final class ProjectDoctorTest extends TestCase
 	public function test_resolution_failure_preserves_original_localized_exception() : void
 	{
 		$project = $this->copyFixture('BuildPlugin');
-		$error = new LocalizedException('cli.project_missing', ['project' => $project], true);
+		$error = new LocalizedException(TranslationKeys::CLI_PROJECT_MISSING, ['project' => $project], true);
 		$debug = new DebugLogger(static function (string $message) use ($error) : void {
 			throw $error;
 		});

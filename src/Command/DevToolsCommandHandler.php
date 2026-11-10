@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Build\BuildException;
+
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
@@ -64,12 +66,12 @@ final class DevToolsCommandHandler
 			if ($subcommand !== 'help'
 				&& !$sender->hasPermission("devtools.command.{$subcommand}")
 				&& !$sender->hasPermission('devtools.command')) {
-				$sender->sendMessage($this->translate('command.permission', ['command' => $subcommand]));
+				$sender->sendMessage($this->translate(TranslationKeys::COMMAND_PERMISSION, ['command' => $subcommand]));
 
 				return true;
 			}
 			if (in_array($subcommand, ['doctor', 'build', 'extract'], true) && !($this->enabledCommands[$subcommand] ?? true)) {
-				$sender->sendMessage($this->translate('command.disabled', ['command' => $subcommand]));
+				$sender->sendMessage($this->translate(TranslationKeys::COMMAND_DISABLED, ['command' => $subcommand]));
 
 				return true;
 			}
@@ -82,7 +84,7 @@ final class DevToolsCommandHandler
 				default => $this->help($sender),
 			};
 		} catch (Throwable $error) {
-			$sender->sendMessage($this->translate('command.failed', ['error' => $error->getMessage()]));
+			$sender->sendMessage($this->translate(TranslationKeys::COMMAND_FAILED, ['error' => $error->getMessage()]));
 
 			return true;
 		}
@@ -96,13 +98,13 @@ final class DevToolsCommandHandler
 				array_shift($arguments);
 			}
 			if ($arguments === [] || str_starts_with($arguments[0], '--')) {
-				throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
+				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
 			}
 			$seen = [];
 			foreach (array_slice($arguments, 1) as $argument) {
 				if ($argument === self::OVERWRITE_OPTION) {
 					if (isset($seen['overwrite'])) {
-						throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
+						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
 					}
 					$seen['overwrite'] = true;
 					continue;
@@ -112,25 +114,25 @@ final class DevToolsCommandHandler
 					$prefix = $option === self::FORMAT_OPTION_NAME ? self::FORMAT_OPTION_PREFIX : self::TYPE_OPTION_PREFIX;
 					$value = substr($argument, strlen($prefix));
 					if (isset($seen[$option])) {
-						throw new BuildException($this->translate('command.usage.extract'));
+						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT));
 					}
 					if ($option === self::FORMAT_OPTION_NAME && ExtractFormat::tryFrom($value) === null) {
-						throw new BuildException($this->translate('command.usage.extract_format'));
+						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT_FORMAT));
 					}
 					if ($option === self::TYPE_OPTION_NAME && ExtractType::tryFrom($value) === null) {
-						throw new BuildException($this->translate('command.usage.extract_type'));
+						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT_TYPE));
 					}
 					$seen[$option] = true;
 					continue;
 				}
-				throw new BuildException($this->translate('command.usage.selection', ['command' => $command]));
+				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
 			}
 		} elseif ($command === 'doctor') {
 			if (count($arguments) > 1 || (isset($arguments[0]) && str_starts_with($arguments[0], '--'))) {
-				throw new BuildException($this->translate('command.usage.doctor'));
+				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_DOCTOR));
 			}
 		} elseif (in_array($command, ['status', 'virions', 'help'], true) && $arguments !== []) {
-			throw new BuildException($this->translate('command.usage.no_arguments', ['command' => $command]));
+			throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_NO_ARGUMENTS, ['command' => $command]));
 		}
 	}
 
@@ -139,7 +141,7 @@ final class DevToolsCommandHandler
 		$projects = $this->pluginDiscovery->discover($this->pluginsDirectory);
 		$loaded = $this->virions->loaded();
 		$async = $loaded === [] ? 'not needed yet' : ($loaded[0]->asyncSupported ? 'available' : 'not registered');
-		$sender->sendMessage($this->translate('status.summary', [
+		$sender->sendMessage($this->translate(TranslationKeys::STATUS_SUMMARY, [
 			'version' => $this->plugin->getDescription()->getVersion(),
 			'projects' => count($projects),
 			'virions' => count($loaded),
@@ -171,7 +173,7 @@ final class DevToolsCommandHandler
 		}
 		$selection = array_shift($arguments);
 		if ($selection === null) {
-			$sender->sendMessage($this->translate('command.build_missing'));
+			$sender->sendMessage($this->translate(TranslationKeys::COMMAND_BUILD_MISSING));
 
 			return true;
 		}
@@ -188,7 +190,7 @@ final class DevToolsCommandHandler
 	{
 		$selection = array_shift($arguments);
 		if ($selection === null) {
-			$sender->sendMessage($this->translate('command.extract_missing'));
+			$sender->sendMessage($this->translate(TranslationKeys::COMMAND_EXTRACT_MISSING));
 
 			return true;
 		}
@@ -214,16 +216,22 @@ final class DevToolsCommandHandler
 	{
 		$entries = $this->virions->entries();
 		if ($entries === []) {
-			$sender->sendMessage($this->translate('virions.none', ['directory' => $this->virionsDirectory]));
+			$sender->sendMessage($this->translate(TranslationKeys::VIRIONS_NONE, ['directory' => $this->virionsDirectory]));
 
 			return true;
 		}
 		foreach ($entries as $entry) {
 			$name = $entry->manifest === null ? basename($entry->location) : $entry->manifest->name;
-			$status = $this->translate('virions.status.' . $entry->status->value);
+			$statusKey = match ($entry->status) {
+				VirionStatus::LOADED => TranslationKeys::VIRIONS_STATUS_LOADED,
+				VirionStatus::SKIPPED => TranslationKeys::VIRIONS_STATUS_SKIPPED,
+				VirionStatus::FAILED => TranslationKeys::VIRIONS_STATUS_FAILED,
+				VirionStatus::CONFLICT => TranslationKeys::VIRIONS_STATUS_CONFLICT,
+			};
+			$status = $this->translate($statusKey);
 			$message = $entry->message;
 			if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
-				$message = $this->translate('virions.loaded', ['name' => $name, 'version' => $entry->manifest->version, 'antigen' => $entry->manifest->antigen]);
+				$message = $this->translate(TranslationKeys::VIRIONS_LOADED, ['name' => $name, 'version' => $entry->manifest->version, 'antigen' => $entry->manifest->antigen]);
 			}
 			$sender->sendMessage("{$status} {$name}. {$message}");
 		}
@@ -233,7 +241,7 @@ final class DevToolsCommandHandler
 
 	private function help(CommandSender $sender) : bool
 	{
-		$sender->sendMessage($this->translate('command.help'));
+		$sender->sendMessage($this->translate(TranslationKeys::COMMAND_HELP));
 
 		return true;
 	}
@@ -245,11 +253,11 @@ final class DevToolsCommandHandler
 	{
 		if ($this->jobs->isBusy()) {
 			$this->debug?->debug("Rejected {$operation} command because another background job is running.");
-			$sender->sendMessage($this->translate('queue.busy'));
+			$sender->sendMessage($this->translate(TranslationKeys::QUEUE_BUSY));
 
 			return true;
 		}
-		$sender->sendMessage($this->translate('queue.queued', ['description' => $description]));
+		$sender->sendMessage($this->translate(TranslationKeys::QUEUE_QUEUED, ['description' => $description]));
 		$this->debug?->debug("Submitting {$operation} command for {$description}.");
 		$debug = $this->debug;
 		if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug) : void {
@@ -261,7 +269,7 @@ final class DevToolsCommandHandler
 			}
 		})) {
 			$this->debug?->debug("Failed to queue {$operation} command for {$description}.");
-			$sender->sendMessage($this->translate('queue.busy'));
+			$sender->sendMessage($this->translate(TranslationKeys::QUEUE_BUSY));
 		}
 
 		return true;

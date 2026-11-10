@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools;
 
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+
 use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
 use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
 use AxolotlBucketLabs\DevTools\Command\BuildJobRunner;
@@ -18,6 +19,7 @@ use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -182,7 +184,7 @@ final class DevTools extends PluginBase
 				$server->getLanguage()->getLang(),
 			));
 		} catch (Throwable $error) {
-			$this->getLogger()->warning(Translator::fromResources()->translate('runtime.language_fallback', ['error' => $error->getMessage()]));
+			$this->getLogger()->warning(Translator::fromResources()->translate(TranslationKeys::RUNTIME_LANGUAGE_FALLBACK, ['error' => $error->getMessage()]));
 
 			return Translator::fromResources();
 		}
@@ -190,7 +192,7 @@ final class DevTools extends PluginBase
 
 	protected function onEnable() : void
 	{
-		$this->getLogger()->info(($this->translator ?? Translator::fromResources())->translate('runtime.ready'));
+		$this->getLogger()->info(($this->translator ?? Translator::fromResources())->translate(TranslationKeys::RUNTIME_READY));
 	}
 
 	protected function onDisable() : void
@@ -203,7 +205,7 @@ final class DevTools extends PluginBase
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool
 	{
 		if ($this->commandHandler === null) {
-			$sender->sendMessage(($this->translator ?? Translator::fromResources())->translate('runtime.not_started'));
+			$sender->sendMessage(($this->translator ?? Translator::fromResources())->translate(TranslationKeys::RUNTIME_NOT_STARTED));
 
 			return true;
 		}

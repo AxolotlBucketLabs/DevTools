@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Support;
 
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -17,17 +19,19 @@ use const JSON_THROW_ON_ERROR;
 
 final class TranslatorTest extends TestCase
 {
+	private const UNKNOWN_TRANSLATION_KEY = 'unknown.key';
+
 	public function test_all_axolotl_locales_have_a_catalog_and_a_translated_runtime_message() : void
 	{
-		$englishHelp = Translator::fromResources('eng')->translate('cli.help');
+		$englishHelp = Translator::fromResources(Translator::DEFAULT_LOCALE)->translate(TranslationKeys::CLI_HELP);
 		foreach (Translator::supportedLocales() as $locale) {
 			$translator = Translator::fromResources($locale);
 
 			self::assertSame($locale, $translator->locale());
-			self::assertNotSame('runtime.ready', $translator->translate('runtime.ready'));
-			self::assertStringContainsString('DevTools', $translator->translate('cli.version', ['version' => '3.3.1']));
-			if ($locale !== 'eng') {
-				self::assertNotSame($englishHelp, $translator->translate('cli.help'));
+			self::assertNotSame(TranslationKeys::RUNTIME_READY, $translator->translate(TranslationKeys::RUNTIME_READY));
+			self::assertStringContainsString('DevTools', $translator->translate(TranslationKeys::CLI_VERSION, ['version' => '3.3.1']));
+			if ($locale !== Translator::DEFAULT_LOCALE) {
+				self::assertNotSame($englishHelp, $translator->translate(TranslationKeys::CLI_HELP));
 			}
 		}
 	}
@@ -36,7 +40,7 @@ final class TranslatorTest extends TestCase
 	{
 		self::assertSame('chs', Translator::fromResources('zh-CN')->locale());
 		self::assertSame('vie', Translator::fromResources('vi')->locale());
-		self::assertSame('unknown.key', Translator::fromResources('vie')->translate('unknown.key', ['value' => 'Example']));
+		self::assertSame(self::UNKNOWN_TRANSLATION_KEY, Translator::fromResources('vie')->translate(self::UNKNOWN_TRANSLATION_KEY, ['value' => 'Example']));
 	}
 
 	public function test_every_locale_has_the_complete_message_catalog() : void
@@ -80,11 +84,11 @@ final class TranslatorTest extends TestCase
 		];
 		$english = Translator::fromResources('eng');
 		$keys = [
-			'virions.local.skipped_prepared', 'virions.local.ambiguous_package', 'virions.local.unverified_name',
-			'virions.local.name_conflict', 'virions.local.selected_debug', 'virions.local.metadata_mismatch',
-			'virions.local.layout_mismatch', 'runtime.shared_requirements_failed',
-			'virions.loaded', 'virions.skipped_one', 'virions.skipped_many',
-			'virions.status.loaded', 'virions.status.skipped', 'virions.status.failed', 'virions.status.conflict',
+			TranslationKeys::VIRIONS_LOCAL_SKIPPED_PREPARED, TranslationKeys::VIRIONS_LOCAL_AMBIGUOUS_PACKAGE, TranslationKeys::VIRIONS_LOCAL_UNVERIFIED_NAME,
+			TranslationKeys::VIRIONS_LOCAL_NAME_CONFLICT, TranslationKeys::VIRIONS_LOCAL_SELECTED_DEBUG, TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH,
+			TranslationKeys::VIRIONS_LOCAL_LAYOUT_MISMATCH, TranslationKeys::RUNTIME_SHARED_REQUIREMENTS_FAILED,
+			TranslationKeys::VIRIONS_LOADED, TranslationKeys::VIRIONS_SKIPPED_ONE, TranslationKeys::VIRIONS_SKIPPED_MANY,
+			TranslationKeys::VIRIONS_STATUS_LOADED, TranslationKeys::VIRIONS_STATUS_SKIPPED, TranslationKeys::VIRIONS_STATUS_FAILED, TranslationKeys::VIRIONS_STATUS_CONFLICT,
 		];
 		foreach (Translator::supportedLocales() as $locale) {
 			$contents = file_get_contents(dirname(__DIR__, 2) . '/resources/lang/' . $locale . '.json');

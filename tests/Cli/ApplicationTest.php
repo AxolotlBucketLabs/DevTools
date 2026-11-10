@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Cli;
 
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use function dirname;
@@ -117,7 +119,7 @@ final class ApplicationTest extends TestCase
 			self::assertSame('operation.' . $command . '_failed', $result['diagnostics'][1]['code']);
 			self::assertIsString($result['diagnostics'][1]['message']);
 			self::assertStringContainsString('no valid virion', $result['diagnostics'][1]['message']);
-			self::assertSame(Translator::fromResources('vie')->translate('cli.failure_suggestion'), $result['diagnostics'][1]['suggestion']);
+			self::assertSame(Translator::fromResources('vie')->translate(TranslationKeys::CLI_FAILURE_SUGGESTION), $result['diagnostics'][1]['suggestion']);
 			self::assertDirectoryDoesNotExist($project . '/build');
 		}
 	}

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Tests\Build;
 
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
+
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPlan;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
 use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
@@ -99,7 +101,7 @@ final class SharedVirionConfigResolverTest extends TestCase
 		});
 		$resolver = $this->resolver(true, $debug, $translator);
 		$resolver->resolve($project, 'BuildFixture', $virions);
-		self::assertSame([$translator->translate('virions.local.selected_debug', [
+		self::assertSame([$translator->translate(TranslationKeys::VIRIONS_LOCAL_SELECTED_DEBUG, [
 			'name' => 'SharedVirion', 'package' => 'example/library', 'project' => $project,
 		])], $messages);
 		$path = $virions . '/Library/composer.json';
@@ -107,7 +109,7 @@ final class SharedVirionConfigResolverTest extends TestCase
 		$metadata['require'] = ['php' => '^8.2'];
 		$this->json($path, $metadata);
 		$this->expectException(BuildException::class);
-		$this->expectExceptionMessage($translator->translate('virions.local.metadata_mismatch', ['name' => 'SharedVirion', 'field' => 'require']));
+		$this->expectExceptionMessage($translator->translate(TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH, ['name' => 'SharedVirion', 'field' => 'require']));
 		$resolver->resolve($project, 'BuildFixture', $virions);
 	}
 

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Loader;
 
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use FilesystemIterator;
@@ -94,7 +96,7 @@ final class PluginSourceConflictDetector
 		foreach (array_intersect_key($folders, $phars) as $key => $folderPaths) {
 			$name = $names[$key] ?? $key;
 			$pharPaths = $phars[$key];
-			$warnings[] = $translator->translate('runtime.duplicate_sources', ['name' => $name]);
+			$warnings[] = $translator->translate(TranslationKeys::RUNTIME_DUPLICATE_SOURCES, ['name' => $name]);
 			$this->debug?->debug(
 				"Plugin {$name} duplicate sources. Development folders: " . implode(', ', $folderPaths)
 				. '; PHARs: ' . implode(', ', $pharPaths) . '.',

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Build;
 
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -109,7 +111,7 @@ final class SharedVirionConfigResolver
 						&& !Filesystem::isLink($project->packageRoot . '/' . ArtifactFile::VIRION_PROVENANCE_METADATA)
 						&& is_file($path) && !Filesystem::isLink($path)
 						&& ($plan->readJson($path)['name'] ?? null) === $packageName) {
-						$skippedLocations[$project->location] = $this->translator->translate('virions.local.skipped_prepared', ['name' => $project->manifest->name, 'package' => $packageName]);
+						$skippedLocations[$project->location] = $this->translator->translate(TranslationKeys::VIRIONS_LOCAL_SKIPPED_PREPARED, ['name' => $project->manifest->name, 'package' => $packageName]);
 						try {
 							if ($this->matchesLocal($project, $packageName, $package, $requirement, $plan)) {
 								$aliases[VirionName::key($project->manifest->name)] = $requirement->name;
@@ -131,7 +133,7 @@ final class SharedVirionConfigResolver
 				$matchedLocations[$project->location] = true;
 			}
 			if (count($matches) > 1) {
-				throw new BuildException($this->translator->translate('virions.local.ambiguous_package', ['package' => $packageName]));
+				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_AMBIGUOUS_PACKAGE, ['package' => $packageName]));
 			}
 			if ($matches === []) {
 				continue;
@@ -140,19 +142,19 @@ final class SharedVirionConfigResolver
 			foreach ($projects as $project) {
 				if (!$project->phar && VirionName::key($project->manifest->name) === VirionName::key($name)
 					&& $requirement->matches($project->manifest->version) && !isset($matchedLocations[$project->location])) {
-					throw new BuildException($this->translator->translate('virions.local.unverified_name', ['name' => $name, 'path' => $project->location]));
+					throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_UNVERIFIED_NAME, ['name' => $name, 'path' => $project->location]));
 				}
 			}
 			$aliasKey = VirionName::key($name);
 			$claimedBy = $aliasPackages[$aliasKey] ?? $this->aliasPackages[$aliasKey] ?? null;
 			if ($claimedBy !== null && $claimedBy !== $packageName) {
-				throw new BuildException($this->translator->translate('virions.local.name_conflict', ['name' => $name, 'first' => $claimedBy, 'second' => $packageName]));
+				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_NAME_CONFLICT, ['name' => $name, 'first' => $claimedBy, 'second' => $packageName]));
 			}
 			$aliasPackages[$aliasKey] = $packageName;
 			$runtimeName = $this->aliases[$key] ?? $name;
 			$aliases[$key] = $runtimeName;
 			$requirements[$index] = new VirionRequirement($runtimeName, $requirement->constraint->expression, $requirement->source);
-			$this->debug?->debug($this->translator->translate('virions.local.selected_debug', ['name' => $name, 'package' => $packageName, 'project' => $projectRoot]));
+			$this->debug?->debug($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_SELECTED_DEBUG, ['name' => $name, 'package' => $packageName, 'project' => $projectRoot]));
 		}
 		$this->aliases = array_replace($this->aliases, $aliases);
 		$this->aliasPackages = array_replace($this->aliasPackages, $aliasPackages);
@@ -201,12 +203,12 @@ final class SharedVirionConfigResolver
 		}
 		foreach (['autoload', 'require', 'extra'] as $field) {
 			if (!$plan->sameMetadata($metadata[$field] ?? [], $package[$field] ?? [])) {
-				throw new BuildException($this->translator->translate('virions.local.metadata_mismatch', ['name' => $project->manifest->name, 'field' => $field]));
+				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH, ['name' => $project->manifest->name, 'field' => $field]));
 			}
 		}
 		if ($project->manifest->antigen !== $plan->antigen($package)
 			|| realpath($project->packageRoot . '/' . $plan->sourceDirectory($package)) !== realpath($project->sourceRoot)) {
-			throw new BuildException($this->translator->translate('virions.local.layout_mismatch', ['name' => $project->manifest->name]));
+			throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_LAYOUT_MISMATCH, ['name' => $project->manifest->name]));
 		}
 		$platform = array_filter(
 			$plan->object($metadata['require'] ?? [], $project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST),

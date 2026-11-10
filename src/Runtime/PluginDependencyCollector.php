@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Runtime;
 
 use AxolotlBucketLabs\DevTools\Build\SharedVirionConfigResolver;
+
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Loader\PluginDependencyIndex;
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
@@ -40,7 +42,7 @@ final class PluginDependencyCollector
 			try {
 				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);
 			} catch (Throwable $error) {
-				($this->warning)($this->translator->translate('runtime.plugin_manifest_failed', ['project' => $project, 'error' => $error->getMessage()]));
+				($this->warning)($this->translator->translate(TranslationKeys::RUNTIME_PLUGIN_MANIFEST_FAILED, ['project' => $project, 'error' => $error->getMessage()]));
 				continue;
 			}
 			try {
@@ -48,7 +50,7 @@ final class PluginDependencyCollector
 				$requirementsByProject[$project] = $requirements;
 			} catch (Throwable $error) {
 				$configurationFailures[$project] = $error->getMessage();
-				($this->warning)($this->translator->translate('runtime.shared_requirements_failed', ['project' => $project, 'error' => $error->getMessage()]));
+				($this->warning)($this->translator->translate(TranslationKeys::RUNTIME_SHARED_REQUIREMENTS_FAILED, ['project' => $project, 'error' => $error->getMessage()]));
 			}
 		}
 		return new PluginDependencyIndex($requirementsByProject, $configurationFailures, $this->checker);

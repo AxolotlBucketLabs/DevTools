@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Cli;
 
 use AxolotlBucketLabs\DevTools\Build\ArtifactInspector;
+
 use AxolotlBucketLabs\DevTools\Build\BuildConfigResolver;
 use AxolotlBucketLabs\DevTools\Build\ComposerVirionPreparer;
 use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
@@ -22,6 +23,7 @@ use AxolotlBucketLabs\DevTools\Command\ExtractType;
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use InvalidArgumentException;
@@ -100,11 +102,11 @@ final class Application
 			} else {
 				$cwd = getcwd();
 				if ($cwd === false) {
-					throw new LocalizedException('cli.cwd_unavailable');
+					throw new LocalizedException(TranslationKeys::CLI_CWD_UNAVAILABLE);
 				}
 				$project = $this->absolute($options['project'] ?? '.', $cwd);
 				if (in_array($command, ['prepare', 'doctor', 'build'], true) && !is_dir($project)) {
-					throw new LocalizedException('cli.project_missing', ['project' => $project]);
+					throw new LocalizedException(TranslationKeys::CLI_PROJECT_MISSING, ['project' => $project]);
 				}
 				$virions = $this->absolute($options['virions'] ?? 'virions', $project);
 				$overwrite = isset($options['overwrite']);
@@ -146,8 +148,8 @@ final class Application
 				'code' => $exit === 2 ? 'cli.usage' : 'operation.' . $command . '_failed',
 				'severity' => 'error', 'message' => $message, 'file' => null, 'line' => null,
 				'suggestion' => $exit === 2
-					? $translator->translate('cli.usage_suggestion')
-					: $translator->translate('cli.failure_suggestion'),
+					? $translator->translate(TranslationKeys::CLI_USAGE_SUGGESTION)
+					: $translator->translate(TranslationKeys::CLI_FAILURE_SUGGESTION),
 			];
 		}
 
@@ -166,10 +168,10 @@ final class Application
 				fwrite(STDOUT, $command === 'help'
 					? self::help($translator)
 					: ($command === 'version'
-						? $translator->translate('cli.version', ['version' => $this->version]) . "\n"
+						? $translator->translate(TranslationKeys::CLI_VERSION, ['version' => $this->version]) . "\n"
 						: json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n"));
 				if (!in_array($command, ['help', 'version'], true)) {
-					fwrite(STDOUT, $translator->translate('cli.static_notice') . "\n");
+					fwrite(STDOUT, $translator->translate(TranslationKeys::CLI_STATIC_NOTICE) . "\n");
 				}
 			}
 		}
@@ -193,11 +195,11 @@ final class Application
 		$checks['artifact'] = 'passed';
 		$detected = $inspection['type'] ?? null;
 		if (!is_string($detected)) {
-			throw new LocalizedException('cli.artifact_type_missing', usageError: true);
+			throw new LocalizedException(TranslationKeys::CLI_ARTIFACT_TYPE_MISSING, usageError: true);
 		}
 		if ($artifactType === ExtractType::AUTO->value) {
 			if ($detected === ProjectRole::DUAL->value) {
-				throw new LocalizedException('cli.dual_artifact_type_required', usageError: true);
+				throw new LocalizedException(TranslationKeys::CLI_DUAL_ARTIFACT_TYPE_REQUIRED, usageError: true);
 			}
 			$artifactType = $detected;
 		} else {
@@ -311,7 +313,7 @@ final class Application
 			}
 			if (preg_match('/^--(project|virions|out|artifact|type|format|lang)=(.+)$/Ds', $argument, $match) === 1) {
 				if (isset($options[$match[1]]) || str_contains($match[2], "\0") || preg_match('/[\r\n]/', $match[2]) === 1) {
-					throw new LocalizedException('cli.path_option_invalid', ['option' => $match[1]], true);
+					throw new LocalizedException(TranslationKeys::CLI_PATH_OPTION_INVALID, ['option' => $match[1]], true);
 				}
 				$options[$match[1]] = $match[2];
 				continue;
@@ -321,7 +323,7 @@ final class Application
 				$reportedCommand = $command;
 				continue;
 			}
-			throw new LocalizedException('cli.unknown_argument', ['argument' => $argument], true);
+			throw new LocalizedException(TranslationKeys::CLI_UNKNOWN_ARGUMENT, ['argument' => $argument], true);
 		}
 		if (isset($options['help']) || $arguments === [] || array_diff($arguments, ['--json', '--debug']) === []) {
 			return ['help', $options];
@@ -330,7 +332,7 @@ final class Application
 			return ['version', $options];
 		}
 		if ($command === null) {
-			throw new LocalizedException('cli.command_required', usageError: true);
+			throw new LocalizedException(TranslationKeys::CLI_COMMAND_REQUIRED, usageError: true);
 		}
 		$allowed = match ($command) {
 			'build' => ['project', 'virions', 'out', 'overwrite', 'type', 'lang'],
@@ -340,7 +342,7 @@ final class Application
 		};
 		foreach (array_keys($options) as $key) {
 			if (!in_array($key, $allowed, true)) {
-				throw new LocalizedException('cli.option_unsupported', ['option' => $key, 'command' => $command], true);
+				throw new LocalizedException(TranslationKeys::CLI_OPTION_UNSUPPORTED, ['option' => $key, 'command' => $command], true);
 			}
 		}
 		if (isset($options['type'])) {
@@ -348,11 +350,11 @@ final class Application
 				? array_map(static fn(BuildTarget $target) : string => $target->value, BuildTarget::cases())
 				: array_map(static fn(ExtractType $type) : string => $type->value, ExtractType::cases());
 			if (!in_array($options['type'], $allowedTypes, true)) {
-				throw new LocalizedException($command === 'build' ? 'cli.build_type_invalid' : 'cli.extract_type_invalid', usageError: true);
+				throw new LocalizedException($command === 'build' ? TranslationKeys::CLI_BUILD_TYPE_INVALID : TranslationKeys::CLI_EXTRACT_TYPE_INVALID, usageError: true);
 			}
 		}
 		if (isset($options['format']) && !in_array($options['format'], array_map(static fn(ExtractFormat $format) : string => $format->value, ExtractFormat::cases()), true)) {
-			throw new LocalizedException('cli.format_invalid', usageError: true);
+			throw new LocalizedException(TranslationKeys::CLI_FORMAT_INVALID, usageError: true);
 		}
 
 		return [$command, $options];
@@ -361,7 +363,7 @@ final class Application
 	/** @param array<string, string> $options */
 	private function required(array $options, string $key) : string
 	{
-		return $options[$key] ?? throw new LocalizedException('cli.option_required', ['option' => $key], true);
+		return $options[$key] ?? throw new LocalizedException(TranslationKeys::CLI_OPTION_REQUIRED, ['option' => $key], true);
 	}
 
 	/** @param array<string, mixed> $inspection */
@@ -372,17 +374,17 @@ final class Application
 		}
 		$detected = $inspection['type'] ?? null;
 		if (!is_string($detected)) {
-			throw new LocalizedException('cli.artifact_type_missing', usageError: true);
+			throw new LocalizedException(TranslationKeys::CLI_ARTIFACT_TYPE_MISSING, usageError: true);
 		}
 		if (!ArtifactInspector::roleMatches($detected, $type)) {
-			throw new LocalizedException('cli.artifact_type_mismatch', ['detected' => $detected, 'type' => $type], true);
+			throw new LocalizedException(TranslationKeys::CLI_ARTIFACT_TYPE_MISMATCH, ['detected' => $detected, 'type' => $type], true);
 		}
 	}
 
 	private function absolute(string $path, string $base) : string
 	{
 		if (preg_match('~^[a-z][a-z0-9+.-]*://~i', $path) === 1) {
-			throw new LocalizedException('cli.local_path_only', usageError: true);
+			throw new LocalizedException(TranslationKeys::CLI_LOCAL_PATH_ONLY, usageError: true);
 		}
 		if (str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:[\\\\\/]/', $path) === 1) {
 			return $path;
@@ -393,6 +395,6 @@ final class Application
 
 	private static function help(Translator $translator) : string
 	{
-		return $translator->translate('cli.help');
+		return $translator->translate(TranslationKeys::CLI_HELP);
 	}
 }

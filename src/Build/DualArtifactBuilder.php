@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Build;
 
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
+
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 
@@ -27,7 +29,7 @@ final class DualArtifactBuilder
 	public function prepare(string $project) : DualArtifactProject
 	{
 		if ($this->roleDetector->detect($project) !== ProjectRole::DUAL) {
-			throw new LocalizedException('build.both_required', ['project' => $project]);
+			throw new LocalizedException(TranslationKeys::BUILD_BOTH_REQUIRED, ['project' => $project]);
 		}
 		$plugin = $this->pluginManifestReader->read($project . '/' . ArtifactFile::PLUGIN_MANIFEST);
 		$virion = $this->virionManifestReader->read($project . '/' . ArtifactFile::VIRION_MANIFEST);
