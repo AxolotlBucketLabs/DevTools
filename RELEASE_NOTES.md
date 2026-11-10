@@ -1,17 +1,19 @@
-# DevTools 3.3.1
+# DevTools 4.0.0
 
-DevTools 3.3.1 completes the localization and documentation follow-up for the v3 workflow while aligning the source tree with PocketMine-MP formatting conventions.
+DevTools 4.0.0 reorganizes dependency selection, runtime loading and artifact building. Direct PHP integrations need the migration described below. Plugin commands, workflow inputs, manifest formats and CLI JSON schema remain unchanged.
 
-## Highlights
+## Changes
 
-- Complete the runtime message catalogs for all 14 supported Axolotl-PM locales.
-- Localize the remaining user-facing CLI and runtime diagnostics while keeping machine-readable JSON output stable.
-- Clarify runtime startup phases and align the CLI, ecosystem and GitHub Actions documentation with the current v3 interfaces.
-- Use PocketMine-MP-compatible PHP formatting rules for the source, tests, tools and examples.
-- Add a dedicated GitHub Actions check for PHP code style.
+- Keep startup dependency errors scoped to the affected folder plugin.
+- Separate candidate selection and graph checks from class-loader registration while preserving folder precedence, compatible cycles and ordered diagnostics.
+- Share artifact replacement and rollback across plugin, virion and dual builds.
+- Share prepared-content verification and project doctor checks, and retain preflight data when a CLI build fails.
 
-## Compatibility and upgrade notes
+## Upgrading
 
-- This is a patch release for the existing v3 workflow channel.
-- Existing plugin and virion projects do not need a migration.
-- The CLI JSON schema and PHAR build or extraction formats are unchanged.
+- Replace `plugins/DevTools.phar` and restart the server.
+- Use `AxolotlBucketLabs/DevTools@v4` or the corresponding reusable workflow reference for the 4.x channel. `v3` remains on the 3.x series. `latest` follows stable releases across major versions.
+- Direct PHP callers must update the dual builder, CLI and folder-loader construction described in the [migration guide](https://github.com/AxolotlBucketLabs/DevTools/blob/v4.0.0/docs/migration.md#direct-php-integrations).
+- PHP 8.4 remains the minimum. Quality checks cover PHP 8.4 and 8.5. Real-server smoke tests use Axolotl-PM 5.51.1 on PHP 8.4.27.
+
+The release tag and checksum manifest are signed with the maintainer's GPG key. Verify `SHA256SUMS.txt.asc` before checking the downloaded assets against `SHA256SUMS.txt`.

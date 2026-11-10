@@ -37,7 +37,7 @@ Unsupported Composer package layouts and dynamic class references fail explicitl
 
 ## Direct PHP integrations
 
-Direct PHP integrations must update the constructors and dual-build calls below. CLI commands, server commands and GitHub workflow inputs keep their existing syntax.
+DevTools 4.0 changes the direct PHP constructors and dual-build calls below. CLI commands, server commands and GitHub workflow inputs keep their existing syntax.
 
 `DualArtifactBuilder` now requires `PluginManifestReader`, `VirionManifestReader` and `ProjectRoleDetector` after its existing constructor dependencies. Call `prepare()` with the project root, then pass the returned `DualArtifactProject` to `build()` instead of a root string and two output names.
 
