@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 4.0.1 - 2026-11-10
+
+### Changed
+
+- Make plugin and virion PHAR builds reproducible when staged files and the build toolchain are unchanged.
+- Normalize archive ordering, timestamps, permissions, and internal PHAR metadata while retaining SHA-256 signatures.
+- Declare the ZIP extension required by the PHAR build path.
+
+### Fixed
+
+- Prevent generated PHAR timestamps from changing an otherwise identical artifact checksum.
+
+### Compatibility
+
+- Plugin commands, manifest formats, namespace contracts, and runtime APIs are unchanged.
+- PHP 8.4 remains the minimum supported version.
+
 ## 4.0.0 - 2026-11-10
 
 ### Changed
