@@ -11,6 +11,7 @@ use AxolotlBucketLabs\DevTools\Build\DualArtifactBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
+use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
 use AxolotlBucketLabs\DevTools\Build\ProjectRole;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionResolver;
@@ -18,8 +19,6 @@ use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Translator;
-use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
-use AxolotlBucketLabs\DevTools\Validation\PluginProjectValidator;
 use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use InvalidArgumentException;
 use Throwable;
@@ -50,8 +49,7 @@ final class Application
 {
 	public function __construct(
 		private readonly string $version,
-		private readonly PluginManifestReader $manifestReader,
-		private readonly PluginProjectValidator $validator,
+		private readonly ProjectDoctor $doctor,
 		private readonly BuildConfigResolver $configResolver,
 		private readonly VirionResolver $resolver,
 		private readonly PharBuilder $builder,
@@ -169,23 +167,23 @@ final class Application
 						];
 						$checks['artifact'] = 'passed';
 					} else {
-						$validation = $this->validator->validate($project);
+						$check = $this->doctor->check($project, $virions, $project . '/plugin.yml');
+						$validation = $check->validation;
 						foreach ($validation->issues() as $issue) {
 							$diagnostics[] = ['code' => $issue->code, 'severity' => $issue->severity->value, 'message' => $issue->message, 'file' => $issue->path, 'line' => null, 'suggestion' => $issue->suggestion];
 						}
 						$checks['structure'] = $validation->hasErrors() ? 'failed' : 'passed';
+						$checks['dependencies'] = $check->dependencyStatus;
 						if ($validation->hasErrors()) {
 							$exit = 1;
+						} elseif ($check->error !== null) {
+							throw $check->error;
 						} else {
-							$manifest = $this->manifestReader->read($project . '/plugin.yml');
-							$checks['dependencies'] = 'failed';
-							$config = $this->configResolver->resolve($project, $manifest->description->getName());
-							$virionsResolved = $this->resolver->resolve($config->virions, $virions);
-							$checks['dependencies'] = 'passed';
+							$manifest = $check->requireManifest();
 							$data = [
 								'project' => $project,
 								'plugin' => ['name' => $manifest->description->getName(), 'version' => $manifest->description->getVersion()],
-								'dependencies' => array_map(static fn($virion) : array => ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location], $virionsResolved),
+								'dependencies' => array_map(static fn($virion) : array => ['name' => $virion->manifest->name, 'version' => $virion->manifest->version, 'antigen' => $virion->manifest->antigen, 'source' => $virion->location], $check->virions),
 							];
 							if ($command === 'build') {
 								$checks['artifact'] = 'failed';

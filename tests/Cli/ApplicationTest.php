@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Cli;
 
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use function dirname;
 use function fclose;
@@ -14,10 +15,12 @@ use function json_decode;
 use function json_encode;
 use function proc_close;
 use function proc_open;
+use function realpath;
 use function stream_get_contents;
 use function sys_get_temp_dir;
 use function unlink;
 use const DIRECTORY_SEPARATOR;
+use const FILE_APPEND;
 use const JSON_THROW_ON_ERROR;
 use const PHP_BINARY;
 
@@ -89,6 +92,91 @@ final class ApplicationTest extends TestCase
 		self::assertNotNull($result['diagnostics'][0]['file']);
 		self::assertSame('failed', $result['checks']['structure']);
 		self::assertSame('not_run', $result['checks']['runtime']);
+	}
+
+	public function test_plugin_preflight_preserves_warnings_before_dependency_failures() : void
+	{
+		$project = $this->copyFixture('BuildPlugin');
+		file_put_contents($project . '/plugin.yml', "softdepend: [Optional, optional]\n", FILE_APPEND);
+		foreach (['doctor', 'build'] as $command) {
+			[$code, $result, $stderr] = $this->cli([$command, '--project=' . $project, '--lang=vie']);
+
+			self::assertSame(1, $code);
+			self::assertSame('', $stderr);
+			self::assertSame([], $result['data']);
+			self::assertSame([
+				'structure' => 'passed', 'dependencies' => 'failed', 'artifact' => 'not_run',
+				'static_analysis' => 'not_run', 'runtime' => 'not_run',
+			], $result['checks']);
+			self::assertSame([
+				'code' => 'plugin.dependency_duplicate', 'severity' => 'warning',
+				'message' => 'softdepend declares optional more than once.',
+				'file' => $project . DIRECTORY_SEPARATOR . 'plugin.yml', 'line' => null,
+				'suggestion' => 'Remove the duplicate entry.',
+			], $result['diagnostics'][0]);
+			self::assertSame('operation.' . $command . '_failed', $result['diagnostics'][1]['code']);
+			self::assertIsString($result['diagnostics'][1]['message']);
+			self::assertStringContainsString('no valid virion', $result['diagnostics'][1]['message']);
+			self::assertSame(Translator::fromResources('vie')->translate('cli.failure_suggestion'), $result['diagnostics'][1]['suggestion']);
+			self::assertDirectoryDoesNotExist($project . '/build');
+		}
+	}
+
+	public function test_plugin_preflight_reports_configuration_failure_in_dependency_phase() : void
+	{
+		$project = $this->copyFixture('ValidPlugin');
+		file_put_contents($project . '/devtools.yml', "unknown: true\n");
+		foreach (['doctor', 'build'] as $command) {
+			[$code, $result] = $this->cli([$command, '--project=' . $project]);
+
+			self::assertSame(1, $code);
+			self::assertSame('passed', $result['checks']['structure']);
+			self::assertSame('failed', $result['checks']['dependencies']);
+			self::assertSame('not_run', $result['checks']['artifact']);
+			self::assertSame('operation.' . $command . '_failed', $result['diagnostics'][0]['code']);
+			self::assertIsString($result['diagnostics'][0]['message']);
+			self::assertStringContainsString('Unknown key "unknown"', $result['diagnostics'][0]['message']);
+			self::assertDirectoryDoesNotExist($project . '/build');
+		}
+	}
+
+	public function test_plugin_validation_errors_stop_before_configuration() : void
+	{
+		$project = $this->copyFixture('ValidPlugin');
+		file_put_contents($project . '/src/Main.php', '<?php invalid syntax');
+		file_put_contents($project . '/devtools.yml', "unknown: true\n");
+		foreach (['doctor', 'build'] as $command) {
+			[$code, $result] = $this->cli([$command, '--project=' . $project]);
+
+			self::assertSame(1, $code);
+			self::assertSame('failed', $result['checks']['structure']);
+			self::assertSame('not_run', $result['checks']['dependencies']);
+			self::assertSame('not_run', $result['checks']['artifact']);
+			self::assertCount(1, $result['diagnostics']);
+			self::assertSame('plugin.source_invalid', $result['diagnostics'][0]['code']);
+		}
+	}
+
+	public function test_doctor_keeps_dependency_summary_and_validation_warnings() : void
+	{
+		$project = $this->copyFixture('BuildPlugin');
+		$virion = $this->copyFixture('SharedVirion', 'BuildPlugin/virions/SharedVirion');
+		file_put_contents($project . '/plugin.yml', "softdepend: [Optional, optional]\n", FILE_APPEND);
+
+		[$code, $result] = $this->cli(['doctor', '--project=' . $project]);
+
+		self::assertSame(0, $code);
+		self::assertTrue($result['success']);
+		self::assertSame('passed', $result['checks']['structure']);
+		self::assertSame('passed', $result['checks']['dependencies']);
+		self::assertSame('not_run', $result['checks']['artifact']);
+		self::assertSame([
+			'project' => $project,
+			'plugin' => ['name' => 'BuildFixture', 'version' => '1.0.0'],
+			'dependencies' => [['name' => 'SharedVirion', 'version' => '1.0.0', 'antigen' => 'Shared\\Virion', 'source' => realpath($virion)]],
+		], $result['data']);
+		self::assertCount(1, $result['diagnostics']);
+		self::assertSame('warning', $result['diagnostics'][0]['severity']);
 	}
 
 	public function test_build_inspect_extract_and_output_protection_work_from_another_directory() : void

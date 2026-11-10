@@ -13,6 +13,7 @@ use AxolotlBucketLabs\DevTools\Build\PharArchiveReader;
 use AxolotlBucketLabs\DevTools\Build\PharBuilder;
 use AxolotlBucketLabs\DevTools\Build\PharExtractor;
 use AxolotlBucketLabs\DevTools\Build\PluginProjectLocator;
+use AxolotlBucketLabs\DevTools\Build\ProjectDoctor;
 use AxolotlBucketLabs\DevTools\Build\ProjectRoleDetector;
 use AxolotlBucketLabs\DevTools\Build\VirionBuilder;
 use AxolotlBucketLabs\DevTools\Build\VirionProjectLocator;
@@ -56,231 +57,24 @@ use const DIRECTORY_SEPARATOR;
  */
 final class BuildWorkerApplication
 {
-	/**
-	 * @param array<string, mixed> $payload
-	 * @return array{success: bool, messages: list<string>, debug: list<string>}
-	 */
-	public static function run(string $operation, array $payload) : array
-	{
-		$debugMessages = [];
-		$translator = null;
-		$debug = new DebugLogger(($payload['debug'] ?? false) === true
-			? static function (string $message) use (&$debugMessages) : void {
-				$debugMessages[] = $message;
-			}
-			: null);
-		$debug->debug("Worker operation {$operation} started.");
-		try {
-			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : 'eng');
-			$messages = match ($operation) {
-				'doctor' => self::doctor($payload, $debug, $translator),
-				'build' => self::build($payload, $debug, $translator),
-				'extract' => self::extract($payload, $debug, $translator),
-				default => throw new BuildException($translator->translate('worker.unknown_operation', ['operation' => $operation])),
-			};
-			$debug->debug("Worker operation {$operation} completed successfully.");
+	private readonly FolderPluginDiscovery $pluginDiscovery;
+	private readonly ProjectDoctor $projectDoctor;
+	private readonly PluginProjectLocator $projectLocator;
+	private readonly PharBuilder $builder;
+	private readonly PharExtractor $extractor;
+	private readonly VirionBuilder $virionBuilder;
+	private readonly ZipArchiveWriter $zipWriter;
+	private readonly ArtifactInspector $artifactInspector;
+	private readonly VirionProjectLocator $virionProjectLocator;
+	private readonly DualArtifactBuilder $dualArtifactBuilder;
 
-			return ['success' => true, 'messages' => $messages, 'debug' => $debugMessages];
-		} catch (\Throwable $error) {
-			$debug->debug("Worker operation {$operation} failed: {$error->getMessage()}");
-
-			return [
-				'success' => false,
-				'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', [
-					'error' => $error instanceof LocalizedException
-						? $error->render($translator ?? Translator::fromResources())
-						: $error->getMessage(),
-				])],
-				'debug' => $debugMessages,
-			];
-		}
-	}
-
-	/**
-	 * @param array<string, mixed> $payload
-	 * @return list<string>
-	 */
-	private static function doctor(array $payload, DebugLogger $debug, Translator $translator) : array
-	{
-		$services = self::services($payload, $debug);
-		$selection = $payload['selection'] ?? null;
-		if ($selection !== null && !is_string($selection)) {
-			throw new BuildException($translator->translate('doctor.invalid_selection'));
-		}
-		$projects = $selection === null
-			? $services['pluginDiscovery']->discover($services['pluginsDirectory'])
-			: [$services['projectLocator']->locate($selection, $services['pluginsDirectory'])];
-		if ($projects === []) {
-			return [$translator->translate('doctor.none', ['directory' => $services['pluginsDirectory']])];
-		}
-
-		$messages = [];
-		foreach ($projects as $project) {
-			$result = $services['validator']->validate($project);
-			$messages[] = $translator->translate('doctor.checking', ['project' => $project]);
-			foreach ($result->issues() as $issue) {
-				$messages[] = $issue->format();
-			}
-			if ($result->hasErrors()) {
-				continue;
-			}
-			try {
-				$manifest = $services['manifestReader']->read($project . DIRECTORY_SEPARATOR . 'plugin.yml');
-				$config = $services['configResolver']->resolve($project, $manifest->description->getName());
-				$resolved = $services['resolver']->resolve($config->virions, $services['virionsDirectory']);
-				$messages[] = $translator->translate('doctor.passed', ['count' => count($resolved)]);
-			} catch (\Throwable $error) {
-				$messages[] = $translator->translate('doctor.failed', ['project' => $project, 'error' => $error->getMessage()]);
-			}
-		}
-
-		return $messages;
-	}
-
-	/**
-	 * @param array<string, mixed> $payload
-	 * @return list<string>
-	 */
-	private static function build(array $payload, DebugLogger $debug, Translator $translator) : array
-	{
-		$services = self::services($payload, $debug);
-		$target = $payload['target'] ?? 'plugin';
-		$selection = $payload['selection'] ?? null;
-		$overwrite = $payload['overwrite'] ?? false;
-		if (!is_string($target) || !is_string($selection) || !is_bool($overwrite)) {
-			throw new BuildException($translator->translate('worker.invalid_build_payload'));
-		}
-
-		if ($target === 'virion') {
-			$project = $services['virionProjectLocator']->locate($selection, $services['virionsDirectory']);
-			$result = $services['virionBuilder']->build($project, $services['buildDirectory'], $overwrite);
-
-			return [
-				$translator->translate('build.virion', ['name' => $result->manifest->name]),
-				$translator->translate('summary.files', ['count' => $result->fileCount]),
-				$translator->translate('summary.output', ['path' => $result->outputPath]),
-			];
-		}
-
-		$project = $services['projectLocator']->locate($selection, $services['pluginsDirectory']);
-		if ($target === 'both') {
-			$dualProject = $services['dualArtifactBuilder']->prepare($project);
-			$artifacts = $services['dualArtifactBuilder']->build(
-				$dualProject,
-				$services['virionsDirectory'],
-				$services['buildDirectory'],
-				$overwrite,
-			);
-
-			return [
-				$translator->translate('build.dual'),
-				$translator->translate('summary.plugin_output', ['path' => $artifacts['plugin']]),
-				$translator->translate('summary.virion_output', ['path' => $artifacts['virion']]),
-			];
-		}
-
-		$result = $services['builder']->build($project, $services['virionsDirectory'], $services['buildDirectory'], $overwrite);
-
-		return [
-			$translator->translate('build.plugin', ['name' => $result->pluginName]),
-			$translator->translate('summary.files', ['count' => $result->fileCount]),
-			$translator->translate('summary.shaded', ['count' => count($result->shadedVirions)]),
-			$translator->translate('summary.output', ['path' => $result->outputPath]),
-		];
-	}
-
-	/**
-	 * @param array<string, mixed> $payload
-	 * @return list<string>
-	 */
-	private static function extract(array $payload, DebugLogger $debug, Translator $translator) : array
-	{
-		$services = self::services($payload, $debug);
-		$selection = $payload['selection'] ?? null;
-		$format = $payload['format'] ?? 'folder';
-		$type = $payload['type'] ?? 'auto';
-		$overwrite = $payload['overwrite'] ?? false;
-		if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
-			throw new BuildException($translator->translate('worker.invalid_extract_payload'));
-		}
-
-		$path = self::locatePhar($selection, $services['pluginsDirectory'], $services['virionsDirectory'], $services['buildDirectory']);
-		$detectedType = $services['artifactInspector']->inspect($path)['type'];
-		if (!is_string($detectedType)) {
-			throw new BuildException($translator->translate('extract.artifact_type'));
-		}
-		if ($type === 'auto') {
-			$type = $detectedType;
-		}
-		if ($type === 'both') {
-			throw new BuildException($translator->translate('extract.dual'));
-		}
-		if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
-			throw new BuildException($translator->translate('extract.usage'));
-		}
-		if (!ArtifactInspector::roleMatches($detectedType, $type)) {
-			throw new BuildException($translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $type]));
-		}
-
-		$name = basename($path);
-		if (str_ends_with(strtolower($name), '.phar')) {
-			$name = substr($name, 0, -5);
-		}
-		if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
-			throw new BuildException($translator->translate('extract.safe_name', ['path' => $path]));
-		}
-		Path::normalizeRelative($name);
-
-		if ($format === 'zip') {
-			$destination = Path::join(realpath($services['buildDirectory']) ?: $services['buildDirectory'], $name . '.zip');
-			$count = $services['zipWriter']->write(new PharArchiveReader($path), $destination, $overwrite);
-
-			return [$translator->translate('extract.archived', ['count' => $count, 'path' => $destination])];
-		}
-
-		$baseDirectory = $type === 'virion' ? $services['virionsDirectory'] : $services['pluginsDirectory'];
-		$base = realpath($baseDirectory);
-		if ($base === false) {
-			throw new BuildException($translator->translate('extract.directory', ['type' => $type, 'directory' => $baseDirectory]));
-		}
-		$destination = Path::join($base, $name);
-		if (dirname($destination) !== $base) {
-			throw new BuildException($translator->translate('extract.outside', ['path' => $base]));
-		}
-		$count = $services['extractor']->extract(new PharArchiveReader($path), $destination, $overwrite);
-
-		return [$translator->translate('extract.extracted', ['count' => $count, 'path' => $destination])];
-	}
-
-	/**
-	 * @param array<string, mixed> $payload
-	 * @return array{
-	 *     pluginDiscovery: FolderPluginDiscovery,
-	 *     validator: PluginProjectValidator,
-	 *     manifestReader: PluginManifestReader,
-	 *     configResolver: BuildConfigResolver,
-	 *     resolver: VirionResolver,
-	 *     projectLocator: PluginProjectLocator,
-	 *     builder: PharBuilder,
-	 *     extractor: PharExtractor,
-	 *     virionBuilder: VirionBuilder,
-	 *     zipWriter: ZipArchiveWriter,
-	 *     artifactInspector: ArtifactInspector,
-	 *     virionProjectLocator: VirionProjectLocator,
-	 *     dualArtifactBuilder: DualArtifactBuilder,
-	 *     pluginsDirectory: string,
-	 *     virionsDirectory: string,
-	 *     buildDirectory: string
-	 * }
-	 */
-	private static function services(array $payload, DebugLogger $debug) : array
-	{
-		foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
-			if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
-				throw new LocalizedException('worker.path_missing', ['key' => $key]);
-			}
-		}
-
+	private function __construct(
+		private readonly string $pluginsDirectory,
+		private readonly string $virionsDirectory,
+		private readonly string $buildDirectory,
+		DebugLogger $debug,
+		private readonly Translator $translator,
+	) {
 		$filesystem = new Filesystem();
 		$yaml = new YamlReader();
 		$sourceInspector = new PhpSourceInspector();
@@ -307,32 +101,223 @@ final class BuildWorkerApplication
 		);
 		$virionBuilder = new VirionBuilder($filesystem, $virionManifestReader, $virionFactory, $virionScanner, $debug);
 
+		$this->pluginDiscovery = $pluginDiscovery;
+		$this->projectDoctor = new ProjectDoctor($validator, $manifestReader, $configResolver, $resolver);
+		$this->projectLocator = new PluginProjectLocator($pluginDiscovery, $manifestReader);
+		$this->builder = $builder;
+		$this->extractor = new PharExtractor($filesystem, $debug);
+		$this->virionBuilder = $virionBuilder;
+		$this->zipWriter = new ZipArchiveWriter($filesystem);
+		$this->artifactInspector = new ArtifactInspector($manifestReader, $virionManifestReader);
+		$this->virionProjectLocator = new VirionProjectLocator($virionDiscovery, $virionFactory);
+		$this->dualArtifactBuilder = new DualArtifactBuilder(
+			$filesystem,
+			$builder,
+			$virionBuilder,
+			new ArtifactSetInstaller(),
+			$manifestReader,
+			$virionManifestReader,
+			new ProjectRoleDetector(),
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $payload
+	 * @return array{success: bool, messages: list<string>, debug: list<string>}
+	 */
+	public static function run(string $operation, array $payload) : array
+	{
+		$debugMessages = [];
+		$translator = null;
+		$debug = new DebugLogger(($payload['debug'] ?? false) === true
+			? static function (string $message) use (&$debugMessages) : void {
+				$debugMessages[] = $message;
+			}
+			: null);
+		$debug->debug("Worker operation {$operation} started.");
+		try {
+			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : 'eng');
+			if (!in_array($operation, ['doctor', 'build', 'extract'], true)) {
+				throw new BuildException($translator->translate('worker.unknown_operation', ['operation' => $operation]));
+			}
+			foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
+				if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
+					throw new LocalizedException('worker.path_missing', ['key' => $key]);
+				}
+			}
+			$application = new self($payload['pluginsDirectory'], $payload['virionsDirectory'], $payload['buildDirectory'], $debug, $translator);
+			$messages = match ($operation) {
+				'doctor' => $application->doctor($payload),
+				'build' => $application->build($payload),
+				'extract' => $application->extract($payload),
+			};
+			$debug->debug("Worker operation {$operation} completed successfully.");
+
+			return ['success' => true, 'messages' => $messages, 'debug' => $debugMessages];
+		} catch (\Throwable $error) {
+			$debug->debug("Worker operation {$operation} failed: {$error->getMessage()}");
+
+			return [
+				'success' => false,
+				'messages' => [($translator ?? Translator::fromResources())->translate('command.failed', [
+					'error' => $error instanceof LocalizedException
+						? $error->render($translator ?? Translator::fromResources())
+						: $error->getMessage(),
+				])],
+				'debug' => $debugMessages,
+			];
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $payload
+	 * @return list<string>
+	 */
+	private function doctor(array $payload) : array
+	{
+		$selection = $payload['selection'] ?? null;
+		if ($selection !== null && !is_string($selection)) {
+			throw new BuildException($this->translator->translate('doctor.invalid_selection'));
+		}
+		$projects = $selection === null
+			? $this->pluginDiscovery->discover($this->pluginsDirectory)
+			: [$this->projectLocator->locate($selection, $this->pluginsDirectory)];
+		if ($projects === []) {
+			return [$this->translator->translate('doctor.none', ['directory' => $this->pluginsDirectory])];
+		}
+
+		$messages = [];
+		foreach ($projects as $project) {
+			$check = $this->projectDoctor->check($project, $this->virionsDirectory);
+			$result = $check->validation;
+			$messages[] = $this->translator->translate('doctor.checking', ['project' => $project]);
+			foreach ($result->issues() as $issue) {
+				$messages[] = $issue->format();
+			}
+			if ($result->hasErrors()) {
+				continue;
+			}
+			if ($check->error !== null) {
+				$messages[] = $this->translator->translate('doctor.failed', ['project' => $project, 'error' => $check->error->getMessage()]);
+			} else {
+				$messages[] = $this->translator->translate('doctor.passed', ['count' => count($check->virions)]);
+			}
+		}
+
+		return $messages;
+	}
+
+	/**
+	 * @param array<string, mixed> $payload
+	 * @return list<string>
+	 */
+	private function build(array $payload) : array
+	{
+		$target = $payload['target'] ?? 'plugin';
+		$selection = $payload['selection'] ?? null;
+		$overwrite = $payload['overwrite'] ?? false;
+		if (!is_string($target) || !is_string($selection) || !is_bool($overwrite)) {
+			throw new BuildException($this->translator->translate('worker.invalid_build_payload'));
+		}
+
+		if ($target === 'virion') {
+			$project = $this->virionProjectLocator->locate($selection, $this->virionsDirectory);
+			$result = $this->virionBuilder->build($project, $this->buildDirectory, $overwrite);
+
+			return [
+				$this->translator->translate('build.virion', ['name' => $result->manifest->name]),
+				$this->translator->translate('summary.files', ['count' => $result->fileCount]),
+				$this->translator->translate('summary.output', ['path' => $result->outputPath]),
+			];
+		}
+
+		$project = $this->projectLocator->locate($selection, $this->pluginsDirectory);
+		if ($target === 'both') {
+			$dualProject = $this->dualArtifactBuilder->prepare($project);
+			$artifacts = $this->dualArtifactBuilder->build(
+				$dualProject,
+				$this->virionsDirectory,
+				$this->buildDirectory,
+				$overwrite,
+			);
+
+			return [
+				$this->translator->translate('build.dual'),
+				$this->translator->translate('summary.plugin_output', ['path' => $artifacts['plugin']]),
+				$this->translator->translate('summary.virion_output', ['path' => $artifacts['virion']]),
+			];
+		}
+
+		$result = $this->builder->build($project, $this->virionsDirectory, $this->buildDirectory, $overwrite);
+
 		return [
-			'pluginDiscovery' => $pluginDiscovery,
-			'validator' => $validator,
-			'manifestReader' => $manifestReader,
-			'configResolver' => $configResolver,
-			'resolver' => $resolver,
-			'projectLocator' => new PluginProjectLocator($pluginDiscovery, $manifestReader),
-			'builder' => $builder,
-			'extractor' => new PharExtractor($filesystem, $debug),
-			'virionBuilder' => $virionBuilder,
-			'zipWriter' => new ZipArchiveWriter($filesystem),
-			'artifactInspector' => new ArtifactInspector($manifestReader, $virionManifestReader),
-			'virionProjectLocator' => new VirionProjectLocator($virionDiscovery, $virionFactory),
-			'dualArtifactBuilder' => new DualArtifactBuilder(
-				$filesystem,
-				$builder,
-				$virionBuilder,
-				new ArtifactSetInstaller(),
-				$manifestReader,
-				$virionManifestReader,
-				new ProjectRoleDetector(),
-			),
-			'pluginsDirectory' => $payload['pluginsDirectory'],
-			'virionsDirectory' => $payload['virionsDirectory'],
-			'buildDirectory' => $payload['buildDirectory'],
+			$this->translator->translate('build.plugin', ['name' => $result->pluginName]),
+			$this->translator->translate('summary.files', ['count' => $result->fileCount]),
+			$this->translator->translate('summary.shaded', ['count' => count($result->shadedVirions)]),
+			$this->translator->translate('summary.output', ['path' => $result->outputPath]),
 		];
+	}
+
+	/**
+	 * @param array<string, mixed> $payload
+	 * @return list<string>
+	 */
+	private function extract(array $payload) : array
+	{
+		$selection = $payload['selection'] ?? null;
+		$format = $payload['format'] ?? 'folder';
+		$type = $payload['type'] ?? 'auto';
+		$overwrite = $payload['overwrite'] ?? false;
+		if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
+			throw new BuildException($this->translator->translate('worker.invalid_extract_payload'));
+		}
+
+		$path = self::locatePhar($selection, $this->pluginsDirectory, $this->virionsDirectory, $this->buildDirectory);
+		$detectedType = $this->artifactInspector->inspect($path)['type'];
+		if (!is_string($detectedType)) {
+			throw new BuildException($this->translator->translate('extract.artifact_type'));
+		}
+		if ($type === 'auto') {
+			$type = $detectedType;
+		}
+		if ($type === 'both') {
+			throw new BuildException($this->translator->translate('extract.dual'));
+		}
+		if (!in_array($type, ['plugin', 'virion'], true) || !in_array($format, ['folder', 'zip'], true)) {
+			throw new BuildException($this->translator->translate('extract.usage'));
+		}
+		if (!ArtifactInspector::roleMatches($detectedType, $type)) {
+			throw new BuildException($this->translator->translate('extract.mismatch', ['detected' => $detectedType, 'requested' => $type]));
+		}
+
+		$name = basename($path);
+		if (str_ends_with(strtolower($name), '.phar')) {
+			$name = substr($name, 0, -5);
+		}
+		if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
+			throw new BuildException($this->translator->translate('extract.safe_name', ['path' => $path]));
+		}
+		Path::normalizeRelative($name);
+
+		if ($format === 'zip') {
+			$destination = Path::join(realpath($this->buildDirectory) ?: $this->buildDirectory, $name . '.zip');
+			$count = $this->zipWriter->write(new PharArchiveReader($path), $destination, $overwrite);
+
+			return [$this->translator->translate('extract.archived', ['count' => $count, 'path' => $destination])];
+		}
+
+		$baseDirectory = $type === 'virion' ? $this->virionsDirectory : $this->pluginsDirectory;
+		$base = realpath($baseDirectory);
+		if ($base === false) {
+			throw new BuildException($this->translator->translate('extract.directory', ['type' => $type, 'directory' => $baseDirectory]));
+		}
+		$destination = Path::join($base, $name);
+		if (dirname($destination) !== $base) {
+			throw new BuildException($this->translator->translate('extract.outside', ['path' => $base]));
+		}
+		$count = $this->extractor->extract(new PharArchiveReader($path), $destination, $overwrite);
+
+		return [$this->translator->translate('extract.extracted', ['count' => $count, 'path' => $destination])];
 	}
 
 	private static function locatePhar(string $selection, string $pluginsDirectory, string $virionsDirectory, string $buildDirectory) : string
