@@ -22,8 +22,7 @@ use function realpath;
 use function rename;
 use function str_contains;
 use function str_replace;
-use function str_starts_with;
-use function strtolower;
+use function strlen;
 
 final class PharExtractor
 {
@@ -63,7 +62,8 @@ final class PharExtractor
 
 		/** @var list<array{ArchiveEntry, string, string}> $pending */
 		$pending = [];
-		$seen = [];
+		$entryCount = 0;
+		$totalSizeBytes = 0;
 		foreach ($archive->entries() as $entry) {
 			if ($entry->symbolicLink) {
 				throw new BuildException("Refusing to extract symbolic link: {$entry->path}");
@@ -73,16 +73,10 @@ final class PharExtractor
 			} catch (\RuntimeException $error) {
 				throw new BuildException("Refusing unsafe archive entry {$entry->path}: {$error->getMessage()}", 0, $error);
 			}
-			$key = strtolower($relative);
-			if (isset($seen[$key])) {
-				throw new BuildException("Archive contains duplicate or case-conflicting path: {$relative}");
-			}
-			foreach ($seen as $seenPath => $_) {
-				if (str_starts_with($key, $seenPath . '/') || str_starts_with($seenPath, $key . '/')) {
-					throw new BuildException("Archive contains a file and directory prefix conflict: {$relative}");
-				}
-			}
-			$seen[$key] = true;
+			$entrySizeBytes = strlen($entry->contents);
+			ArchiveLimits::assertEntryWithinLimits($entryCount, $totalSizeBytes, $relative, $entrySizeBytes);
+			++$entryCount;
+			$totalSizeBytes += $entrySizeBytes;
 			$target = Path::join($base, $relative);
 			if (!Path::isInside($base, $target)) {
 				throw new BuildException("Refusing archive entry outside destination: {$entry->path}");

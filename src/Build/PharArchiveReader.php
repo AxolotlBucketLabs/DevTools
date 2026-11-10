@@ -8,7 +8,12 @@ use Phar;
 use PharFileInfo;
 use RecursiveIteratorIterator;
 use Throwable;
+use function fclose;
+use function fopen;
+use function is_resource;
+use function is_string;
 use function str_starts_with;
+use function stream_get_contents;
 use function strlen;
 use function substr;
 
@@ -37,6 +42,8 @@ final class PharArchiveReader implements ArchiveReader
 
 	public function entries() : iterable
 	{
+		$entryCount = 0;
+		$totalSizeBytes = 0;
 		$iterator = new RecursiveIteratorIterator($this->phar);
 		foreach ($iterator as $entry) {
 			if (!$entry instanceof PharFileInfo) {
@@ -45,12 +52,28 @@ final class PharArchiveReader implements ArchiveReader
 			if (!$entry->isFile()) {
 				continue;
 			}
-			$contents = $entry->getContent();
 			$relative = $entry->getPathName();
 			$prefix = 'phar://' . $this->phar->getPath() . '/';
 			if (str_starts_with($relative, $prefix)) {
 				$relative = substr($relative, strlen($prefix));
 			}
+			ArchiveLimits::assertEntryWithinLimits($entryCount, $totalSizeBytes, $relative, $entry->getSize());
+			$stream = fopen($entry->getPathName(), 'rb');
+			if (!is_resource($stream)) {
+				throw new BuildException("Cannot read archive entry: {$relative}");
+			}
+			try {
+				$contents = stream_get_contents($stream, ArchiveLimits::MAX_ENTRY_SIZE_BYTES + 1);
+			} finally {
+				fclose($stream);
+			}
+			if (!is_string($contents)) {
+				throw new BuildException("Cannot read archive entry: {$relative}");
+			}
+			$entrySizeBytes = strlen($contents);
+			ArchiveLimits::assertEntryWithinLimits($entryCount, $totalSizeBytes, $relative, $entrySizeBytes);
+			++$entryCount;
+			$totalSizeBytes += $entrySizeBytes;
 			yield new ArchiveEntry($relative, $contents, $entry->isLink());
 		}
 	}

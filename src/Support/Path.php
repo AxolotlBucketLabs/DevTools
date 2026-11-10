@@ -162,10 +162,11 @@ final class Path
 			$normalized = self::normalizeRelative($path);
 			$components = explode('/', $normalized);
 			$prefix = [];
+			$lastIndex = count($components) - 1;
 			foreach ($components as $index => $component) {
 				$prefix[] = $component;
 				$relative = implode('/', $prefix);
-				$directory = $index < count($components) - 1;
+				$directory = $index < $lastIndex;
 				$key = strtolower($relative);
 				if (isset($seen[$key])) {
 					$previous = $seen[$key];
@@ -179,14 +180,6 @@ final class Path
 						throw new FilesystemException("Cannot stage {$relative}: it is duplicated.");
 					}
 					continue;
-				}
-				foreach ($seen as $seenKey => $previous) {
-					if (str_starts_with($key, $seenKey . '/') && !$previous['directory']) {
-						throw new FilesystemException("Cannot stage {$relative}: it conflicts with file {$previous['path']} as a file and directory path.");
-					}
-					if (str_starts_with($seenKey, $key . '/') && !$directory) {
-						throw new FilesystemException("Cannot stage {$relative}: it conflicts with {$previous['path']} as a file and directory path.");
-					}
 				}
 				$seen[$key] = ['path' => $relative, 'directory' => $directory];
 			}

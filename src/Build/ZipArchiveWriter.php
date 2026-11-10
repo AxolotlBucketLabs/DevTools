@@ -19,7 +19,7 @@ use function is_file;
 use function pathinfo;
 use function realpath;
 use function rename;
-use function str_starts_with;
+use function strlen;
 use function strtolower;
 use function unlink;
 use const PATHINFO_EXTENSION;
@@ -48,7 +48,8 @@ final class ZipArchiveWriter
 		}
 
 		$entries = [];
-		$seen = [];
+		$entryCount = 0;
+		$totalSizeBytes = 0;
 		foreach ($archive->entries() as $entry) {
 			if ($entry->symbolicLink) {
 				throw new BuildException("Refusing to archive symbolic link: {$entry->path}");
@@ -58,16 +59,10 @@ final class ZipArchiveWriter
 			} catch (Throwable $error) {
 				throw new BuildException("Refusing unsafe archive entry {$entry->path}: {$error->getMessage()}", 0, $error);
 			}
-			$key = strtolower($relative);
-			if (isset($seen[$key])) {
-				throw new BuildException("Archive contains duplicate or case-conflicting path: {$relative}");
-			}
-			foreach ($seen as $seenPath => $_) {
-				if (str_starts_with($key, $seenPath . '/') || str_starts_with($seenPath, $key . '/')) {
-					throw new BuildException("Archive contains a file and directory prefix conflict: {$relative}");
-				}
-			}
-			$seen[$key] = true;
+			$entrySizeBytes = strlen($entry->contents);
+			ArchiveLimits::assertEntryWithinLimits($entryCount, $totalSizeBytes, $relative, $entrySizeBytes);
+			++$entryCount;
+			$totalSizeBytes += $entrySizeBytes;
 			$entries[] = [$relative, $entry->contents];
 		}
 		try {

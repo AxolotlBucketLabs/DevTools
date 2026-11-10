@@ -11,10 +11,12 @@ use SplFileInfo;
 use function basename;
 use function chmod;
 use function copy;
+use function count;
 use function dirname;
 use function explode;
 use function file_exists;
 use function fileperms;
+use function implode;
 use function in_array;
 use function is_dir;
 use function is_file;
@@ -27,7 +29,6 @@ use function rmdir;
 use function rtrim;
 use function str_contains;
 use function str_replace;
-use function str_starts_with;
 use function strcasecmp;
 use function strlen;
 use function strtolower;
@@ -169,30 +170,32 @@ final class Filesystem
 	/** @param array<string, array{path: string, directory: bool}> $seen */
 	private function recordPortablePath(array &$seen, string $relative, bool $directory) : void
 	{
-		$key = strtolower($relative);
-		if (isset($seen[$key])) {
-			if ($seen[$key]['path'] !== $relative) {
-				throw new FilesystemException(
-					"Cannot stage {$relative}: it has a case-conflicting path component with {$seen[$key]['path']}.",
-				);
+		$components = explode('/', $relative);
+		$prefix = [];
+		$lastIndex = count($components) - 1;
+		foreach ($components as $index => $component) {
+			$prefix[] = $component;
+			$path = implode('/', $prefix);
+			$pathIsDirectory = $index < $lastIndex || $directory;
+			$key = strtolower($path);
+			if (isset($seen[$key])) {
+				if ($seen[$key]['path'] !== $path) {
+					throw new FilesystemException(
+						"Cannot stage {$path}: it has a case-conflicting path component with {$seen[$key]['path']}.",
+					);
+				}
+				if ($seen[$key]['directory'] !== $pathIsDirectory) {
+					throw new FilesystemException(
+						"Cannot stage {$path}: it conflicts with {$seen[$key]['path']} as a file and directory path.",
+					);
+				}
+				if (!$pathIsDirectory) {
+					throw new FilesystemException("Cannot stage {$path}: it is duplicated.");
+				}
+				continue;
 			}
-			throw new FilesystemException(
-				"Cannot stage {$relative}: it is duplicated.",
-			);
+			$seen[$key] = ['path' => $path, 'directory' => $pathIsDirectory];
 		}
-		foreach ($seen as $seenKey => $entry) {
-			if (str_starts_with($key, $seenKey . '/') && !$entry['directory']) {
-				throw new FilesystemException(
-					"Cannot stage {$relative}: it conflicts with file {$entry['path']} as a file and directory path.",
-				);
-			}
-			if (str_starts_with($seenKey, $key . '/') && !$directory) {
-				throw new FilesystemException(
-					"Cannot stage {$relative}: it conflicts with {$entry['path']} as a file and directory path.",
-				);
-			}
-		}
-		$seen[$key] = ['path' => $relative, 'directory' => $directory];
 	}
 
 	public function assertNoSymbolicLinkComponents(string $base, string $relative) : void
