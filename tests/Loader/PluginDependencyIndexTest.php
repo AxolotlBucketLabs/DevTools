@@ -21,6 +21,7 @@ use AxolotlBucketLabs\DevTools\Virion\VirionRegistryEntry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirementChecker;
 use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use function file_put_contents;
+use function implode;
 
 final class PluginDependencyIndexTest extends TestCase
 {
@@ -53,9 +54,12 @@ final class PluginDependencyIndexTest extends TestCase
 		file_put_contents($invalid . '/devtools.yml', "include-paths: LICENSE\n");
 		file_put_contents($broken . '/plugin.yml', "name: Broken\n");
 		$warnings = [];
-		$index = $this->collector(new VirionRegistry(), $warnings)->collect($this->temporaryDirectory . '/plugins', $this->temporaryDirectory . '/virions');
+		$index = $this->collector(new VirionRegistry(), $warnings, Translator::fromResources('vie'))->collect($this->temporaryDirectory . '/plugins', $this->temporaryDirectory . '/virions');
 
 		self::assertCount(2, $warnings);
+		self::assertStringContainsString('Không thể đọc yêu cầu virion dùng chung', implode("\n", $warnings));
+		self::assertStringContainsString('Không thể đọc manifest plugin', implode("\n", $warnings));
+		self::assertStringContainsString('plugin.yml', implode("\n", $warnings));
 		self::assertNotNull($index->configurationFailure($invalid . '/.'));
 		self::assertNull($index->configurationFailure($healthy));
 		self::assertNull($index->dependencyFailure($healthy));
@@ -63,7 +67,7 @@ final class PluginDependencyIndexTest extends TestCase
 	}
 
 	/** @param list<string> $warnings */
-	private function collector(VirionRegistry $registry, array &$warnings) : PluginDependencyCollector
+	private function collector(VirionRegistry $registry, array &$warnings, ?Translator $translator = null) : PluginDependencyCollector
 	{
 		[$reader] = $this->validationServices();
 		return new PluginDependencyCollector(
@@ -78,7 +82,7 @@ final class PluginDependencyIndexTest extends TestCase
 			static function (string $message) use (&$warnings) : void {
 				$warnings[] = $message;
 			},
-			Translator::fromResources(),
+			$translator ?? Translator::fromResources(),
 		);
 	}
 }

@@ -36,4 +36,4 @@ Yes. DevTools uses filesystem APIs rather than shell-built commands. Portable ar
 
 ## Which languages does DevTools support?
 
-DevTools follows Axolotl-PM's selected language by default and supports `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`. Set `language` in the server `config.yml` to override `auto`, or use `--lang=<code>` with the CLI. Technical diagnostics fall back to English when an exact translation is not available.
+DevTools follows Axolotl-PM's selected language by default and supports `bul`, `chs`, `deu`, `eng`, `fra`, `ita`, `jpn`, `kor`, `lav`, `nld`, `rus`, `spa`, `tur` and `vie`. Set `language` in the server `config.yml` to override `auto`, or use `--lang=<code>` with the CLI. Summaries and guidance are translated. DEBUG traces and detailed validator, builder and parser diagnostics remain in English to preserve exact paths, package names and error details.

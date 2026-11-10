@@ -53,7 +53,7 @@ final class BuildWorkerApplicationTest extends TestCase
 		self::assertTrue($result['success']);
 		self::assertSame([
 			$translator->translate(TranslationKeys::DOCTOR_CHECKING, ['project' => $project]),
-			$validator->validate($project)->issues()[0]->format(),
+			$validator->validate($project)->issues()[0]->format($translator),
 			$translator->translate(TranslationKeys::DOCTOR_PASSED, ['count' => 1]),
 		], $result['messages']);
 	}

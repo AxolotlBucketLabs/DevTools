@@ -37,7 +37,7 @@ final class DevToolsCommandHandlerTest extends TestCase
 		$messages = $this->command(['virions'], registry: $registry, translator: Translator::fromResources('vie'));
 
 		self::assertStringContainsString('Đã nạp ExampleVirion. Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages);
-		self::assertStringContainsString('Thất bại ExampleVirion. Technical validator detail', $messages);
+		self::assertStringContainsString('Thất bại ExampleVirion. Không thể nạp virion. Technical validator detail', $messages);
 		self::assertStringNotContainsString('Loaded ExampleVirion', $messages);
 	}
 

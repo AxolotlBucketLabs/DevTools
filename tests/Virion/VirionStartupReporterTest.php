@@ -28,7 +28,10 @@ final class VirionStartupReporterTest extends TestCase
 			'Skipped SharedVirion candidates (1.0.0, 1.1.0). See /devtools virions for selection details.',
 			$messages[0]['message'],
 		);
-		self::assertSame(['first path', 'second path'], $messages[0]['details']);
+		self::assertSame([
+			'The virion candidate was skipped. first path',
+			'The virion candidate was skipped. second path',
+		], $messages[0]['details']);
 	}
 
 	private function entry(string $version, string $message) : VirionRegistryEntry
@@ -51,6 +54,22 @@ final class VirionStartupReporterTest extends TestCase
 
 		self::assertSame('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages[0]['message']);
 		self::assertSame('Đã bỏ qua một bản SharedVirion (1.0.0). Xem /devtools virions để biết chi tiết lựa chọn.', $messages[1]['message']);
-		self::assertSame(['Technical selection detail'], $messages[1]['details']);
+		self::assertSame(['Đã bỏ qua bản virion này. Technical selection detail'], $messages[1]['details']);
+	}
+
+	public function test_failure_and_conflict_summaries_are_translated_and_keep_technical_details() : void
+	{
+		$registry = new VirionRegistry();
+		$manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
+		$registry->record(new VirionRegistryEntry('failed path', $manifest, VirionStatus::FAILED, 'Technical load failure.'));
+		$registry->record(new VirionRegistryEntry('conflict path', $manifest, VirionStatus::CONFLICT, 'Technical conflict detail.'));
+
+		$messages = (new VirionStartupReporter(Translator::fromResources('vie')))->messages($registry);
+
+		self::assertCount(2, $messages);
+		self::assertStringStartsWith('Không thể nạp virion.', $messages[0]['message']);
+		self::assertStringContainsString('Technical load failure.', $messages[0]['message']);
+		self::assertStringStartsWith('Phát hiện xung đột virion.', $messages[1]['message']);
+		self::assertStringContainsString('Technical conflict detail.', $messages[1]['message']);
 	}
 }

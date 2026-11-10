@@ -49,7 +49,7 @@
     "doctor.failed": "Controllo delle dipendenze non riuscito per {project}. {error}",
     "worker.invalid_build_payload": "Payload di build in background non valido.",
     "summary.files": "File: {count}",
-    "summary.output": "Output: {path}",
+    "summary.output": "Percorso di output: {path}",
     "build.both_required": "La build di entrambi i ruoli richiede che {project} contenga plugin.yml e virion.yml.",
     "summary.plugin_output": "Output del plugin: {path}",
     "summary.virion_output": "Output del virion: {path}",

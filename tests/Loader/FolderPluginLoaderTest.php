@@ -76,6 +76,19 @@ final class FolderPluginLoaderTest extends TestCase
 		$loader->getPluginDescription($project);
 	}
 
+	public function test_folder_load_failure_uses_runtime_language_and_preserves_technical_detail() : void
+	{
+		$project = $this->copyFixture('MissingMain');
+		[$reader, $validator] = $this->validationServices();
+		$loader = new FolderPluginLoader(new ThreadSafeClassLoader(), $reader, $validator, translator: Translator::fromResources('vie'));
+
+		$this->expectException(PluginDescriptionParseException::class);
+		$this->expectExceptionMessage('Không thể nạp plugin dạng folder');
+		$this->expectExceptionMessage('src/Main.php');
+
+		$loader->getPluginDescription($project);
+	}
+
 	public function test_project_with_invalid_devtools_configuration_is_not_loadable() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'plugins/InvalidConfiguration');
@@ -91,7 +104,7 @@ final class FolderPluginLoaderTest extends TestCase
 		);
 
 		$this->expectException(PluginDescriptionParseException::class);
-		$this->expectExceptionMessage('DevTools configuration is invalid');
+		$this->expectExceptionMessage('must be a list of relative paths');
 
 		$loader->getPluginDescription($project);
 	}
@@ -143,7 +156,7 @@ final class FolderPluginLoaderTest extends TestCase
 			$loader->loadPlugin($project);
 			self::fail('A plugin with invalid configuration must not register its source path.');
 		} catch (\RuntimeException $error) {
-			self::assertStringContainsString('configuration is invalid', $error->getMessage());
+			self::assertStringContainsString('must be a list of relative paths', $error->getMessage());
 		}
 		self::assertNull($classLoader->findClass('Fixture\\Plugin\\Main'));
 	}
@@ -205,6 +218,8 @@ final class FolderPluginLoaderTest extends TestCase
 		self::assertCount(1, $warnings);
 		self::assertStringContainsString('development folder', $warnings[0]);
 		self::assertStringContainsString('PHAR', $warnings[0]);
+		$localizedWarnings = (new PluginSourceConflictDetector($reader))->detect($plugins, null, Translator::fromResources('vie'));
+		self::assertStringContainsString('có cả thư mục phát triển và PHAR', $localizedWarnings[0]);
 		self::assertSame([], (new PluginSourceConflictDetector($reader))->detect($plugins, $plugins . DIRECTORY_SEPARATOR . 'ValidPlugin'));
 	}
 
@@ -267,7 +282,7 @@ final class FolderPluginLoaderTest extends TestCase
 		);
 
 		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('shadows a loaded shared virion');
+		$this->expectExceptionMessage('shadows shared virion class');
 
 		$loader->loadPlugin($project);
 	}
