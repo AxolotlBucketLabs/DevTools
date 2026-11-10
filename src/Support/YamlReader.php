@@ -6,6 +6,8 @@ namespace AxolotlBucketLabs\DevTools\Support;
 
 use function file_get_contents;
 use function get_debug_type;
+use function ini_get;
+use function ini_set;
 use function is_array;
 use function is_file;
 use function restore_error_handler;
@@ -14,6 +16,9 @@ use function yaml_parse;
 
 final class YamlReader
 {
+	private const PHP_OBJECT_DECODING_INI = 'yaml.decode_php';
+	private const PHP_OBJECT_DECODING_DISABLED = '0';
+
 	/**
 	 * @return array<string, mixed>
 	 */
@@ -28,16 +33,32 @@ final class YamlReader
 			throw new YamlException("The YAML file could not be read: {$path}");
 		}
 
-		$warning = null;
-		set_error_handler(static function (int $severity, string $message) use (&$warning) : bool {
-			$warning = $message;
+		$previousObjectDecoding = ini_get(self::PHP_OBJECT_DECODING_INI);
+		if ($previousObjectDecoding === false) {
+			throw new YamlException('The YAML extension does not expose its PHP object decoding setting.');
+		}
+		if ($previousObjectDecoding !== self::PHP_OBJECT_DECODING_DISABLED
+			&& ini_set(self::PHP_OBJECT_DECODING_INI, self::PHP_OBJECT_DECODING_DISABLED) === false) {
+			throw new YamlException('PHP object decoding could not be disabled for YAML parsing.');
+		}
 
-			return true;
-		});
+		$warning = null;
 		try {
-			$data = yaml_parse($contents);
+			set_error_handler(static function (int $severity, string $message) use (&$warning) : bool {
+				$warning = $message;
+
+				return true;
+			});
+			try {
+				$data = yaml_parse($contents);
+			} finally {
+				restore_error_handler();
+			}
 		} finally {
-			restore_error_handler();
+			if ($previousObjectDecoding !== self::PHP_OBJECT_DECODING_DISABLED
+				&& ini_set(self::PHP_OBJECT_DECODING_INI, $previousObjectDecoding) === false) {
+				throw new YamlException('The previous YAML PHP object decoding setting could not be restored.');
+			}
 		}
 		if ($warning !== null) {
 			throw new YamlException("YAML syntax error in {$path}: {$warning}");
