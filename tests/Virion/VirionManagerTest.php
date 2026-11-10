@@ -17,12 +17,14 @@ use AxolotlBucketLabs\DevTools\Virion\VirionManifestReader;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectFactory;
 use AxolotlBucketLabs\DevTools\Virion\VirionProjectSelector;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
+use AxolotlBucketLabs\DevTools\Virion\VirionRegistryEntry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRequirement;
 use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use Phar;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use pocketmine\thread\ThreadSafeClassLoader;
 use function array_filter;
+use function array_map;
 use function file_get_contents;
 use function file_put_contents;
 use function hash_file;
@@ -40,6 +42,121 @@ use const JSON_THROW_ON_ERROR;
 
 final class VirionManagerTest extends TestCase
 {
+	public function test_cycle_inspection_failure_preserves_diagnostic_order_across_discovery() : void
+	{
+		$a = $this->graphVirion('A', ['B']);
+		$this->graphVirion('B', ['A']);
+		file_put_contents($a . '/src/GraphAudit/A/Greeting.php', '<?php namespace GraphAudit\\A;');
+		$registry = new VirionRegistry();
+		$registrar = new FakeClassLoaderRegistrar();
+		$manager = $this->manager($registrar, $registry);
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+		$sourceRoot = (new VirionProjectFactory(new VirionManifestReader(new YamlReader())))->open($a)->sourceRoot;
+		$failure = "Cannot load A: no PHP classes were found in {$sourceRoot}.";
+		$expected = [
+			['A', VirionStatus::FAILED, $failure],
+			['B', VirionStatus::FAILED, "Cannot load B: dependency A failed. {$failure}"],
+		];
+		self::assertSame($expected, $this->diagnostics($registry));
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+		self::assertCount(2, $registry->entries());
+		self::assertSame([], $registrar->registrations);
+	}
+
+	public function test_dependency_diagnostics_use_first_canonical_registry_entry() : void
+	{
+		$this->graphVirion('AConsumer', ['ZDependency']);
+		$dependency = $this->graphVirion('ZDependency');
+		file_put_contents($dependency . '/src/GraphAudit/ZDependency/Greeting.php', '<?php namespace GraphAudit\\ZDependency;');
+		$factory = new VirionProjectFactory(new VirionManifestReader(new YamlReader()));
+		$project = $factory->open($dependency);
+		$manifest = $project->manifest;
+		$registry = new VirionRegistry();
+		$registry->record(new VirionRegistryEntry(str_replace('/', '\\', $dependency), $manifest, VirionStatus::FAILED, 'First diagnostic.'));
+		$registry->record(new VirionRegistryEntry($dependency, $manifest, VirionStatus::FAILED, 'Later diagnostic.'));
+		$registrar = new FakeClassLoaderRegistrar();
+		$this->manager($registrar, $registry)->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+		self::assertSame([
+			['ZDependency', VirionStatus::FAILED, 'First diagnostic.'],
+			['ZDependency', VirionStatus::FAILED, 'Later diagnostic.'],
+			['ZDependency', VirionStatus::FAILED, "Cannot load ZDependency: no PHP classes were found in {$project->sourceRoot}."],
+			['AConsumer', VirionStatus::FAILED, 'Cannot load AConsumer: dependency ZDependency failed. First diagnostic.'],
+		], $this->diagnostics($registry));
+		self::assertSame([], $registrar->registrations);
+	}
+
+	public function test_compatible_cycle_and_self_dependency_preserve_repeated_discovery_results() : void
+	{
+		$this->graphVirion('A', ['B']);
+		$this->graphVirion('B', ['A']);
+		$this->graphVirion('C', ['C']);
+		$registry = new VirionRegistry();
+		$registrar = new FakeClassLoaderRegistrar();
+		$manager = $this->manager($registrar, $registry);
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+		$expected = [
+			['B', VirionStatus::LOADED, 'Loaded B 1.0.0 (GraphAudit\\B).'],
+			['A', VirionStatus::LOADED, 'Loaded A 1.0.0 (GraphAudit\\A).'],
+			['C', VirionStatus::LOADED, 'Loaded C 1.0.0 (GraphAudit\\C).'],
+		];
+		self::assertSame($expected, $this->diagnostics($registry));
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+		$conflict = 'dependency cycle with B has a antigen GraphAudit\\B conflicts with GraphAudit\\B.';
+		$expected[] = ['B', VirionStatus::FAILED, 'Cannot load B: ' . $conflict];
+		$expected[] = ['A', VirionStatus::FAILED, 'Cannot load A: ' . $conflict];
+		$expected[] = ['C', VirionStatus::FAILED, 'Cannot load C: dependency cycle with C has a antigen GraphAudit\\C conflicts with GraphAudit\\C.'];
+		self::assertSame($expected, $this->diagnostics($registry));
+		self::assertCount(3, $registrar->registrations);
+	}
+
+	public function test_cycle_failure_preserves_later_dependency_failure_multiplicity() : void
+	{
+		$this->graphVirion('A', ['B'], 'GraphAudit\\Cycle');
+		$this->graphVirion('B', ['A'], 'GraphAudit\\Cycle\\B');
+		$this->graphVirion('C', ['A']);
+		$registry = new VirionRegistry();
+		$registrar = new FakeClassLoaderRegistrar();
+		$manager = $this->manager($registrar, $registry);
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+		$conflict = 'dependency cycle with A has a antigen GraphAudit\\Cycle\\B conflicts with GraphAudit\\Cycle.';
+		$consumerFailure = 'Cannot load C: dependency A failed. Cannot load A: ' . $conflict;
+		$expected = [
+			['B', VirionStatus::FAILED, 'Cannot load B: ' . $conflict],
+			['A', VirionStatus::FAILED, 'Cannot load A: ' . $conflict],
+			['C', VirionStatus::FAILED, $consumerFailure],
+		];
+		self::assertSame($expected, $this->diagnostics($registry));
+		$manager->discoverAndLoad($this->temporaryDirectory . '/virions');
+		$expected[] = ['C', VirionStatus::FAILED, $consumerFailure];
+		self::assertSame($expected, $this->diagnostics($registry));
+		self::assertSame([], $registrar->registrations);
+	}
+
+	public function test_cycle_conflicts_use_the_initial_ready_project_snapshot() : void
+	{
+		$this->graphVirion('A', ['B'], 'GraphAudit\\Left');
+		$this->graphVirion('B', ['A']);
+		$this->graphVirion('C', ['D'], 'GraphAudit\\Left\\Nested');
+		$this->graphVirion('D', ['C']);
+		$registry = new VirionRegistry();
+		$registrar = new FakeClassLoaderRegistrar();
+		$this->manager($registrar, $registry)->discoverAndLoad($this->temporaryDirectory . '/virions');
+
+		$first = 'dependency cycle with C has a antigen GraphAudit\\Left conflicts with GraphAudit\\Left\\Nested.';
+		$second = 'dependency cycle with A has a antigen GraphAudit\\Left\\Nested conflicts with GraphAudit\\Left.';
+		self::assertSame([
+			['B', VirionStatus::FAILED, 'Cannot load B: ' . $first],
+			['A', VirionStatus::FAILED, 'Cannot load A: ' . $first],
+			['D', VirionStatus::FAILED, 'Cannot load D: ' . $second],
+			['C', VirionStatus::FAILED, 'Cannot load C: ' . $second],
+		], $this->diagnostics($registry));
+		self::assertSame([], $registrar->registrations);
+	}
+
 	public function test_missing_single_composer_package_reports_failure_for_empty_directory() : void
 	{
 		$registrar = new FakeClassLoaderRegistrar();
@@ -224,6 +341,12 @@ final class VirionManagerTest extends TestCase
 		self::assertCount(1, $registrar->registrations);
 		self::assertCount(1, $registry->loaded());
 		self::assertSame('A', $registry->loaded()[0]->requireManifest()->name);
+		$conflict = 'dependency cycle with A has a antigen CycleAudit\\Shared\\B conflicts with CycleAudit\\Shared.';
+		self::assertSame([
+			['C', VirionStatus::FAILED, 'Cannot load C: ' . $conflict],
+			['B', VirionStatus::FAILED, 'Cannot load B: ' . $conflict],
+			['A', VirionStatus::LOADED, 'Loaded A 1.0.0 (CycleAudit\\Shared).'],
+		], $this->diagnostics($registry));
 		$statuses = [];
 		foreach ($registry->entries() as $entry) {
 			if ($entry->manifest !== null) {
@@ -832,6 +955,26 @@ PHP,
 		self::assertSame(VirionStatus::CONFLICT, $registry->entries()[0]->status);
 		self::assertSame(VirionStatus::CONFLICT, $registry->entries()[1]->status);
 		self::assertStringContainsString('No version of virion SharedVirion satisfies', $registry->entries()[0]->message);
+	}
+
+	/** @param list<string> $dependencies */
+	private function graphVirion(string $name, array $dependencies = [], ?string $antigen = null) : string
+	{
+		$project = str_replace('\\', '/', $this->copyFixture('SharedVirion', 'virions/' . $name));
+		$antigen ??= 'GraphAudit\\' . $name;
+		$this->filesystem->removeTree($project . '/src');
+		$source = $project . '/src/' . str_replace('\\', '/', $antigen);
+		$this->filesystem->ensureDirectory($source);
+		file_put_contents($source . '/Greeting.php', "<?php\nnamespace {$antigen}; final class Greeting {}\n");
+		file_put_contents($project . '/virion.yml', "name: {$name}\nversion: 1.0.0\nantigen: {$antigen}\napi: 5.0.0\nvirions: " . json_encode($dependencies, JSON_THROW_ON_ERROR) . "\n");
+
+		return $project;
+	}
+
+	/** @return list<array{?string, VirionStatus, string}> */
+	private function diagnostics(VirionRegistry $registry) : array
+	{
+		return array_map(static fn(VirionRegistryEntry $entry) : array => [$entry->manifest?->name, $entry->status, $entry->message], $registry->entries());
 	}
 
 	private function manager(ClassLoaderRegistrar $registrar, VirionRegistry $registry, ?DebugLogger $debug = null) : VirionManager

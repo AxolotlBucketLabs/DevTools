@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
-use Closure;
 use pocketmine\plugin\ApiVersion;
 use Throwable;
-use function array_fill_keys;
 use function array_filter;
-use function array_keys;
 use function array_map;
-use function array_pop;
 use function array_values;
 use function class_exists;
 use function count;
@@ -20,11 +16,9 @@ use function defined;
 use function enum_exists;
 use function function_exists;
 use function implode;
-use function in_array;
 use function interface_exists;
 use function ksort;
 use function ltrim;
-use function min;
 use function realpath;
 use function str_contains;
 use function str_replace;
@@ -41,11 +35,10 @@ final class VirionManager
 	/** @var array<string, 'loading'|'loaded'|'failed'> */
 	private array $graphLoadStates = [];
 
-	/** @var array<string, 'checking'|'ready'|'failed'> */
-	private array $graphPreflightStates = [];
+	private readonly VirionGraphPreflight $graphPreflight;
 
-	/** @var array<string, VirionSourceSymbols> */
-	private array $graphPreflightSymbols = [];
+	/** @var array<string, true> */
+	private array $graphReadyProjects = [];
 
 	public function __construct(
 		private readonly VirionDiscovery $discovery,
@@ -56,7 +49,9 @@ final class VirionManager
 		private readonly VirionProjectSelector $selector,
 		private readonly string $serverApiVersion,
 		private readonly ?DebugLogger $debug = null,
-	) {}
+	) {
+		$this->graphPreflight = new VirionGraphPreflight($this->inspectSelectedProject(...));
+	}
 
 	/**
 	 * @param list<VirionRequirement> $requirements
@@ -245,7 +240,12 @@ final class VirionManager
 			unset($requirementsByName[$nameKey]);
 		}
 
-		$this->preflightSelectedDependencyCycles($selectedProjects);
+		$preflight = $this->graphPreflight->check($selectedProjects, $this->registry->entries(), $this->registry->loaded());
+		$this->graphReadyProjects = $preflight->readyProjects;
+		foreach ($preflight->failures as $failure) {
+			$this->processedLocations[$this->canonicalLocation($failure->location)] = true;
+			$this->registry->record($failure);
+		}
 		foreach ($projectsByName as $nameKey => $_candidates) {
 			foreach ($selectionActions[$nameKey] ?? [] as $action) {
 				if ($action['type'] === 'selected') {
@@ -276,7 +276,7 @@ final class VirionManager
 	/** @param array<string, array{string, VirionProject}> $selectedProjects */
 	private function loadSelectedProject(string $nameKey, array $selectedProjects) : bool
 	{
-		if (!$this->preflightSelectedProject($nameKey, $selectedProjects)) {
+		if (!isset($this->graphReadyProjects[$nameKey])) {
 			$this->graphLoadStates[$nameKey] = 'failed';
 
 			return false;
@@ -337,312 +337,16 @@ final class VirionManager
 		return $loaded;
 	}
 
-	/** @param array<string, array{string, VirionProject}> $selectedProjects */
-	private function preflightSelectedProject(string $nameKey, array $selectedProjects) : bool
+	private function inspectSelectedProject(VirionProject $project) : VirionSourceSymbols
 	{
-		$state = $this->graphPreflightStates[$nameKey] ?? null;
-		if ($state === 'ready') {
-			return true;
+		$this->assertCompatible($project->manifest);
+		$symbols = $this->classScanner->scanSymbols($project);
+		if ($symbols->classes === []) {
+			throw new VirionException("Cannot load {$project->manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
 		}
-		if ($state === 'failed') {
-			return false;
-		}
-		if ($state === 'checking') {
-			return true;
-		}
-		if (!isset($selectedProjects[$nameKey])) {
-			$this->graphPreflightStates[$nameKey] = 'failed';
+		$this->assertPreflightSymbolsAvailable($project, $symbols);
 
-			return false;
-		}
-
-		$this->graphPreflightStates[$nameKey] = 'checking';
-		[$location, $project] = $selectedProjects[$nameKey];
-		foreach ($project->manifest->requirements as $requirement) {
-			$dependencyKey = VirionName::key($requirement->name);
-			if (!isset($selectedProjects[$dependencyKey])) {
-				$this->recordDependencyFailure(
-					$location,
-					$project,
-					"Required virion {$requirement->name} was not selected for {$project->manifest->name}.",
-				);
-				$this->graphPreflightStates[$nameKey] = 'failed';
-
-				return false;
-			}
-			if ($this->preflightSelectedProject($dependencyKey, $selectedProjects)) {
-				continue;
-			}
-			$dependency = $this->entryForLocation($selectedProjects[$dependencyKey][0]);
-			$detail = $dependency === null ? 'The dependency failed before it could be diagnosed.' : $dependency->message;
-			$this->recordDependencyFailure(
-				$location,
-				$project,
-				"Cannot load {$project->manifest->name}: dependency {$requirement->name} failed. {$detail}",
-			);
-			$this->graphPreflightStates[$nameKey] = 'failed';
-
-			return false;
-		}
-
-		try {
-			$this->assertCompatible($project->manifest);
-			$symbols = $this->classScanner->scanSymbols($project);
-			if ($symbols->classes === []) {
-				throw new VirionException("Cannot load {$project->manifest->name}: no PHP classes were found in {$project->sourceRoot}.");
-			}
-			$this->assertPreflightSymbolsAvailable($project, $symbols);
-			$this->graphPreflightSymbols[$nameKey] = $symbols;
-		} catch (Throwable $error) {
-			$this->recordDependencyFailure($location, $project, $error->getMessage());
-			$this->graphPreflightStates[$nameKey] = 'failed';
-
-			return false;
-		}
-
-		$this->graphPreflightStates[$nameKey] = 'ready';
-
-		return true;
-	}
-
-	/** @param array<string, array{string, VirionProject}> $selectedProjects */
-	private function preflightSelectedDependencyCycles(array $selectedProjects) : void
-	{
-		foreach (array_keys($selectedProjects) as $nameKey) {
-			$this->preflightSelectedProject($nameKey, $selectedProjects);
-		}
-
-		do {
-			$changed = false;
-			foreach ($selectedProjects as $nameKey => [$location, $project]) {
-				if (($this->graphPreflightStates[$nameKey] ?? null) !== 'ready') {
-					continue;
-				}
-				foreach ($project->manifest->requirements as $requirement) {
-					$dependencyKey = VirionName::key($requirement->name);
-					if (($this->graphPreflightStates[$dependencyKey] ?? null) !== 'failed') {
-						continue;
-					}
-					$dependency = $this->entryForLocation($selectedProjects[$dependencyKey][0] ?? '');
-					$detail = $dependency === null ? 'The dependency failed before it could be diagnosed.' : $dependency->message;
-					$this->recordDependencyFailure(
-						$location,
-						$project,
-						"Cannot load {$project->manifest->name}: dependency {$requirement->name} failed. {$detail}",
-					);
-					$this->graphPreflightStates[$nameKey] = 'failed';
-					$changed = true;
-					break;
-				}
-			}
-		} while ($changed);
-
-		$readyKeys = [];
-		foreach (array_keys($selectedProjects) as $key) {
-			if (($this->graphPreflightStates[$key] ?? null) === 'ready') {
-				$readyKeys[] = $key;
-			}
-		}
-		foreach ($this->stronglyConnectedComponents($selectedProjects) as $component) {
-			$isCycle = count($component) > 1;
-			if (!$isCycle) {
-				$cycleKey = $component[0] ?? null;
-				if ($cycleKey === null) {
-					continue;
-				}
-				foreach ($selectedProjects[$cycleKey][1]->manifest->requirements as $requirement) {
-					if (VirionName::key($requirement->name) === $cycleKey) {
-						$isCycle = true;
-						break;
-					}
-				}
-			}
-			if (!$isCycle) {
-				continue;
-			}
-
-			$conflict = null;
-			$otherName = null;
-			$componentCount = count($component);
-			for ($left = 0; $left < $componentCount && $conflict === null; ++$left) {
-				$leftKey = $component[$left];
-				for ($right = $left + 1; $right < $componentCount; ++$right) {
-					$rightKey = $component[$right];
-					$conflict = $this->selectedProjectConflict($leftKey, $rightKey, $selectedProjects);
-					if ($conflict !== null) {
-						$otherName = $selectedProjects[$rightKey][1]->manifest->name;
-						break;
-					}
-				}
-			}
-			if ($conflict === null) {
-				foreach ($readyKeys as $externalKey) {
-					if (in_array($externalKey, $component, true)) {
-						continue;
-					}
-					foreach ($component as $cycleKey) {
-						$conflict = $this->selectedProjectConflict($cycleKey, $externalKey, $selectedProjects);
-						if ($conflict !== null) {
-							$otherName = $selectedProjects[$externalKey][1]->manifest->name;
-							break 2;
-						}
-					}
-				}
-			}
-			if ($conflict === null) {
-				foreach ($this->registry->loaded() as $loaded) {
-					$loadedManifest = $loaded->requireManifest();
-					foreach ($component as $cycleKey) {
-						$cycleProject = $selectedProjects[$cycleKey][1];
-						$conflict = $this->describeProjectConflict(
-							$cycleProject->manifest,
-							$this->graphPreflightSymbols[$cycleKey] ?? new VirionSourceSymbols([], [], [], []),
-							$loadedManifest,
-							new VirionSourceSymbols($loaded->classes, $loaded->functions, $loaded->constants, $loaded->functions),
-						);
-						if ($conflict !== null) {
-							$otherName = $loadedManifest->name;
-							break 2;
-						}
-					}
-				}
-			}
-			if ($conflict === null) {
-				continue;
-			}
-
-			foreach ($component as $cycleKey) {
-				[$cycleLocation, $cycleProject] = $selectedProjects[$cycleKey];
-				$this->recordDependencyFailure(
-					$cycleLocation,
-					$cycleProject,
-					"Cannot load {$cycleProject->manifest->name}: dependency cycle with {$otherName} has a {$conflict}.",
-				);
-				$this->graphPreflightStates[$cycleKey] = 'failed';
-			}
-		}
-	}
-
-	/**
-	 * @param array<string, array{string, VirionProject}> $selectedProjects
-	 * @return list<list<string>>
-	 */
-	private function stronglyConnectedComponents(array $selectedProjects) : array
-	{
-		$ready = [];
-		foreach (array_keys($selectedProjects) as $key) {
-			if (($this->graphPreflightStates[$key] ?? null) === 'ready') {
-				$ready[$key] = true;
-			}
-		}
-
-		$index = 0;
-		/** @var array<string, int> $indices */
-		$indices = [];
-		/** @var array<string, int> $lowLinks */
-		$lowLinks = [];
-		/** @var list<string> $stack */
-		$stack = [];
-		/** @var array<string, true> $onStack */
-		$onStack = [];
-		/** @var list<list<string>> $components */
-		$components = [];
-		/** @var Closure(string): void $visit */
-		$visit = function (string $node) use (&$visit, &$index, &$indices, &$lowLinks, &$stack, &$onStack, &$components, $ready, $selectedProjects) : void {
-			$indices[$node] = $index;
-			$lowLinks[$node] = $index;
-			++$index;
-			$stack[] = $node;
-			$onStack[$node] = true;
-
-			foreach ($selectedProjects[$node][1]->manifest->requirements as $requirement) {
-				$dependency = VirionName::key($requirement->name);
-				if (!isset($ready[$dependency])) {
-					continue;
-				}
-				if (!isset($indices[$dependency])) {
-					$visit($dependency);
-					$lowLinks[$node] = min($lowLinks[$node], $lowLinks[$dependency]);
-				} elseif (isset($onStack[$dependency])) {
-					$lowLinks[$node] = min($lowLinks[$node], $indices[$dependency]);
-				}
-			}
-
-			if ($lowLinks[$node] !== $indices[$node]) {
-				return;
-			}
-
-			$component = [];
-			do {
-				$member = array_pop($stack);
-				if ($member === null) {
-					break;
-				}
-				unset($onStack[$member]);
-				$component[] = $member;
-			} while ($member !== $node);
-			$components[] = $component;
-		};
-
-		foreach (array_keys($ready) as $key) {
-			if (!isset($indices[$key])) {
-				$visit($key);
-			}
-		}
-
-		return $components;
-	}
-
-	/** @param array<string, array{string, VirionProject}> $selectedProjects */
-	private function selectedProjectConflict(string $leftKey, string $rightKey, array $selectedProjects) : ?string
-	{
-		return $this->describeProjectConflict(
-			$selectedProjects[$leftKey][1]->manifest,
-			$this->graphPreflightSymbols[$leftKey] ?? new VirionSourceSymbols([], [], [], []),
-			$selectedProjects[$rightKey][1]->manifest,
-			$this->graphPreflightSymbols[$rightKey] ?? new VirionSourceSymbols([], [], [], []),
-		);
-	}
-
-	private function describeProjectConflict(
-		VirionManifest $left,
-		VirionSourceSymbols $leftSymbols,
-		VirionManifest $right,
-		VirionSourceSymbols $rightSymbols,
-	) : ?string {
-		if ($this->isNamespaceMember($left->antigen, $right->antigen)
-			|| $this->isNamespaceMember($right->antigen, $left->antigen)) {
-			return "antigen {$left->antigen} conflicts with {$right->antigen}";
-		}
-
-		$rightClassMap = [];
-		foreach ($rightSymbols->classes as $class) {
-			$rightClassMap[strtolower($class)] = $class;
-		}
-		foreach ($leftSymbols->classes as $class) {
-			if (isset($rightClassMap[strtolower($class)])) {
-				return "class {$class} conflicts with {$rightClassMap[strtolower($class)]}";
-			}
-		}
-
-		$rightFunctionMap = [];
-		foreach ($rightSymbols->unconditionalFunctions as $function) {
-			$rightFunctionMap[strtolower($function)] = $function;
-		}
-		foreach ($leftSymbols->unconditionalFunctions as $function) {
-			if (isset($rightFunctionMap[strtolower($function)])) {
-				return "function {$function} conflicts with {$rightFunctionMap[strtolower($function)]}";
-			}
-		}
-
-		$rightConstantMap = array_fill_keys($rightSymbols->constants, true);
-		foreach ($leftSymbols->constants as $constant) {
-			if (isset($rightConstantMap[$constant])) {
-				return "constant {$constant} conflicts with {$constant}";
-			}
-		}
-
-		return null;
+		return $symbols;
 	}
 
 	private function assertPreflightSymbolsAvailable(VirionProject $project, VirionSourceSymbols $symbols) : void
