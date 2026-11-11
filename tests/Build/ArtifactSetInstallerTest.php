@@ -7,11 +7,14 @@ namespace AxolotlBucketLabs\DevTools\Tests\Build;
 use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use function chmod;
+use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
 use function glob;
 use function restore_error_handler;
 use function set_error_handler;
+use const PHP_OS_FAMILY;
 
 final class ArtifactSetInstallerTest extends TestCase
 {
@@ -112,6 +115,51 @@ final class ArtifactSetInstallerTest extends TestCase
 		}
 		self::assertSame('previous artifact', file_get_contents($output));
 		self::assertSame([], glob($output . '.backup-*'));
+	}
+
+	public function test_failed_multi_artifact_install_restores_backups_after_an_unremovable_output() : void
+	{
+		if (PHP_OS_FAMILY !== 'Windows') {
+			self::markTestSkipped('Read-only file deletion behavior is specific to Windows.');
+		}
+
+		$firstTemporary = $this->temporaryDirectory . '/new-one.phar';
+		$firstOutput = $this->temporaryDirectory . '/one.phar';
+		$secondOutput = $this->temporaryDirectory . '/two.phar';
+		file_put_contents($firstTemporary, 'new one');
+		file_put_contents($firstOutput, 'old one');
+		file_put_contents($secondOutput, 'old two');
+		self::assertTrue(chmod($firstTemporary, 0444));
+
+		set_error_handler(static fn() : bool => true);
+		try {
+			try {
+				(new ArtifactSetInstaller())->install([
+					['temporary' => $firstTemporary, 'output' => $firstOutput],
+					['temporary' => $secondOutput, 'output' => $secondOutput],
+				], true);
+				self::fail('Expected installation to fail after the second output was backed up.');
+			} catch (BuildException $error) {
+				self::assertStringContainsString('during rollback', $error->getMessage());
+			}
+		} finally {
+			restore_error_handler();
+			if (file_exists($firstTemporary)) {
+				chmod($firstTemporary, 0644);
+			}
+			if (file_exists($firstOutput)) {
+				chmod($firstOutput, 0644);
+			}
+		}
+
+		self::assertSame('new one', file_get_contents($firstOutput));
+		self::assertSame('old two', file_get_contents($secondOutput));
+		$firstBackups = glob($firstOutput . '.backup-*');
+		self::assertIsArray($firstBackups);
+		self::assertCount(1, $firstBackups);
+		$firstBackup = $firstBackups[0] ?? '';
+		self::assertSame('old one', file_get_contents($firstBackup));
+		self::assertSame([], glob($secondOutput . '.backup-*'));
 	}
 
 	public function test_symbolic_link_destination_is_rejected_without_changing_target() : void

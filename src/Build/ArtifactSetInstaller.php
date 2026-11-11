@@ -9,6 +9,7 @@ use AxolotlBucketLabs\DevTools\Support\RandomToken;
 use Throwable;
 use function array_map;
 use function file_exists;
+use function implode;
 use function is_file;
 use function rename;
 use function str_replace;
@@ -75,23 +76,31 @@ final class ArtifactSetInstaller
 				$installed[] = $artifact['output'];
 			}
 		} catch (Throwable $error) {
+			$rollbackFailures = [];
+			$unremovedOutputs = [];
 			foreach ($installed as $output) {
 				if (file_exists($output) && !unlink($output)) {
-					throw new BuildException(
-						$error->getMessage() . " The new artifact could not be removed during rollback: {$output}",
-						0,
-						$error,
-					);
+					$unremovedOutputs[$output] = true;
+					$backup = $backups[$output] ?? null;
+					$rollbackFailures[] = $backup === null
+						? "The new artifact could not be removed during rollback: {$output}."
+						: "The new artifact could not be removed during rollback: {$output}. The previous artifact remains at {$backup}.";
 				}
 			}
 			foreach ($backups as $output => $backup) {
-				if (file_exists($backup) && !rename($backup, $output)) {
-					throw new BuildException(
-						$error->getMessage() . " The previous artifact could not be restored: {$backup}",
-						0,
-						$error,
-					);
+				if (!file_exists($backup) || isset($unremovedOutputs[$output])) {
+					continue;
 				}
+				if (file_exists($output) || !rename($backup, $output)) {
+					$rollbackFailures[] = "The previous artifact could not be restored from {$backup} to {$output}.";
+				}
+			}
+			if ($rollbackFailures !== []) {
+				throw new BuildException(
+					$error->getMessage() . ' Rollback was incomplete: ' . implode(' ', $rollbackFailures),
+					0,
+					$error,
+				);
 			}
 			throw $error instanceof BuildException
 				? $error
