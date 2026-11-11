@@ -47,10 +47,31 @@ final class Path
 
 	public static function join(string ...$parts) : string
 	{
-		$first = rtrim(array_shift($parts) ?? '', '/\\');
+		$first = array_shift($parts) ?? '';
+		$isDriveRoot = strlen($first) === self::WINDOWS_DRIVE_PREFIX_LENGTH + 1
+			&& ctype_alpha($first[self::WINDOWS_DRIVE_LETTER_INDEX])
+			&& $first[self::WINDOWS_DRIVE_SEPARATOR_INDEX] === ':'
+			&& in_array($first[self::WINDOWS_DRIVE_PREFIX_LENGTH], ['/', '\\'], true);
+		$isFilesystemRoot = $first === DIRECTORY_SEPARATOR || $first === '/' || $first === '\\';
+		if ($isDriveRoot) {
+			$first = substr($first, 0, self::WINDOWS_DRIVE_PREFIX_LENGTH) . DIRECTORY_SEPARATOR;
+			$isFilesystemRoot = true;
+		} elseif ($isFilesystemRoot) {
+			$first = DIRECTORY_SEPARATOR;
+		} else {
+			$first = rtrim($first, '/\\');
+		}
 		$parts = array_map(static fn(string $part) : string => trim($part, '/\\'), $parts);
 
-		return $first . ($parts === [] ? '' : DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $parts));
+		if ($parts === []) {
+			return $first;
+		}
+		$joined = implode(DIRECTORY_SEPARATOR, $parts);
+		if ($first === '') {
+			return $joined;
+		}
+
+		return $first . ($isFilesystemRoot ? '' : DIRECTORY_SEPARATOR) . $joined;
 	}
 
 	public static function normalizeRelative(string $path) : string
