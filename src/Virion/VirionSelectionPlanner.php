@@ -46,7 +46,7 @@ final class VirionSelectionPlanner
 					$location,
 					$candidate->manifest,
 					VirionStatus::SKIPPED,
-					"Skipped {$candidate->manifest->name} {$candidate->manifest->version} at {$location}: a development folder with the same name could not be loaded. {$errorMessage}",
+					"Version {$candidate->manifest->version} at {$location}: a development folder with the same name could not be loaded. {$errorMessage}",
 				);
 			}
 			unset($projectsByName[$nameKey], $requirementsByName[$nameKey]);
@@ -136,7 +136,7 @@ final class VirionSelectionPlanner
 					'type' => 'skipped',
 					'location' => $location,
 					'project' => $project,
-					'message' => "Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: {$reason}.",
+					'message' => "Version {$project->manifest->version} at {$location}: {$reason}.",
 				];
 			}
 			foreach ($this->preferredPharDiagnostics($candidates) as $entry) {
@@ -208,7 +208,7 @@ final class VirionSelectionPlanner
 					$location,
 					$project->manifest,
 					VirionStatus::SKIPPED,
-					"Skipped {$project->manifest->name} {$project->manifest->version} at {$location}: a development folder for this virion name is preferred over a packaged PHAR.",
+					"Version {$project->manifest->version} at {$location}: a development folder for this virion name is preferred over a packaged PHAR.",
 				);
 			}
 		}

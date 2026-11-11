@@ -45,7 +45,7 @@ final class VirionSelectionPlannerTest extends TestCase
 		self::assertSame(['selected', 'skipped', 'selected'], array_column($plan->actions, 'type'));
 		self::assertSame([
 			'type' => 'skipped', 'location' => $older->location, 'project' => $older,
-			'message' => "Skipped Zed 1.0.0 at {$older->location}: a higher compatible version 2.0.0 was selected.",
+			'message' => "Version 1.0.0 at {$older->location}: a higher compatible version 2.0.0 was selected.",
 		], $plan->actions[1]);
 		self::assertCount(1, $plan->afterLoad);
 		self::assertNull($plan->afterLoad[0]->manifest);
@@ -64,7 +64,7 @@ final class VirionSelectionPlannerTest extends TestCase
 		self::assertSame([], $plan->afterLoad);
 		self::assertSame([VirionStatus::FAILED, VirionStatus::SKIPPED], array_column($plan->beforeLoad, 'status'));
 		self::assertSame('Cannot load Library: it declares API 99.0.0, but this server provides 5.44.0.', $plan->beforeLoad[0]->message);
-		self::assertSame("Skipped Library 1.0.0 at {$phar->location}: a development folder for this virion name is preferred over a packaged PHAR.", $plan->beforeLoad[1]->message);
+		self::assertSame("Version 1.0.0 at {$phar->location}: a development folder for this virion name is preferred over a packaged PHAR.", $plan->beforeLoad[1]->message);
 	}
 
 	public function test_unreadable_folder_prevents_packaged_fallback_without_a_false_missing_diagnostic() : void
@@ -81,7 +81,7 @@ final class VirionSelectionPlannerTest extends TestCase
 		self::assertSame([], $plan->afterLoad);
 		self::assertCount(1, $plan->beforeLoad);
 		self::assertSame(VirionStatus::SKIPPED, $plan->beforeLoad[0]->status);
-		self::assertSame("Skipped Library 1.0.0 at {$phar->location}: a development folder with the same name could not be loaded. Invalid source path.", $plan->beforeLoad[0]->message);
+		self::assertSame("Version 1.0.0 at {$phar->location}: a development folder with the same name could not be loaded. Invalid source path.", $plan->beforeLoad[0]->message);
 	}
 
 	public function test_duplicate_versions_do_not_block_an_independent_package() : void

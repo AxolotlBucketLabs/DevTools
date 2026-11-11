@@ -62,7 +62,7 @@ final class VirionManagerTest extends TestCase
 		$old = $directory . DIRECTORY_SEPARATOR . 'Old';
 		$expected = [
 			['AIncompatible', VirionStatus::FAILED, 'Cannot load AIncompatible: it declares API 99.0.0, but this server provides 5.44.0.'],
-			['ZSelected', VirionStatus::SKIPPED, "Skipped ZSelected 1.0.0 at {$old}: a higher compatible version 2.0.0 was selected."],
+			['ZSelected', VirionStatus::SKIPPED, "Version 1.0.0 at {$old}: a higher compatible version 2.0.0 was selected."],
 			['ZSelected', VirionStatus::LOADED, 'Loaded ZSelected 2.0.0 (GraphAudit\\Versioned).'],
 			$missing,
 		];
