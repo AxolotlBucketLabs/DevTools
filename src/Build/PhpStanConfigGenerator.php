@@ -101,7 +101,7 @@ final class PhpStanConfigGenerator
 		}
 		if (preg_match(self::LEVEL_PATTERN, $level) !== 1 || (int) $level < self::MIN_LEVEL || (int) $level > self::MAX_LEVEL) {
 			throw new BuildException(
-				"Invalid PHPStan level \"{$level}\". Use off, a number from " . self::MIN_LEVEL . ' through ' . self::MAX_LEVEL . ', or max. Omit phpstan or use off to disable analysis.',
+				"Invalid PHPStan level \"{$level}\". Use a number from " . self::MIN_LEVEL . ' through ' . self::MAX_LEVEL . ', or max. To disable analysis, omit the phpstan input or set it to off before invoking this generator.',
 			);
 		}
 

@@ -178,6 +178,16 @@ final class PhpStanConfigGeneratorTest extends TestCase
 		yield 'empty' => [''];
 	}
 
+	public function test_disabled_level_error_explains_that_the_generator_requires_an_enabled_level() : void
+	{
+		try {
+			(new PhpStanConfigGenerator())->generate('.', '.', [], 'off', 'tmp');
+			self::fail('Expected disabled PHPStan generation to be rejected.');
+		} catch (BuildException $error) {
+			self::assertStringContainsString('set it to off before invoking this generator', $error->getMessage());
+		}
+	}
+
 	public function test_missing_server_source_has_an_actionable_error() : void
 	{
 		$project = $this->copyFixture('ValidPlugin', 'plugin');
