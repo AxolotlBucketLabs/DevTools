@@ -82,6 +82,7 @@ final class DevToolsCommandHandlerTest extends TestCase
 	public function test_async_result_is_not_sent_to_a_disconnected_player() : void
 	{
 		$runner = new class implements BuildJobRunner {
+			/** @var (\Closure(array{success: bool, messages: list<string>, debug?: list<string>}): void)|null */
 			private ?\Closure $completion = null;
 
 			public function submit(string $operation, array $payload, callable $onComplete) : bool
@@ -355,9 +356,8 @@ final class DevToolsCommandHandlerTest extends TestCase
 			translator: $translator,
 		);
 		$messages = [];
-		$defaultSender = $sender === null;
-		$sender ??= $this->createMock(CommandSender::class);
-		if ($defaultSender) {
+		if ($sender === null) {
+			$sender = $this->createMock(CommandSender::class);
 			$sender->method('hasPermission')->willReturn(true);
 			$sender->method('sendMessage')->willReturnCallback(static function (string $message) use (&$messages) : void {
 				$messages[] = $message;
