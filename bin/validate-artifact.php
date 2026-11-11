@@ -6,6 +6,8 @@ const MINIMUM_PHAR_SIZE_BYTES = 1024;
 const PHAR_SHA256_SIGNATURE = 'SHA-256';
 const SHA256_ALGORITHM = 'sha256';
 const RELEASE_TAG_PREFIX = 'v';
+const YAML_PHP_OBJECT_DECODING_INI = 'yaml.decode_php';
+const YAML_PHP_OBJECT_DECODING_DISABLED = '0';
 
 function artifactFailure(string $message) : never
 {
@@ -34,6 +36,9 @@ foreach (['plugin.yml', 'src/DevTools.php', 'vendor/nikic/php-parser/lib/PhpPars
 	}
 }
 
+if (ini_set(YAML_PHP_OBJECT_DECODING_INI, YAML_PHP_OBJECT_DECODING_DISABLED) === false) {
+	artifactFailure('Cannot disable PHP object decoding for YAML parsing');
+}
 $manifest = yaml_parse($phar['plugin.yml']->getContent());
 if (!is_array($manifest)) {
 	artifactFailure('plugin.yml is not a YAML map');
