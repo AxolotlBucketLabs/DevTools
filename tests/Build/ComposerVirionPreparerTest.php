@@ -273,6 +273,21 @@ final class ComposerVirionPreparerTest extends TestCase
 		self::assertDirectoryDoesNotExist($outside . '/new-directory');
 	}
 
+	public function test_source_directory_output_is_rejected_without_creating_directories() : void
+	{
+		$project = $this->project();
+		$createdDirectory = $project . '/src/prepared-virions';
+
+		try {
+			(new ComposerVirionPreparer($this->filesystem))->prepare($project, $createdDirectory . '/output');
+			self::fail('Expected source-directory output rejection.');
+		} catch (BuildException $error) {
+			self::assertStringContainsString('must be outside vendor/ and src/', $error->getMessage());
+		}
+
+		self::assertDirectoryDoesNotExist($createdDirectory);
+	}
+
 	public function test_changed_installed_metadata_is_rejected_without_output() : void
 	{
 		$project = $this->project();

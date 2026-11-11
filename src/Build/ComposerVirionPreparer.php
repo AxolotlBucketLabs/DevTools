@@ -22,6 +22,7 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use function array_key_first;
 use function array_keys;
+use function array_reverse;
 use function basename;
 use function dirname;
 use function file_exists;
@@ -84,6 +85,10 @@ final class ComposerVirionPreparer
 			if (Filesystem::isLink($component)) {
 				throw new BuildException("Refusing dependency output through symbolic link {$component}.");
 			}
+		}
+		$resolvedParent = $this->resolveOutputParent(dirname($destination));
+		if (Path::isInside($projectRoot . '/' . ArtifactFile::COMPOSER_VENDOR_DIRECTORY, $resolvedParent) || Path::isInside($projectRoot . '/' . ArtifactFile::SOURCE_DIRECTORY, $resolvedParent)) {
+			throw new BuildException('Dependency output must be outside vendor/ and src/.');
 		}
 		$this->filesystem->ensureDirectory(dirname($destination));
 		$parent = realpath(dirname($destination)) ?: throw new BuildException('Cannot resolve dependency output parent.');
@@ -210,6 +215,25 @@ final class ComposerVirionPreparer
 			$this->filesystem->removeTree($stage);
 		}
 		return $result;
+	}
+
+	private function resolveOutputParent(string $path) : string
+	{
+		$missing = [];
+		while (!is_dir($path)) {
+			$component = basename($path);
+			$parent = dirname($path);
+			if ($parent === $path) {
+				throw new BuildException('Cannot resolve dependency output parent.');
+			}
+			$missing[] = $component;
+			$path = $parent;
+		}
+		$resolved = realpath($path) ?: throw new BuildException('Cannot resolve dependency output parent.');
+		foreach (array_reverse($missing) as $component) {
+			$resolved = $component === '..' ? dirname($resolved) : Path::join($resolved, $component);
+		}
+		return $resolved;
 	}
 
 	/** @return array<string, string> */
