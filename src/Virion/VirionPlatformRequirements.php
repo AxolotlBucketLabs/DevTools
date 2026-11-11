@@ -54,7 +54,12 @@ final class VirionPlatformRequirements
 					throw new VirionException("{$source} requires PHP {$constraint}. Current PHP is " . PHP_VERSION . '.');
 				}
 			} elseif ($name === self::PHP_64BIT_REQUIREMENT_NAME) {
-				if ($constraint !== self::ANY_VERSION_CONSTRAINT || PHP_INT_SIZE !== self::EXPECTED_64_BIT_INTEGER_BYTES) {
+				if ($constraint !== self::ANY_VERSION_CONSTRAINT) {
+					throw new VirionException(
+						"{$source} uses unsupported versioned " . self::PHP_64BIT_REQUIREMENT_NAME . " requirement {$constraint}. Only * is supported.",
+					);
+				}
+				if (PHP_INT_SIZE !== self::EXPECTED_64_BIT_INTEGER_BYTES) {
 					throw new VirionException("{$source} requires 64-bit PHP. Current PHP integer size is " . PHP_INT_SIZE . ' bytes.');
 				}
 			} elseif (str_starts_with($name, self::EXTENSION_REQUIREMENT_PREFIX)) {
