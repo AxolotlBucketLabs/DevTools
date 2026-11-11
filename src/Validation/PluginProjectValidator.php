@@ -247,7 +247,22 @@ final class PluginProjectValidator
 		$childIndent = null;
 		$seen = [];
 		$seenRootSections = [];
+		$blockScalarIndent = null;
 		foreach ($lines as $line) {
+			if ($blockScalarIndent !== null) {
+				if (trim($line) === '') {
+					continue;
+				}
+				preg_match('/^(\s*)/', $line, $indentMatch);
+				if (strlen($indentMatch[1] ?? '') > $blockScalarIndent) {
+					continue;
+				}
+				$blockScalarIndent = null;
+			}
+			if (preg_match('/^(\s*)(?:[^#][^:]*:\s*|-\s+)(?:[&*!][^\s]+\s+)*[|>](?:[1-9][+-]?|[+-][1-9]?|[+-]?)\s*(?:#.*)?$/', $line, $match) === 1) {
+				$blockScalarIndent = strlen($match[1]);
+				continue;
+			}
 			if (preg_match('/^(\s*)(commands|permissions)\s*:\s*(?:#.*)?$/', $line, $match) === 1) {
 				$section = $match[2];
 				$sectionIndent = strlen($match[1]);

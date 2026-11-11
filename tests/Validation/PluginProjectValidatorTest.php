@@ -52,6 +52,18 @@ final class PluginProjectValidatorTest extends TestCase
 		self::assertContains('plugin.duplicate_permissions', $codes);
 	}
 
+	public function test_duplicate_keys_in_block_scalar_are_not_manifest_duplicates() : void
+	{
+		$project = $this->copyFixture('ValidPlugin');
+		file_put_contents($project . '/plugin.yml', "name: FixturePlugin\nversion: 1.0.0\nmain: Fixture\\Plugin\\Main\nsrc-namespace-prefix: Fixture\\Plugin\napi: 5.0.0\ndescription: |\n  commands:\n    example: first\n    example: second\n");
+		[, $validator] = $this->validationServices();
+
+		self::assertNotContains('plugin.duplicate_commands', array_map(
+			static fn($issue) : string => $issue->code,
+			$validator->validate($project)->issues(),
+		));
+	}
+
 	public function test_empty_api_list_is_rejected() : void
 	{
 		$project = $this->copyFixture('ValidPlugin');
