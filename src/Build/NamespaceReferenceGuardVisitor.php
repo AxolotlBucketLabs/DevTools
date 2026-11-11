@@ -22,8 +22,6 @@ use AxolotlBucketLabs\DevTools\Vendor\PhpParser\NodeVisitorAbstract;
 use function in_array;
 use function ltrim;
 use function str_replace;
-use function strlen;
-use function strpos;
 use function strtolower;
 
 final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
@@ -128,19 +126,8 @@ final class NamespaceReferenceGuardVisitor extends NodeVisitorAbstract
 
 	private function containsNamespaceReference(string $value, string $namespace) : bool
 	{
-		if (SerializedClassReferenceDetector::contains($value, $namespace)) {
-			return true;
-		}
-		$offset = 0;
-		while (($position = strpos($value, $namespace, $offset)) !== false) {
-			$end = $position + strlen($namespace);
-			if ($position === 0 && ($end === strlen($value) || $value[$end] === '\\')) {
-				return true;
-			}
-			$offset = $position + 1;
-		}
-
-		return false;
+		return SerializedClassReferenceDetector::contains($value, $namespace)
+			|| NamespaceStringReferenceMatcher::contains($value, $namespace);
 	}
 
 	private function isExactNamespace(string $candidate) : bool

@@ -103,6 +103,42 @@ PHP);
 		(new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
 	}
 
+	public function test_namespace_reference_inside_string_text_is_rejected() : void
+	{
+		$directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
+		$this->filesystem->ensureDirectory($directory);
+		file_put_contents($directory . DIRECTORY_SEPARATOR . 'Unsafe.php', "<?php\n\$class = 'Loading Shared\\\\Virion\\\\Greeting';\n");
+
+		$this->expectException(BuildException::class);
+		$this->expectExceptionMessage('string literal');
+
+		(new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+	}
+
+	public function test_string_with_a_longer_unrelated_namespace_is_allowed() : void
+	{
+		$directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
+		$this->filesystem->ensureDirectory($directory);
+		$path = $directory . DIRECTORY_SEPARATOR . 'Safe.php';
+		file_put_contents($path, "<?php\n\$class = 'Loading NotShared\\\\Virion\\\\Greeting';\n");
+
+		(new NamespaceShader())->shadeDirectory($directory, ['Shared\Virion' => 'Fixture\Shade\Shared']);
+
+		self::assertFileExists($path);
+	}
+
+	public function test_standalone_guard_finds_namespace_reference_inside_string_text() : void
+	{
+		$directory = $this->temporaryDirectory . DIRECTORY_SEPARATOR . 'src';
+		$this->filesystem->ensureDirectory($directory);
+		file_put_contents($directory . DIRECTORY_SEPARATOR . 'Unsafe.php', "<?php\n\$class = 'Loading Shared\\\\Virion\\\\Greeting';\n");
+
+		$this->expectException(BuildException::class);
+		$this->expectExceptionMessage('development-only namespace');
+
+		(new NamespaceShader())->assertNoNamespaceReferences($directory, ['Shared\Virion']);
+	}
+
 	/** @dataProvider hiddenDynamicReferenceProvider */
 	public function test_aliased_and_named_dynamic_class_references_are_rejected(string $source, bool $shade) : void
 	{

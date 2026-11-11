@@ -26,7 +26,6 @@ use function ltrim;
 use function str_replace;
 use function str_starts_with;
 use function strlen;
-use function strpos;
 use function strtolower;
 use function substr;
 
@@ -199,16 +198,7 @@ final class NamespaceRewriteVisitor extends NodeVisitorAbstract
 		$value = ltrim(strtolower(str_replace('\\\\', '\\', $value)), '\\');
 		$namespace = strtolower(ltrim($namespace, '\\'));
 
-		$offset = 0;
-		while (($position = strpos($value, $namespace, $offset)) !== false) {
-			$end = $position + strlen($namespace);
-			if ($position === 0 && ($end === strlen($value) || $value[$end] === '\\')) {
-				return true;
-			}
-			$offset = $position + 1;
-		}
-
-		return false;
+		return NamespaceStringReferenceMatcher::contains($value, $namespace);
 	}
 
 	private function isStaticClassExpression(Expr $expression) : bool
