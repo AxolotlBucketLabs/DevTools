@@ -2,11 +2,11 @@
 
 ## DevTools PHAR workflow
 
-- For CLI, dependency and release interfaces, read `docs/cli.md`, `docs/dependencies.md`, and `docs/github-actions.md` from the exact DevTools revision used. The references below describe the `v4.0.1` release and its maintained channels.
+- For CLI, dependency and release interfaces, read `docs/cli.md`, `docs/dependencies.md`, and `docs/github-actions.md` from the exact DevTools revision used. The references below describe the `v4.0.2` release and its maintained channels.
 - Use CLI `--json`, check the exit status and `success`, consume the returned artifact path and verify its SHA-256. Report runtime testing and static analysis separately from package validation.
 
 - Read `plugin.yml`, `devtools.yml`, Composer metadata, existing workflows, and referenced source before changing the build.
-- Use `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` by default according to the versioned [GitHub Actions guide](https://github.com/AxolotlBucketLabs/DevTools/blob/v4/docs/github-actions.md). Use `@latest` only when the repository intentionally accepts stable major upgrades. Use `@v4.0.1` for a release-pinned build or the full commit SHA for strict reproducibility. The workflow checks out the builder from its own resolved reference. Use the step-level action when extra setup is required.
+- Use `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` by default according to the versioned [GitHub Actions guide](https://github.com/AxolotlBucketLabs/DevTools/blob/v4/docs/github-actions.md). Use `@latest` only when the repository intentionally accepts stable major upgrades. Use `@v4.0.2` for a release-pinned build or the full commit SHA for strict reproducibility. The workflow checks out the builder from its own resolved reference. Use the step-level action when extra setup is required.
 - Run the PHAR workflow on `push`, `pull_request`, and `workflow_dispatch` with `contents: read` permission.
 - The reusable workflow owns the documented Node.js 24 compatible Axolotl-PM PHP setup. Use the step-level setup only when that workflow is selected.
 - Keep PHPStan off unless this repository explicitly enables it. When enabled, keep the requested level and pin Axolotl-PM source with `axolotl-ref`. Use `phpstan-server` only for additional source paths already checked out by the caller.

@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 4.0.2 - 2026-11-11
+
+### Security
+
+- Disable PHP object decoding when parsing YAML.
+- Limit archive processing to 10,000 entries, 64 MiB per entry and 256 MiB of uncompressed content.
+
+### Fixed
+
+- Preserve background job results when errors contain invalid UTF-8.
+- Report the resolved plugin or virion type during extraction.
+- Tighten validation of dynamic class annotations used during namespace shading.
+- Clarify plugin folder loading and complete runtime, virion, queue and extraction translations across all 14 locales.
+
+### Compatibility
+
+- The PHP minimum remains 8.4. CI covers PHP 8.4 and 8.5.
+- Existing commands, manifests and workflow inputs are unchanged. Archives above the new limits are rejected.
+
 ## 4.0.1 - 2026-11-10
 
 ### Changed

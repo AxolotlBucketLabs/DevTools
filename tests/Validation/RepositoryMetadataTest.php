@@ -19,7 +19,7 @@ use const JSON_THROW_ON_ERROR;
 
 final class RepositoryMetadataTest extends TestCase
 {
-	private const VERSION = '4.0.1';
+	private const VERSION = '4.0.2';
 	private const COMPATIBILITY_BUILDER_VERSION = '4.0.1';
 	private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
 

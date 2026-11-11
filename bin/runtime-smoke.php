@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 
+require dirname(__DIR__) . '/vendor/autoload.php';
+
 const PROCESS_POLL_INTERVAL_MICROSECONDS = 100000;
 const PROCESS_STOP_GRACE_PERIOD_MICROSECONDS = 500000;
 const RUNTIME_SMOKE_JSON_DEPTH = 512;
@@ -172,7 +174,6 @@ try {
 	if (!extension_loaded('pmmpthread') || ini_get('phar.readonly') !== '0') {
 		throw new RuntimeException('Use the Axolotl-PM-compatible PHP binary with pmmpthread and -d phar.readonly=0.');
 	}
-	require $root . '/' . ArtifactFile::COMPOSER_VENDOR_DIRECTORY . '/' . ArtifactFile::COMPOSER_AUTOLOAD;
 	$reference = Composer\InstalledVersions::getReference('axolotl-pm/pocketmine-mp');
 	$installed = Composer\InstalledVersions::getInstallPath('axolotl-pm/pocketmine-mp');
 	if ($reference === null || $installed === null) {
