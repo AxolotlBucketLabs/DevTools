@@ -83,10 +83,12 @@ final class BuildWorkerThread extends Thread
 	private function runRequest(string $request, \pocketmine\snooze\SleeperNotifier $notifier) : void
 	{
 		$translator = null;
+		$jobId = '';
 		try {
-			$translator = Translator::fromResources();
 			/** @var array{jobId: string, operation: string, payload: array<string, mixed>} $decoded */
 			$decoded = json_decode($request, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
+			$jobId = is_string($decoded['jobId'] ?? null) ? $decoded['jobId'] : '';
+			$translator = Translator::fromResources();
 			$locale = $decoded['payload']['locale'] ?? null;
 			if (is_string($locale)) {
 				$translator = Translator::fromResources($locale);
@@ -95,9 +97,11 @@ final class BuildWorkerThread extends Thread
 			$result['jobId'] = $decoded['jobId'];
 		} catch (Throwable $error) {
 			$result = [
-				'jobId' => '',
+				'jobId' => $jobId,
 				'success' => false,
-				'messages' => [($translator ?? Translator::fromResources())->translate(TranslationKeys::WORKER_UNEXPECTED_FAILURE, ['error' => $error->getMessage()])],
+				'messages' => [$translator === null
+					? $error->getMessage()
+					: $translator->translate(TranslationKeys::WORKER_UNEXPECTED_FAILURE, ['error' => $error->getMessage()])],
 			];
 		}
 		$this->responses[] = json_encode($result, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
