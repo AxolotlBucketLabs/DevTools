@@ -107,10 +107,26 @@ final class VirionPlatformRequirements
 					$normalized[] = '*';
 					continue;
 				}
-				if (preg_match('/^(\^|>=|<=|>|<|=)?(\d+)\.(\d+)(?:\.(\d+))?$/D', $token, $match) !== 1) {
+				if (preg_match('/^(\^|>=|<=|>|<|=)?(\d+)\.(\*|\d+)(?:\.(\*|\d+))?$/D', $token, $match) !== 1) {
 					throw new VirionException("Unsupported Composer PHP constraint {$expression}. Use caret versions or comparison ranges, optionally separated by ||.");
 				}
-				$normalized[] = $match[1] . $match[2] . '.' . $match[3] . '.' . ($match[4] ?? '0');
+				$operator = $match[1];
+				$major = $match[2];
+				$minor = $match[3];
+				$patch = $match[4] ?? null;
+				if ($minor === '*') {
+					if ($operator !== '' || $patch !== null) {
+						throw new VirionException("Unsupported Composer PHP constraint {$expression}. Use caret versions or comparison ranges, optionally separated by ||.");
+					}
+					$normalized[] = $major . '.*';
+				} elseif ($patch === '*') {
+					if ($operator !== '') {
+						throw new VirionException("Unsupported Composer PHP constraint {$expression}. Use caret versions or comparison ranges, optionally separated by ||.");
+					}
+					$normalized[] = $major . '.' . $minor . '.*';
+				} else {
+					$normalized[] = $operator . $major . '.' . $minor . '.' . ($patch ?? '0');
+				}
 			}
 			$matched = (new VirionVersionConstraint(implode(' ', $normalized)))->matches(PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.' . PHP_RELEASE_VERSION) || $matched;
 		}

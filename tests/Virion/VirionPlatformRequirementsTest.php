@@ -8,6 +8,8 @@ use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
 use AxolotlBucketLabs\DevTools\Virion\VirionPlatformRequirements;
 use function extension_loaded;
+use const PHP_MAJOR_VERSION;
+use const PHP_MINOR_VERSION;
 
 final class VirionPlatformRequirementsTest extends TestCase
 {
@@ -29,6 +31,23 @@ final class VirionPlatformRequirementsTest extends TestCase
 		$this->expectException(VirionException::class);
 		$this->expectExceptionMessage('Unsupported Composer PHP constraint');
 		(new VirionPlatformRequirements())->validate(['php' => '^8.1 || ~8.2'], 'Example');
+	}
+
+	public function test_composer_php_minor_wildcard_matches_current_php_minor() : void
+	{
+		(new VirionPlatformRequirements())->validate(
+			['php' => PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.*'],
+			'Example',
+		);
+		$this->expectNotToPerformAssertions();
+	}
+
+	public function test_composer_php_wildcard_rejects_a_different_minor() : void
+	{
+		$nextMinor = PHP_MINOR_VERSION + 1;
+		$this->expectException(VirionException::class);
+		$this->expectExceptionMessage('requires PHP ' . PHP_MAJOR_VERSION . '.' . $nextMinor . '.*');
+		(new VirionPlatformRequirements())->validate(['php' => PHP_MAJOR_VERSION . '.' . $nextMinor . '.*'], 'Example');
 	}
 
 	public function test_composer_normalized_zend_opcache_extension_name_is_recognized() : void
