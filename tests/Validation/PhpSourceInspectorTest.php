@@ -221,6 +221,48 @@ PHP);
 		self::assertSame(['Fixture\Virion\other'], $symbols->unconditionalFunctions);
 	}
 
+	public function test_function_guard_is_recognized_inside_a_compound_conjunction() : void
+	{
+		$path = $this->temporaryDirectory . '/CompoundGuard.php';
+		file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (PHP_VERSION_ID >= 80000 && !function_exists('Fixture\\Virion\\helper')) {
+    function helper(): string
+    {
+        return 'guarded';
+    }
+}
+PHP);
+
+		$symbols = (new PhpSourceInspector())->inspect($path);
+
+		self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
+		self::assertSame([], $symbols->unconditionalFunctions);
+	}
+
+	public function test_function_guard_inside_a_disjunction_does_not_hide_a_conflict() : void
+	{
+		$path = $this->temporaryDirectory . '/DisjunctiveGuard.php';
+		file_put_contents($path, <<<'PHP'
+<?php
+namespace Fixture\Virion;
+
+if (!function_exists('Fixture\\Virion\\helper') || PHP_VERSION_ID >= 80000) {
+    function helper(): string
+    {
+        return 'not guaranteed';
+    }
+}
+PHP);
+
+		$symbols = (new PhpSourceInspector())->inspect($path);
+
+		self::assertSame(['Fixture\Virion\helper'], $symbols->functions);
+		self::assertSame(['Fixture\Virion\helper'], $symbols->unconditionalFunctions);
+	}
+
 	public function test_function_exists_for_another_name_does_not_guard_the_declared_function() : void
 	{
 		$path = $this->temporaryDirectory . '/WrongGuard.php';

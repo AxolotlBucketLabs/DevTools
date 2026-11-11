@@ -6,6 +6,7 @@ namespace AxolotlBucketLabs\DevTools\Support;
 
 use ParseError;
 use function array_pop;
+use function array_slice;
 use function array_unique;
 use function array_values;
 use function chr;
@@ -27,6 +28,8 @@ use function token_get_all;
 use function trim;
 use const T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG;
 use const T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG;
+use const T_BOOLEAN_AND;
+use const T_BOOLEAN_OR;
 use const T_CLASS;
 use const T_COMMENT;
 use const T_CONST;
@@ -39,6 +42,8 @@ use const T_ENUM;
 use const T_FUNCTION;
 use const T_IF;
 use const T_INTERFACE;
+use const T_LOGICAL_AND;
+use const T_LOGICAL_OR;
 use const T_NAME_FULLY_QUALIFIED;
 use const T_NAME_QUALIFIED;
 use const T_NAMESPACE;
@@ -266,6 +271,98 @@ final class PhpSourceInspector
 			return null;
 		}
 
+		return $this->functionGuardNamesInCondition($condition);
+	}
+
+	/**
+	 * @param list<array{int, string, int}|string> $condition
+	 * @return list<string>|null
+	 */
+	private function functionGuardNamesInCondition(array $condition) : ?array
+	{
+		$condition = $this->removeOuterConditionParentheses($condition);
+		if ($condition === []) {
+			return null;
+		}
+
+		$segments = [];
+		$segmentStart = 0;
+		$parentheses = 0;
+		$hasConjunction = false;
+		$lastIndex = count($condition) - 1;
+		foreach ($condition as $index => $token) {
+			if (is_string($token)) {
+				if ($token === '(') {
+					++$parentheses;
+				} elseif ($token === ')') {
+					--$parentheses;
+				}
+				continue;
+			}
+			if ($parentheses !== 0) {
+				continue;
+			}
+			if (in_array($token[0], [T_BOOLEAN_OR, T_LOGICAL_OR], true)) {
+				return null;
+			}
+			if (in_array($token[0], [T_BOOLEAN_AND, T_LOGICAL_AND], true)) {
+				$segments[] = array_slice($condition, $segmentStart, $index - $segmentStart);
+				$segmentStart = $index + 1;
+				$hasConjunction = true;
+			}
+		}
+
+		if ($hasConjunction) {
+			$segments[] = array_slice($condition, $segmentStart, $lastIndex - $segmentStart + 1);
+			$guards = [];
+			foreach ($segments as $segment) {
+				$guards = [...$guards, ...($this->functionGuardNamesInCondition($segment) ?? [])];
+			}
+			$guards = array_values(array_unique($guards));
+
+			return $guards === [] ? null : $guards;
+		}
+
+		$guard = $this->negatedFunctionExistsGuardName($condition);
+
+		return $guard === null ? null : [$guard];
+	}
+
+	/**
+	 * @param list<array{int, string, int}|string> $condition
+	 * @return list<array{int, string, int}|string>
+	 */
+	private function removeOuterConditionParentheses(array $condition) : array
+	{
+		while (count($condition) > 1 && $condition[0] === '(' && $condition[count($condition) - 1] === ')') {
+			$parentheses = 0;
+			$coversWholeCondition = true;
+			$lastIndex = count($condition) - 1;
+			foreach ($condition as $index => $token) {
+				if ($token === '(') {
+					++$parentheses;
+				} elseif ($token === ')') {
+					--$parentheses;
+					if ($parentheses === 0 && $index !== $lastIndex) {
+						$coversWholeCondition = false;
+						break;
+					}
+				}
+			}
+			if (!$coversWholeCondition) {
+				break;
+			}
+			$condition = array_slice($condition, 1, -1);
+		}
+
+		return $condition;
+	}
+
+	/**
+	 * @param list<array{int, string, int}|string> $condition
+	 */
+	private function negatedFunctionExistsGuardName(array $condition) : ?string
+	{
 		$position = 0;
 		if ($condition[0] !== '!') {
 			return null;
@@ -313,7 +410,7 @@ final class PhpSourceInspector
 			return null;
 		}
 
-		return [strtolower($name)];
+		return strtolower($name);
 	}
 
 	public function decodeStringLiteral(string $raw, string $quote) : string
