@@ -17,6 +17,9 @@ use function trim;
 
 final class VirionManifestReader
 {
+	private const CURRENT_DIRECTORY_NAME = '.';
+	private const PARENT_DIRECTORY_NAME = '..';
+
 	public function __construct(private readonly YamlReader $yamlReader) {}
 
 	public function read(string $path) : VirionManifest
@@ -99,6 +102,9 @@ final class VirionManifestReader
 		$name = trim((string) $raw['name']);
 		if (preg_match('/^[A-Za-z0-9_.-]+$/D', $name) !== 1) {
 			throw new VirionException("Cannot load virion {$name}: name may contain only letters, numbers, dot, underscore, and hyphen.");
+		}
+		if ($name === self::CURRENT_DIRECTORY_NAME || $name === self::PARENT_DIRECTORY_NAME) {
+			throw new VirionException("Cannot load virion {$name}: name cannot be a path component.");
 		}
 
 		return $name;
