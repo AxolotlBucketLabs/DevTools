@@ -28,6 +28,7 @@ final class Path
 	private const WINDOWS_DRIVE_PREFIX_LENGTH = 2;
 	private const WINDOWS_DRIVE_LETTER_INDEX = 0;
 	private const WINDOWS_DRIVE_SEPARATOR_INDEX = 1;
+	private const RESERVED_WINDOWS_DEVICE_NAME_PATTERN = '/^(?:con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])$/Du';
 
 	/** @var list<string> */
 	private const DEFAULT_EXCLUDED_COMPONENTS = [
@@ -108,7 +109,7 @@ final class Path
 				throw new FilesystemException("The path is not portable across supported filesystems: {$path}");
 			}
 			$device = strtolower(explode('.', $component, 2)[0]);
-			if (preg_match('/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/D', $device) === 1) {
+			if (preg_match(self::RESERVED_WINDOWS_DEVICE_NAME_PATTERN, $device) === 1) {
 				throw new FilesystemException("The path uses a reserved Windows device name: {$path}");
 			}
 			$normalized[] = $component;

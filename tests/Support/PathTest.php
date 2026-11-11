@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AxolotlBucketLabs\DevTools\Tests\Support;
 
+use AxolotlBucketLabs\DevTools\Support\FilesystemException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use function realpath;
@@ -11,6 +12,18 @@ use const DIRECTORY_SEPARATOR;
 
 final class PathTest extends TestCase
 {
+	public function test_windows_device_aliases_are_rejected_for_portable_paths() : void
+	{
+		foreach (['conin$', 'conout$', 'com0', 'lpt0', 'com¹', 'lpt³'] as $path) {
+			try {
+				Path::normalizeRelative($path);
+				self::fail("Expected reserved device name {$path} to be rejected.");
+			} catch (FilesystemException $error) {
+				self::assertStringContainsString('reserved Windows device name', $error->getMessage());
+			}
+		}
+	}
+
 	public function test_windows_paths_are_compared_without_case_sensitivity() : void
 	{
 		if (DIRECTORY_SEPARATOR !== '\\') {
