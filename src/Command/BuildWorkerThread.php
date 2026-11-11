@@ -6,6 +6,8 @@ namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
 use AxolotlBucketLabs\DevTools\Support\JsonLimits;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\Thread;
@@ -80,16 +82,22 @@ final class BuildWorkerThread extends Thread
 
 	private function runRequest(string $request, \pocketmine\snooze\SleeperNotifier $notifier) : void
 	{
+		$translator = null;
 		try {
+			$translator = Translator::fromResources();
 			/** @var array{jobId: string, operation: string, payload: array<string, mixed>} $decoded */
 			$decoded = json_decode($request, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
+			$locale = $decoded['payload']['locale'] ?? null;
+			if (is_string($locale)) {
+				$translator = Translator::fromResources($locale);
+			}
 			$result = BuildWorkerApplication::run($decoded['operation'], $decoded['payload']);
 			$result['jobId'] = $decoded['jobId'];
 		} catch (Throwable $error) {
 			$result = [
 				'jobId' => '',
 				'success' => false,
-				'messages' => ["DevTools worker failed.\n{$error->getMessage()}"],
+				'messages' => [($translator ?? Translator::fromResources())->translate(TranslationKeys::WORKER_UNEXPECTED_FAILURE, ['error' => $error->getMessage()])],
 			];
 		}
 		$this->responses[] = json_encode($result, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);

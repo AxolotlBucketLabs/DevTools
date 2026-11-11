@@ -60,7 +60,12 @@ final class TranslationKeys
 	public const EXTRACT_SAFE_NAME = 'extract.safe_name';
 	public const EXTRACT_USAGE = 'extract.usage';
 	public const QUEUE_BUSY = 'queue.busy';
-	public const QUEUE_QUEUED = 'queue.queued';
+	public const QUEUE_BUILD_BOTH = 'queue.build_both';
+	public const QUEUE_BUILD_PLUGIN = 'queue.build_plugin';
+	public const QUEUE_BUILD_VIRION = 'queue.build_virion';
+	public const QUEUE_DOCTOR_ALL = 'queue.doctor_all';
+	public const QUEUE_DOCTOR_PROJECT = 'queue.doctor_project';
+	public const QUEUE_EXTRACT = 'queue.extract';
 	public const RUNTIME_DUPLICATE_SOURCES = 'runtime.duplicate_sources';
 	public const RUNTIME_LANGUAGE_FALLBACK = 'runtime.language_fallback';
 	public const RUNTIME_NOT_STARTED = 'runtime.not_started';
@@ -68,6 +73,11 @@ final class TranslationKeys
 	public const RUNTIME_PLUGIN_LOAD_FAILED = 'runtime.plugin_load_failed';
 	public const RUNTIME_READY = 'runtime.ready';
 	public const RUNTIME_SHARED_REQUIREMENTS_FAILED = 'runtime.shared_requirements_failed';
+	public const STATUS_ASYNC_AVAILABLE = 'status.async.available';
+	public const STATUS_ASYNC_NOT_NEEDED = 'status.async.not_needed';
+	public const STATUS_ASYNC_UNAVAILABLE = 'status.async.unavailable';
+	public const STATUS_JOB_IDLE = 'status.job.idle';
+	public const STATUS_JOB_RUNNING = 'status.job.running';
 	public const STATUS_SUMMARY = 'status.summary';
 	public const SUMMARY_FILES = 'summary.files';
 	public const SUMMARY_OUTPUT = 'summary.output';
@@ -103,4 +113,5 @@ final class TranslationKeys
 	public const WORKER_INVALID_EXTRACT_PAYLOAD = 'worker.invalid_extract_payload';
 	public const WORKER_PATH_MISSING = 'worker.path_missing';
 	public const WORKER_UNKNOWN_OPERATION = 'worker.unknown_operation';
+	public const WORKER_UNEXPECTED_FAILURE = 'worker.unexpected_failure';
 }

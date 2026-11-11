@@ -29,8 +29,8 @@ final class VirionStartupReporterTest extends TestCase
 			$messages[0]['message'],
 		);
 		self::assertSame([
-			'The virion candidate was skipped. first path',
-			'The virion candidate was skipped. second path',
+			'Skipped virion SharedVirion. first path',
+			'Skipped virion SharedVirion. second path',
 		], $messages[0]['details']);
 	}
 
@@ -54,7 +54,7 @@ final class VirionStartupReporterTest extends TestCase
 
 		self::assertSame('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages[0]['message']);
 		self::assertSame('Đã bỏ qua một bản SharedVirion (1.0.0). Xem /devtools virions để biết chi tiết lựa chọn.', $messages[1]['message']);
-		self::assertSame(['Đã bỏ qua bản virion này. Technical selection detail'], $messages[1]['details']);
+		self::assertSame(['Đã bỏ qua ứng viên virion SharedVirion. Technical selection detail'], $messages[1]['details']);
 	}
 
 	public function test_failure_and_conflict_summaries_are_translated_and_keep_technical_details() : void
@@ -67,9 +67,9 @@ final class VirionStartupReporterTest extends TestCase
 		$messages = (new VirionStartupReporter(Translator::fromResources('vie')))->messages($registry);
 
 		self::assertCount(2, $messages);
-		self::assertStringStartsWith('Không thể nạp virion.', $messages[0]['message']);
+		self::assertStringStartsWith('Không thể nạp virion ExampleVirion.', $messages[0]['message']);
 		self::assertStringContainsString('Technical load failure.', $messages[0]['message']);
-		self::assertStringStartsWith('Phát hiện xung đột virion.', $messages[1]['message']);
+		self::assertStringStartsWith('Virion ExampleVirion gặp xung đột.', $messages[1]['message']);
 		self::assertStringContainsString('Technical conflict detail.', $messages[1]['message']);
 	}
 }

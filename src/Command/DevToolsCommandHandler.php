@@ -12,14 +12,12 @@ use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
-use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 use Throwable;
 use function array_shift;
 use function array_slice;
 use function array_unshift;
-use function basename;
 use function count;
 use function explode;
 use function in_array;
@@ -141,13 +139,16 @@ final class DevToolsCommandHandler
 	{
 		$projects = $this->pluginDiscovery->discover($this->pluginsDirectory);
 		$loaded = $this->virions->loaded();
-		$async = $loaded === [] ? 'not needed yet' : ($loaded[0]->asyncSupported ? 'available' : 'not registered');
+		$asyncKey = TranslationKeys::STATUS_ASYNC_NOT_NEEDED;
+		if ($loaded !== []) {
+			$asyncKey = $loaded[0]->asyncSupported ? TranslationKeys::STATUS_ASYNC_AVAILABLE : TranslationKeys::STATUS_ASYNC_UNAVAILABLE;
+		}
 		$sender->sendMessage($this->translate(TranslationKeys::STATUS_SUMMARY, [
 			'version' => $this->plugin->getDescription()->getVersion(),
 			'projects' => count($projects),
 			'virions' => count($loaded),
-			'async' => $async,
-			'job' => $this->jobs->status(),
+			'async' => $this->translate($asyncKey),
+			'job' => $this->translate($this->jobs->isBusy() ? TranslationKeys::STATUS_JOB_RUNNING : TranslationKeys::STATUS_JOB_IDLE),
 			'output' => $this->buildDirectory,
 		]));
 
@@ -158,7 +159,14 @@ final class DevToolsCommandHandler
 	private function doctor(CommandSender $sender, array $arguments) : bool
 	{
 		$selection = array_shift($arguments);
-		return $this->submit($sender, 'doctor', ['selection' => $selection], $selection === null ? 'all plugin folders' : "plugin {$selection}");
+		return $this->submit(
+			$sender,
+			'doctor',
+			['selection' => $selection],
+			$selection === null ? TranslationKeys::QUEUE_DOCTOR_ALL : TranslationKeys::QUEUE_DOCTOR_PROJECT,
+			$selection === null ? [] : ['project' => $selection],
+			$selection === null ? 'all plugin folders' : "plugin {$selection}",
+		);
 	}
 
 	/** @param list<string> $arguments */
@@ -179,11 +187,23 @@ final class DevToolsCommandHandler
 			return true;
 		}
 		$overwrite = in_array(self::OVERWRITE_OPTION, $arguments, true);
-		return $this->submit($sender, 'build', [
-			'target' => $target,
-			'selection' => $selection,
-			'overwrite' => $overwrite,
-		], "{$target} build for {$selection}");
+		$queueMessageKey = match (BuildTarget::from($target)) {
+			BuildTarget::PLUGIN => TranslationKeys::QUEUE_BUILD_PLUGIN,
+			BuildTarget::VIRION => TranslationKeys::QUEUE_BUILD_VIRION,
+			BuildTarget::BOTH => TranslationKeys::QUEUE_BUILD_BOTH,
+		};
+		return $this->submit(
+			$sender,
+			'build',
+			[
+				'target' => $target,
+				'selection' => $selection,
+				'overwrite' => $overwrite,
+			],
+			$queueMessageKey,
+			['project' => $selection],
+			"{$target} build for {$selection}",
+		);
 	}
 
 	/** @param list<string> $arguments */
@@ -205,12 +225,19 @@ final class DevToolsCommandHandler
 				$type = substr($argument, strlen(self::TYPE_OPTION_PREFIX));
 			}
 		}
-		return $this->submit($sender, 'extract', [
-			'selection' => $selection,
-			'format' => $format,
-			'type' => $type,
-			'overwrite' => $overwrite,
-		], "extract {$selection}");
+		return $this->submit(
+			$sender,
+			'extract',
+			[
+				'selection' => $selection,
+				'format' => $format,
+				'type' => $type,
+				'overwrite' => $overwrite,
+			],
+			TranslationKeys::QUEUE_EXTRACT,
+			['artifact' => $selection],
+			"extract {$selection}",
+		);
 	}
 
 	private function virions(CommandSender $sender) : bool
@@ -223,19 +250,8 @@ final class DevToolsCommandHandler
 		}
 		$reporter = new VirionStartupReporter($this->translator);
 		foreach ($entries as $entry) {
-			$name = $entry->manifest === null ? basename($entry->location) : $entry->manifest->name;
-			$statusKey = match ($entry->status) {
-				VirionStatus::LOADED => TranslationKeys::VIRIONS_STATUS_LOADED,
-				VirionStatus::SKIPPED => TranslationKeys::VIRIONS_STATUS_SKIPPED,
-				VirionStatus::FAILED => TranslationKeys::VIRIONS_STATUS_FAILED,
-				VirionStatus::CONFLICT => TranslationKeys::VIRIONS_STATUS_CONFLICT,
-			};
-			$status = $this->translate($statusKey);
 			$message = $reporter->formatDiagnostic($entry);
-			if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
-				$message = $this->translate(TranslationKeys::VIRIONS_LOADED, ['name' => $name, 'version' => $entry->manifest->version, 'antigen' => $entry->manifest->antigen]);
-			}
-			$sender->sendMessage("{$status} {$name}. {$message}");
+			$sender->sendMessage($message);
 		}
 
 		return true;
@@ -249,9 +265,10 @@ final class DevToolsCommandHandler
 	}
 
 	/**
-	 * @param array<string, mixed> $payload
+	 * @param array<string, mixed>      $payload
+	 * @param array<string, int|string> $queueMessageParameters
 	 */
-	private function submit(CommandSender $sender, string $operation, array $payload, string $description) : bool
+	private function submit(CommandSender $sender, string $operation, array $payload, string $queueMessageKey, array $queueMessageParameters, string $description) : bool
 	{
 		if ($this->jobs->isBusy()) {
 			$this->debug?->debug("Rejected {$operation} command because another background job is running.");
@@ -259,7 +276,7 @@ final class DevToolsCommandHandler
 
 			return true;
 		}
-		$sender->sendMessage($this->translate(TranslationKeys::QUEUE_QUEUED, ['description' => $description]));
+		$sender->sendMessage($this->translate($queueMessageKey, $queueMessageParameters));
 		$this->debug?->debug("Submitting {$operation} command for {$description}.");
 		$debug = $this->debug;
 		if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug) : void {

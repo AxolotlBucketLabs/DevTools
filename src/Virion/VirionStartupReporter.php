@@ -6,6 +6,7 @@ namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
+use function basename;
 use function count;
 use function implode;
 
@@ -73,14 +74,19 @@ final class VirionStartupReporter
 			VirionStatus::SKIPPED => TranslationKeys::VIRIONS_SKIPPED_DETAIL,
 			VirionStatus::LOADED => TranslationKeys::VIRIONS_LOADED,
 		};
-		if ($entry->status === VirionStatus::LOADED && $entry->manifest !== null) {
+		if ($entry->status === VirionStatus::LOADED) {
+			$manifest = $entry->requireManifest();
+
 			return $this->translator->translate($key, [
-				'name' => $entry->manifest->name,
-				'version' => $entry->manifest->version,
-				'antigen' => $entry->manifest->antigen,
+				'name' => $manifest->name,
+				'version' => $manifest->version,
+				'antigen' => $manifest->antigen,
 			]);
 		}
 
-		return $this->translator->translate($key, ['detail' => $entry->message]);
+		return $this->translator->translate($key, [
+			'name' => $entry->manifest->name ?? basename($entry->location),
+			'detail' => $entry->message,
+		]);
 	}
 }

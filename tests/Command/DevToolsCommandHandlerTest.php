@@ -36,8 +36,10 @@ final class DevToolsCommandHandlerTest extends TestCase
 
 		$messages = $this->command(['virions'], registry: $registry, translator: Translator::fromResources('vie'));
 
-		self::assertStringContainsString('Đã nạp ExampleVirion. Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages);
-		self::assertStringContainsString('Thất bại ExampleVirion. Không thể nạp virion. Technical validator detail', $messages);
+		self::assertStringContainsString('Đã nạp ExampleVirion 1.2.3 (Example\\Library).', $messages);
+		self::assertStringContainsString('Không thể nạp virion ExampleVirion. Technical validator detail', $messages);
+		self::assertStringNotContainsString('Đã nạp ExampleVirion. Đã nạp', $messages);
+		self::assertStringNotContainsString('Thất bại ExampleVirion. Không thể nạp', $messages);
 		self::assertStringNotContainsString('Loaded ExampleVirion', $messages);
 	}
 
@@ -48,6 +50,54 @@ final class DevToolsCommandHandlerTest extends TestCase
 		self::assertStringContainsString('Dependency check failed', $messages);
 		self::assertStringContainsString('SharedVirion', $messages);
 		self::assertStringNotContainsString('Project structure and dependency selection passed', $messages);
+	}
+
+	public function test_server_queue_acknowledgement_does_not_insert_english_operation_details() : void
+	{
+		$messages = $this->command(['doctor'], translator: Translator::fromResources('vie'));
+
+		self::assertStringContainsString('Đã đưa việc kiểm tra tất cả thư mục plugin phát triển vào hàng đợi.', $messages);
+		self::assertStringNotContainsString('all plugin folders', $messages);
+	}
+
+	public function test_server_queue_acknowledgement_keeps_localized_operation_and_project_context() : void
+	{
+		$cases = [
+			[['doctor', 'QueueExample'], 'Đã đưa việc kiểm tra QueueExample vào hàng đợi.'],
+			[['build', 'plugin', 'QueueExample'], 'Đã đưa việc build PHAR plugin cho QueueExample vào hàng đợi.'],
+			[['build', 'virion', 'QueueExample'], 'Đã đưa việc build PHAR virion cho QueueExample vào hàng đợi.'],
+			[['build', 'both', 'QueueExample'], 'Đã đưa việc build PHAR plugin và virion cho QueueExample vào hàng đợi.'],
+			[['extract', 'QueueExample.phar'], 'Đã đưa việc giải nén QueueExample.phar vào hàng đợi.'],
+		];
+		$translator = Translator::fromResources('vie');
+
+		foreach ($cases as [$arguments, $expected]) {
+			$messages = $this->command($arguments, translator: $translator);
+
+			self::assertStringContainsString($expected, $messages);
+		}
+	}
+
+	public function test_status_translates_worker_and_job_states() : void
+	{
+		$messages = $this->command(['status'], translator: Translator::fromResources('vie'));
+
+		self::assertStringContainsString('chưa cần', $messages);
+		self::assertStringContainsString('không có tác vụ đang chạy', $messages);
+		self::assertStringNotContainsString('not needed yet', $messages);
+		self::assertStringNotContainsString('idle', $messages);
+	}
+
+	public function test_status_translates_async_worker_availability() : void
+	{
+		$registry = new VirionRegistry();
+		$manifest = new VirionManifest('ExampleVirion', '1.2.3', 'Example\\Library', [], [], [], 'virion.yml');
+		$registry->record(new VirionRegistryEntry('source', $manifest, VirionStatus::LOADED, 'Loaded.', asyncSupported: true));
+
+		$messages = $this->command(['status'], registry: $registry, translator: Translator::fromResources('vie'));
+
+		self::assertStringContainsString('có sẵn', $messages);
+		self::assertStringNotContainsString('available', $messages);
 	}
 
 	public function test_server_doctor_reports_invalid_build_declaration() : void
@@ -64,7 +114,7 @@ final class DevToolsCommandHandlerTest extends TestCase
 		$this->copyFixture('BuildPlugin', 'plugins/Source');
 		$this->copyFixture('SharedVirion', 'virions/Shared');
 		$messages = $this->command(['doctor', 'BuildFixture']);
-		self::assertStringContainsString('Project structure and dependency selection passed (1 virions)', $messages);
+		self::assertStringContainsString('Project structure and dependency selection are valid. Selected virion count: 1.', $messages);
 		self::assertStringContainsString('runtime tests were not run', $messages);
 		self::assertStringContainsString('/devtools virions', $messages);
 	}
@@ -99,7 +149,7 @@ final class DevToolsCommandHandlerTest extends TestCase
 		self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.phar');
 
 		$messages = $this->command(['BuildFixture'], 'devtools:extractplugin');
-		self::assertStringContainsString('Extracted', $messages);
+		self::assertStringContainsString('Files extracted to', $messages);
 		self::assertFileExists($this->temporaryDirectory . '/plugins/BuildFixture/plugin.yml');
 	}
 
@@ -114,7 +164,7 @@ final class DevToolsCommandHandlerTest extends TestCase
 		$messages = $this->command(['build', 'BuildFixture']);
 		self::assertStringContainsString('Built BuildFixture successfully', $messages);
 		$messages = $this->command(['extract', 'BuildFixture.phar', '--format=zip']);
-		self::assertStringContainsString('Archived', $messages);
+		self::assertStringContainsString('Archive created at', $messages);
 		self::assertFileExists($this->temporaryDirectory . '/build/BuildFixture.zip');
 	}
 
