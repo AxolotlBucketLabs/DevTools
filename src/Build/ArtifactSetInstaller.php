@@ -79,7 +79,12 @@ final class ArtifactSetInstaller
 			$rollbackFailures = [];
 			$unremovedOutputs = [];
 			foreach ($installed as $output) {
-				if (file_exists($output) && !unlink($output)) {
+				try {
+					$removed = !file_exists($output) || unlink($output);
+				} catch (Throwable) {
+					$removed = false;
+				}
+				if (!$removed) {
 					$unremovedOutputs[$output] = true;
 					$backup = $backups[$output] ?? null;
 					$rollbackFailures[] = $backup === null
@@ -88,10 +93,16 @@ final class ArtifactSetInstaller
 				}
 			}
 			foreach ($backups as $output => $backup) {
-				if (!file_exists($backup) || isset($unremovedOutputs[$output])) {
-					continue;
+				$restoreFailed = false;
+				try {
+					if (!file_exists($backup) || isset($unremovedOutputs[$output])) {
+						continue;
+					}
+					$restoreFailed = file_exists($output) || !rename($backup, $output);
+				} catch (Throwable) {
+					$restoreFailed = true;
 				}
-				if (file_exists($output) || !rename($backup, $output)) {
+				if ($restoreFailed) {
 					$rollbackFailures[] = "The previous artifact could not be restored from {$backup} to {$output}.";
 				}
 			}

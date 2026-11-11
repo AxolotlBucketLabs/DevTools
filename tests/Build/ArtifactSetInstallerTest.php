@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Tests\Build;
 use AxolotlBucketLabs\DevTools\Build\ArtifactSetInstaller;
 use AxolotlBucketLabs\DevTools\Build\BuildException;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
+use ErrorException;
 use function chmod;
 use function file_exists;
 use function file_get_contents;
@@ -131,7 +132,9 @@ final class ArtifactSetInstallerTest extends TestCase
 		file_put_contents($secondOutput, 'old two');
 		self::assertTrue(chmod($firstTemporary, 0444));
 
-		set_error_handler(static fn() : bool => true);
+		set_error_handler(static function (int $severity, string $message) : bool {
+			throw new ErrorException($message, 0, $severity);
+		});
 		try {
 			try {
 				(new ArtifactSetInstaller())->install([
