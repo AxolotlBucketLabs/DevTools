@@ -19,6 +19,7 @@ use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistryEntry;
 use AxolotlBucketLabs\DevTools\Virion\VirionStatus;
 use pocketmine\command\CommandSender;
+use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
 use function file_put_contents;
 use function hash_file;
@@ -76,6 +77,64 @@ final class DevToolsCommandHandlerTest extends TestCase
 
 			self::assertStringContainsString($expected, $messages);
 		}
+	}
+
+	public function test_async_result_is_not_sent_to_a_disconnected_player() : void
+	{
+		$runner = new class implements BuildJobRunner {
+			private ?\Closure $completion = null;
+
+			public function submit(string $operation, array $payload, callable $onComplete) : bool
+			{
+				$this->completion = \Closure::fromCallable($onComplete);
+
+				return true;
+			}
+
+			public function isBusy() : bool
+			{
+				return false;
+			}
+
+			public function status() : string
+			{
+				return 'idle';
+			}
+
+			public function shutdown() : void {}
+
+			public function complete() : void
+			{
+				$completion = $this->completion ?? throw new \LogicException('No background completion was queued.');
+				$completion(['success' => true, 'messages' => ['Build completed.']]);
+			}
+		};
+		$sender = new class extends Player {
+			public int $sentMessages = 0;
+
+			public function __construct() {}
+
+			public function __destruct() {}
+
+			public function hasPermission(\pocketmine\permission\Permission|string $name) : bool
+			{
+				return true;
+			}
+
+			public function isConnected() : bool
+			{
+				return false;
+			}
+
+			public function sendMessage(\pocketmine\lang\Translatable|string $message) : void
+			{
+				++$this->sentMessages;
+			}
+		};
+
+		$this->command(['doctor'], runner: $runner, sender: $sender);
+		$runner->complete();
+		self::assertSame(1, $sender->sentMessages);
 	}
 
 	public function test_status_translates_worker_and_job_states() : void
@@ -234,7 +293,15 @@ final class DevToolsCommandHandlerTest extends TestCase
 	 * @param list<string>        $arguments
 	 * @param array<string, bool> $enabledCommands
 	 */
-	private function command(array $arguments, string $label = 'devtools', array $enabledCommands = [], ?VirionRegistry $registry = null, ?Translator $translator = null) : string
+	private function command(
+		array $arguments,
+		string $label = 'devtools',
+		array $enabledCommands = [],
+		?VirionRegistry $registry = null,
+		?Translator $translator = null,
+		?BuildJobRunner $runner = null,
+		?CommandSender $sender = null,
+	) : string
 	{
 		[$reader, $validator] = $this->validationServices();
 		$discovery = new FolderPluginDiscovery();
@@ -242,6 +309,40 @@ final class DevToolsCommandHandlerTest extends TestCase
 		$virionManifestReader = new VirionManifestReader($yaml);
 		$virionFactory = new VirionProjectFactory($virionManifestReader);
 		$virionDiscovery = new VirionDiscovery($this->filesystem);
+		$runner ??= new class (
+			$this->temporaryDirectory . '/plugins',
+			$this->temporaryDirectory . '/virions',
+			$this->temporaryDirectory . '/build',
+		) implements BuildJobRunner {
+			public function __construct(
+				private readonly string $pluginsDirectory,
+				private readonly string $virionsDirectory,
+				private readonly string $buildDirectory,
+			) {}
+
+			public function submit(string $operation, array $payload, callable $onComplete) : bool
+			{
+				$onComplete(BuildWorkerApplication::run($operation, $payload + [
+					'pluginsDirectory' => $this->pluginsDirectory,
+					'virionsDirectory' => $this->virionsDirectory,
+					'buildDirectory' => $this->buildDirectory,
+				]));
+
+				return true;
+			}
+
+			public function isBusy() : bool
+			{
+				return false;
+			}
+
+			public function status() : string
+			{
+				return 'idle';
+			}
+
+			public function shutdown() : void {}
+		};
 		$handler = new DevToolsCommandHandler(
 			$this->createMock(Plugin::class),
 			$discovery,
@@ -249,49 +350,19 @@ final class DevToolsCommandHandlerTest extends TestCase
 			$this->temporaryDirectory . '/plugins',
 			$this->temporaryDirectory . '/virions',
 			$this->temporaryDirectory . '/build',
-			new class (
-				$this->temporaryDirectory . '/plugins',
-				$this->temporaryDirectory . '/virions',
-				$this->temporaryDirectory . '/build',
-			) implements BuildJobRunner {
-				public function __construct(
-					private readonly string $pluginsDirectory,
-					private readonly string $virionsDirectory,
-					private readonly string $buildDirectory,
-				) {}
-
-				public function submit(string $operation, array $payload, callable $onComplete) : bool
-				{
-					$onComplete(BuildWorkerApplication::run($operation, $payload + [
-						'pluginsDirectory' => $this->pluginsDirectory,
-						'virionsDirectory' => $this->virionsDirectory,
-						'buildDirectory' => $this->buildDirectory,
-					]));
-
-					return true;
-				}
-
-				public function isBusy() : bool
-				{
-					return false;
-				}
-
-				public function status() : string
-				{
-					return 'idle';
-				}
-
-				public function shutdown() : void {}
-			},
+			$runner,
 			$enabledCommands,
 			translator: $translator,
 		);
 		$messages = [];
-		$sender = $this->createMock(CommandSender::class);
-		$sender->method('hasPermission')->willReturn(true);
-		$sender->method('sendMessage')->willReturnCallback(static function (string $message) use (&$messages) : void {
-			$messages[] = $message;
-		});
+		$defaultSender = $sender === null;
+		$sender ??= $this->createMock(CommandSender::class);
+		if ($defaultSender) {
+			$sender->method('hasPermission')->willReturn(true);
+			$sender->method('sendMessage')->willReturnCallback(static function (string $message) use (&$messages) : void {
+				$messages[] = $message;
+			});
+		}
 		$handler->handle($sender, $label, $arguments);
 		return implode("\n", $messages);
 	}

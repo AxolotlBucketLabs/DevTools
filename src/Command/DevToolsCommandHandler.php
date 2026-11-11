@@ -13,6 +13,7 @@ use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
 use AxolotlBucketLabs\DevTools\Virion\VirionStartupReporter;
 use pocketmine\command\CommandSender;
+use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
 use Throwable;
 use function array_shift;
@@ -282,6 +283,9 @@ final class DevToolsCommandHandler
 		if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug) : void {
 			foreach ($result['debug'] ?? [] as $message) {
 				$debug?->debug($message);
+			}
+			if ($sender instanceof Player && !$sender->isConnected()) {
+				return;
 			}
 			foreach ($result['messages'] as $message) {
 				$sender->sendMessage($message);
