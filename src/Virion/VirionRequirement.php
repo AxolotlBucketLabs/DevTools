@@ -21,6 +21,9 @@ final class VirionRequirement
 				"Invalid virion requirement name \"{$name}\" in {$source}. Use letters, numbers, dot, underscore, or hyphen.",
 			);
 		}
+		if (VirionName::isPathComponent($name)) {
+			throw new VirionException("Invalid virion requirement name \"{$name}\" in {$source}. Name cannot be a path component.");
+		}
 		$this->name = $name;
 		$this->constraint = new VirionVersionConstraint(trim($constraintExpression));
 	}
