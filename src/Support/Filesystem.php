@@ -162,7 +162,7 @@ final class Filesystem
 
 	private function portableRelative(string $root, string $path) : string
 	{
-		$relative = substr($path, strlen(rtrim($root, DIRECTORY_SEPARATOR)) + 1);
+		$relative = substr($path, strlen(rtrim($root, '/\\')) + 1);
 		if (DIRECTORY_SEPARATOR === '/' && str_contains($relative, '\\')) {
 			throw new FilesystemException(
 				"Cannot stage {$path}: a backslash in a POSIX filename would change meaning when normalized.",
