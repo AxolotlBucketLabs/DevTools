@@ -78,6 +78,11 @@ final class Filesystem
 		}
 	}
 
+	public function isDirectory(string $path) : bool
+	{
+		return is_dir($path);
+	}
+
 	/**
 	 * @param callable(string): bool|null $include Receives a normalized relative path.
 	 */

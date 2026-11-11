@@ -6,9 +6,11 @@ namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
+use AxolotlBucketLabs\DevTools\Support\FilesystemException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use FilesystemIterator;
 use SplFileInfo;
+use function file_exists;
 use function sort;
 use function str_ends_with;
 use function strtolower;
@@ -21,7 +23,14 @@ final class VirionDiscovery
 	/** @return list<string> */
 	public function discover(string $directory) : array
 	{
-		$this->filesystem->ensureDirectory($directory);
+		if (!$this->filesystem->isDirectory($directory)) {
+			if (file_exists($directory) || Filesystem::isLink($directory)) {
+				throw new FilesystemException("Cannot discover virions in a non-directory path: {$directory}");
+			}
+
+			return [];
+		}
+
 		$locations = [];
 		$iterator = new FilesystemIterator(
 			$directory,
