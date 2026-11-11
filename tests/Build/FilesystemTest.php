@@ -12,6 +12,7 @@ use function dirname;
 use function str_ends_with;
 use function strtoupper;
 use function substr;
+use const DIRECTORY_SEPARATOR;
 use const PHP_OS_FAMILY;
 
 final class FilesystemTest extends TestCase
