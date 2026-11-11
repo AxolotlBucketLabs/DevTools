@@ -40,6 +40,17 @@ final class FilesystemTest extends TestCase
 		self::assertFileExists($source . '/src/Main.php');
 	}
 
+	public function test_copy_tree_accepts_a_source_path_with_a_trailing_separator() : void
+	{
+		$source = $this->copyFixture('ValidPlugin');
+		$destination = $this->temporaryDirectory . '/copy-with-trailing-separator';
+
+		$this->filesystem->copyTree($source . DIRECTORY_SEPARATOR, $destination);
+
+		self::assertFileExists($destination . DIRECTORY_SEPARATOR . 'plugin.yml');
+		self::assertFileExists($destination . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Main.php');
+	}
+
 	public function test_links_are_rejected_even_if_excluded_and_removal_preserves_target() : void
 	{
 		$source = $this->temporaryDirectory . '/source';
