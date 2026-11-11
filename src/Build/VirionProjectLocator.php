@@ -38,7 +38,13 @@ final class VirionProjectLocator
 				throw new BuildException("Refusing symbolic-link virion project: {$nameOrPath}");
 			}
 			$real = realpath($nameOrPath);
-			if ($real !== false && Path::isInside($virionsRoot, $real) && dirname($real) === $virionsRoot) {
+			if ($real !== false) {
+				if (!Path::isInside($virionsRoot, $real) || dirname($real) !== $virionsRoot) {
+					throw new BuildException(
+						"Refusing virion project outside the immediate virions directory {$virionsRoot}: {$real}",
+					);
+				}
+
 				return $real;
 			}
 		}
