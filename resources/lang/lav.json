@@ -14,7 +14,7 @@
     "virions.loaded": "Ielādēts {name} {version} ({antigen}).",
     "virions.skipped_one": "Izlaists {name} kandidāts ({versions}). Atlases informāciju skatiet ar /devtools virions.",
     "virions.skipped_many": "Izlaisti {name} kandidāti ({versions}). Atlases informāciju skatiet ar /devtools virions.",
-    "runtime.ready": "Mapju spraudņu ielāde, koplietojamie virioni un patstāvīgu PHAR veidošana ir gatava.",
+    "runtime.ready": "DevTools ir gatavs ielādēt spraudņus mapju formā un koplietojamos virion, kā arī veidot patstāvīgus PHAR.",
     "runtime.not_started": "DevTools nebeidza startēšanu. Pārbaudiet startēšanas kļūdu servera žurnālā.",
     "command.permission": "Jums nav atļaujas izmantot /devtools {command}.",
     "command.disabled": "Komanda /devtools {command} konfigurācijā ir atspējota.",

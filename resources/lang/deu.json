@@ -14,7 +14,7 @@
     "virions.loaded": "{name} {version} ({antigen}) wurde geladen.",
     "virions.skipped_one": "Kandidat für {name} ({versions}) wurde übersprungen. Details zur Auswahl stehen unter /devtools virions.",
     "virions.skipped_many": "Kandidaten für {name} ({versions}) wurden übersprungen. Details zur Auswahl stehen unter /devtools virions.",
-    "runtime.ready": "Das Laden von Plugin-Ordnern, gemeinsam genutzten Virions und eigenständigen PHARs ist bereit.",
+    "runtime.ready": "DevTools kann Plugins im Ordnerformat und gemeinsame Virions laden sowie eigenständige PHARs erstellen.",
     "runtime.not_started": "DevTools wurde nicht vollständig gestartet. Prüfe den Startfehler im Serverprotokoll.",
     "command.permission": "Du hast keine Berechtigung für /devtools {command}.",
     "command.disabled": "Der Befehl /devtools {command} ist in der Konfiguration deaktiviert.",

@@ -14,7 +14,7 @@
     "virions.loaded": "Загружен {name} {version} ({antigen}).",
     "virions.skipped_one": "Кандидат для {name} ({versions}) пропущен. Подробности выбора доступны в /devtools virions.",
     "virions.skipped_many": "Кандидаты для {name} ({versions}) пропущены. Подробности выбора доступны в /devtools virions.",
-    "runtime.ready": "Загрузка плагинов из папок, общих virion и сборка автономных PHAR готовы.",
+    "runtime.ready": "DevTools готов загружать плагины в виде папок и совместно используемые virion, а также собирать автономные PHAR-файлы.",
     "runtime.not_started": "DevTools не завершил запуск. Проверьте ошибку запуска в журнале сервера.",
     "command.permission": "У вас нет разрешения использовать /devtools {command}.",
     "command.disabled": "Команда /devtools {command} отключена в конфигурации.",

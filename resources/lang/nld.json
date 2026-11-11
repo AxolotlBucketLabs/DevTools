@@ -14,7 +14,7 @@
     "virions.loaded": "{name} {version} ({antigen}) is geladen.",
     "virions.skipped_one": "Kandidaat voor {name} ({versions}) is overgeslagen. Zie /devtools virions voor selectiedetails.",
     "virions.skipped_many": "Kandidaten voor {name} ({versions}) zijn overgeslagen. Zie /devtools virions voor selectiedetails.",
-    "runtime.ready": "Het laden van plugins uit mappen, gedeelde virions en het bouwen van zelfstandige PHAR's is klaar.",
+    "runtime.ready": "DevTools is klaar om plugins in mapvorm en gedeelde virions te laden en zelfstandige PHAR-bestanden te bouwen.",
     "runtime.not_started": "DevTools is niet volledig gestart. Controleer de startfout in het serverlogboek.",
     "command.permission": "Je hebt geen toestemming om /devtools {command} te gebruiken.",
     "command.disabled": "Het commando /devtools {command} is uitgeschakeld in de configuratie.",

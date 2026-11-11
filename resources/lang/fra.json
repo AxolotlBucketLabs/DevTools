@@ -14,7 +14,7 @@
     "virions.loaded": "{name} {version} ({antigen}) a été chargé.",
     "virions.skipped_one": "Le candidat de {name} ({versions}) a été ignoré. Consultez /devtools virions pour les détails de sélection.",
     "virions.skipped_many": "Les candidats de {name} ({versions}) ont été ignorés. Consultez /devtools virions pour les détails de sélection.",
-    "runtime.ready": "Le chargement des plugins depuis des dossiers, des virions partagés et la construction de PHAR autonomes sont prêts.",
+    "runtime.ready": "DevTools est prêt à charger des plugins sous forme de dossiers et des virions partagés, ainsi qu’à créer des PHAR autonomes.",
     "runtime.not_started": "DevTools n'a pas terminé son démarrage. Consultez l'erreur de démarrage dans le journal du serveur.",
     "command.permission": "Vous n'avez pas la permission d'utiliser /devtools {command}.",
     "command.disabled": "La commande /devtools {command} est désactivée dans la configuration.",

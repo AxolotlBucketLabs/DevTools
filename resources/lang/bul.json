@@ -14,7 +14,7 @@
     "virions.loaded": "Зареден е {name} {version} ({antigen}).",
     "virions.skipped_one": "Пропуснат е кандидатът за {name} ({versions}). Вижте /devtools virions за подробности за избора.",
     "virions.skipped_many": "Пропуснати са кандидатите за {name} ({versions}). Вижте /devtools virions за подробности за избора.",
-    "runtime.ready": "Зареждането на плъгини от папки, споделените virion-и и самостоятелното изграждане на PHAR са готови.",
+    "runtime.ready": "DevTools е готов да зарежда плъгини във вид на папки и споделени virion-и, както и да изгражда самостоятелни PHAR файлове.",
     "runtime.not_started": "DevTools не завърши стартирането си. Проверете грешката при стартиране в журнала на сървъра.",
     "command.permission": "Нямате право да използвате /devtools {command}.",
     "command.disabled": "Командата /devtools {command} е изключена от конфигурацията.",

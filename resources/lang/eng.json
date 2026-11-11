@@ -14,7 +14,7 @@
     "virions.loaded": "Loaded {name} {version} ({antigen}).",
     "virions.skipped_one": "Skipped {name} candidate ({versions}). See /devtools virions for selection details.",
     "virions.skipped_many": "Skipped {name} candidates ({versions}). See /devtools virions for selection details.",
-    "runtime.ready": "Folder plugin loading, shared virions, and standalone PHAR building are ready.",
+    "runtime.ready": "DevTools is ready to load folder-based plugins and shared virions, and build standalone PHARs.",
     "runtime.not_started": "DevTools did not finish starting. Check the server log for the startup error.",
     "command.permission": "You do not have permission to use /devtools {command}.",
     "command.disabled": "The /devtools {command} command is disabled by configuration.",

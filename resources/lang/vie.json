@@ -14,7 +14,7 @@
     "virions.loaded": "Đã nạp {name} {version} ({antigen}).",
     "virions.skipped_one": "Đã bỏ qua một bản {name} ({versions}). Xem /devtools virions để biết chi tiết lựa chọn.",
     "virions.skipped_many": "Đã bỏ qua các bản {name} ({versions}). Xem /devtools virions để biết chi tiết lựa chọn.",
-    "runtime.ready": "Đã sẵn sàng tải plugin dạng thư mục, virion dùng chung và build PHAR độc lập.",
+    "runtime.ready": "DevTools đã sẵn sàng nạp plugin dạng thư mục, virion dùng chung và build PHAR độc lập.",
     "runtime.not_started": "DevTools chưa khởi động xong. Hãy kiểm tra lỗi khởi động trong log server.",
     "command.permission": "Bạn không có quyền sử dụng /devtools {command}.",
     "command.disabled": "Lệnh /devtools {command} đã bị tắt trong cấu hình.",

@@ -14,7 +14,7 @@
     "virions.loaded": "{name} {version} ({antigen}) yüklendi.",
     "virions.skipped_one": "{name} adayı ({versions}) atlandı. Seçim ayrıntıları için /devtools virions komutuna bakın.",
     "virions.skipped_many": "{name} adayları ({versions}) atlandı. Seçim ayrıntıları için /devtools virions komutuna bakın.",
-    "runtime.ready": "Klasör eklentisi yükleme, paylaşılan virion'lar ve bağımsız PHAR oluşturma hazır.",
+    "runtime.ready": "DevTools, klasör biçimindeki eklentileri ve paylaşılan virion'ları yüklemeye ve bağımsız PHAR'lar oluşturmaya hazır.",
     "runtime.not_started": "DevTools başlatmayı tamamlayamadı. Sunucu günlüğündeki başlatma hatasını kontrol edin.",
     "command.permission": "/devtools {command} komutunu kullanma izniniz yok.",
     "command.disabled": "/devtools {command} komutu yapılandırmada devre dışı bırakıldı.",

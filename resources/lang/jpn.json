@@ -14,7 +14,7 @@
     "virions.loaded": "{name} {version}（{antigen}）を読み込みました。",
     "virions.skipped_one": "{name} の候補（{versions}）をスキップしました。選択の詳細は /devtools virions で確認してください。",
     "virions.skipped_many": "{name} の複数の候補（{versions}）をスキップしました。選択の詳細は /devtools virions で確認してください。",
-    "runtime.ready": "フォルダー内のプラグイン、共有 virion、スタンドアロン PHAR のビルドを利用できます。",
+    "runtime.ready": "DevTools は、フォルダー形式のプラグインと共有 virion を読み込み、単体動作する PHAR をビルドできます。",
     "runtime.not_started": "DevTools の起動が完了しませんでした。サーバーログで起動エラーを確認してください。",
     "command.permission": "/devtools {command} を使用する権限がありません。",
     "command.disabled": "/devtools {command} は設定で無効になっています。",

@@ -14,7 +14,7 @@
     "virions.loaded": "已加载 {name} {version}（{antigen}）。",
     "virions.skipped_one": "已跳过 {name} 的候选版本（{versions}）。运行 /devtools virions 查看选择详情。",
     "virions.skipped_many": "已跳过 {name} 的多个候选版本（{versions}）。运行 /devtools virions 查看选择详情。",
-    "runtime.ready": "文件夹插件加载、共享 virion 和独立 PHAR 构建已准备就绪。",
+    "runtime.ready": "DevTools 已就绪，可加载文件夹形式的插件和共享 virion，并构建独立 PHAR。",
     "runtime.not_started": "DevTools 未完成启动。请检查服务器日志中的启动错误。",
     "command.permission": "你没有权限使用 /devtools {command}。",
     "command.disabled": "/devtools {command} 命令已在配置中禁用。",
