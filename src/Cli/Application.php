@@ -86,14 +86,15 @@ final class Application
 		$exit = 0;
 		$translator = $this->translator ?? Translator::fromResources();
 		try {
+			$locale = getenv('DEVTOOLS_LANG') ?: Translator::DEFAULT_LOCALE;
 			foreach ($arguments as $argument) {
 				if (preg_match('/^--lang=(.+)$/D', $argument, $localeMatch) === 1) {
-					$translator = $translator->withLocale($localeMatch[1]);
+					$locale = $localeMatch[1];
 					break;
 				}
 			}
+			$translator = $translator->withLocale($locale);
 			[$command, $options] = $this->parse($arguments, $command);
-			$translator = $translator->withLocale($options['lang'] ?? (getenv('DEVTOOLS_LANG') ?: Translator::DEFAULT_LOCALE));
 			$this->debug?->debug("CLI command {$command} selected.");
 			if ($command === 'help') {
 				$data = ['help' => self::help($translator)];

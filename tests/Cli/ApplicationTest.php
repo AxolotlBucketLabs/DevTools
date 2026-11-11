@@ -11,12 +11,14 @@ use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use function dirname;
 use function fclose;
 use function file_put_contents;
+use function getenv;
 use function glob;
 use function hash_file;
 use function json_decode;
 use function json_encode;
 use function proc_close;
 use function proc_open;
+use function putenv;
 use function realpath;
 use function stream_get_contents;
 use function sys_get_temp_dir;
@@ -59,6 +61,21 @@ final class ApplicationTest extends TestCase
 
 		self::assertSame(2, $code);
 		self::assertSame('Tùy chọn --type của build phải là plugin, virion hoặc both.', $result['diagnostics'][0]['message']);
+	}
+
+	public function test_cli_uses_environment_locale_for_usage_errors() : void
+	{
+		$originalLocale = getenv('DEVTOOLS_LANG');
+		putenv('DEVTOOLS_LANG=vie');
+		try {
+			[$code, $result] = $this->cli(['build', '--unknown']);
+
+			self::assertSame(2, $code);
+			self::assertSame('Không xác định được command hoặc tham số --unknown.', $result['diagnostics'][0]['message']);
+			self::assertSame('Chạy --help để xem các lệnh và tùy chọn được hỗ trợ.', $result['diagnostics'][0]['suggestion']);
+		} finally {
+			putenv($originalLocale === false ? 'DEVTOOLS_LANG' : 'DEVTOOLS_LANG=' . $originalLocale);
+		}
 	}
 
 	public function test_version_does_not_leave_isolated_parser_directories() : void
