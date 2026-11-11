@@ -87,14 +87,14 @@ final class BuildWorkerThread extends Thread
 		try {
 			/** @var array{jobId: string, operation: string, payload: array<string, mixed>} $decoded */
 			$decoded = json_decode($request, true, JsonLimits::MAX_NESTING_DEPTH, JSON_THROW_ON_ERROR);
-			$jobId = is_string($decoded['jobId'] ?? null) ? $decoded['jobId'] : '';
+			$jobId = $decoded['jobId'];
 			$translator = Translator::fromResources();
 			$locale = $decoded['payload']['locale'] ?? null;
 			if (is_string($locale)) {
 				$translator = Translator::fromResources($locale);
 			}
 			$result = BuildWorkerApplication::run($decoded['operation'], $decoded['payload']);
-			$result['jobId'] = $decoded['jobId'];
+			$result['jobId'] = $jobId;
 		} catch (Throwable $error) {
 			$result = [
 				'jobId' => $jobId,
