@@ -17,6 +17,7 @@ use function str_contains;
 use function str_ends_with;
 use function str_replace;
 use function str_starts_with;
+use function strlen;
 use function strtolower;
 use function substr;
 use function trim;
@@ -210,6 +211,9 @@ final class Path
 	private static function comparable(string $path) : string
 	{
 		$path = rtrim(str_replace('\\', '/', $path), '/');
+		if (DIRECTORY_SEPARATOR === '\\') {
+			return strtolower($path);
+		}
 		if (isset($path[self::WINDOWS_DRIVE_SEPARATOR_INDEX]) && $path[self::WINDOWS_DRIVE_SEPARATOR_INDEX] === ':' && ctype_alpha($path[self::WINDOWS_DRIVE_LETTER_INDEX])) {
 			$path = strtolower(substr($path, 0, self::WINDOWS_DRIVE_PREFIX_LENGTH)) . substr($path, self::WINDOWS_DRIVE_PREFIX_LENGTH);
 		}
