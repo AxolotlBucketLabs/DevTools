@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Support;
 use InvalidArgumentException;
 use RuntimeException;
 use function dirname;
+use function explode;
 use function file_get_contents;
 use function implode;
 use function in_array;
@@ -132,6 +133,13 @@ final class Translator
 		}
 		if (in_array($normalized, self::SUPPORTED_LOCALES, true)) {
 			return $normalized;
+		}
+		$language = explode('_', $normalized, 2)[0];
+		if (isset(self::ALIASES[$language])) {
+			return self::ALIASES[$language];
+		}
+		if (in_array($language, self::SUPPORTED_LOCALES, true)) {
+			return $language;
 		}
 
 		throw new InvalidArgumentException(

@@ -66,6 +66,10 @@ final class TranslatorTest extends TestCase
 	{
 		self::assertSame('chs', Translator::fromResources('zh-CN')->locale());
 		self::assertSame('vie', Translator::fromResources('vi')->locale());
+		self::assertSame('eng', Translator::fromResources('en_US')->locale());
+		self::assertSame('eng', Translator::fromResources('en-GB')->locale());
+		self::assertSame('deu', Translator::fromResources('de_DE')->locale());
+		self::assertSame('vie', Translator::fromResources('vi_VN')->locale());
 		self::assertSame(self::UNKNOWN_TRANSLATION_KEY, Translator::fromResources('vie')->translate(self::UNKNOWN_TRANSLATION_KEY, ['value' => 'Example']));
 	}
 
