@@ -159,7 +159,7 @@ final class PharExtractorTest extends TestCase
 			);
 			self::fail('Expected prefix conflict protection.');
 		} catch (BuildException $error) {
-			self::assertStringContainsString('prefix conflict', $error->getMessage());
+			self::assertStringContainsString('file and directory path', $error->getMessage());
 		}
 		self::assertFileDoesNotExist($destination . DIRECTORY_SEPARATOR . 'first.php');
 	}
