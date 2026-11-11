@@ -246,10 +246,22 @@ final class PluginProjectValidator
 		$sectionIndent = 0;
 		$childIndent = null;
 		$seen = [];
+		$seenRootSections = [];
 		foreach ($lines as $line) {
 			if (preg_match('/^(\s*)(commands|permissions)\s*:\s*(?:#.*)?$/', $line, $match) === 1) {
 				$section = $match[2];
 				$sectionIndent = strlen($match[1]);
+				if ($sectionIndent === 0) {
+					if (isset($seenRootSections[$section])) {
+						$result->error(
+							"plugin.duplicate_{$section}",
+							"The root {$section} section is declared more than once.",
+							$path,
+							"Keep only one root {$section} section.",
+						);
+					}
+					$seenRootSections[$section] = true;
+				}
 				$childIndent = null;
 				$seen = [];
 				continue;
