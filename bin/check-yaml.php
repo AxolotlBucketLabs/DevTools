@@ -80,7 +80,9 @@ if ($stderr !== '') {
 	fwrite(STDERR, $stderr);
 }
 
-if ($exitCode === 127) {
+if ($exitCode === 127
+	|| str_contains($stderr, 'No module named yamllint')
+	|| str_contains($stderr, "No module named 'yamllint'")) {
 	fwrite(STDERR, "yamllint is not installed. Install yamllint 1.38.0 or set YAMLLINT_PYTHON.\n");
 }
 
