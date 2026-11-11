@@ -265,7 +265,9 @@ final class VirionClassScanner
 			}
 
 			$cursor = $index;
-			$dir = $this->nextSignificantToken($tokens, $cursor);
+			$firstToken = $this->nextSignificantToken($tokens, $cursor);
+			$parenthesized = $firstToken === '(';
+			$dir = $parenthesized ? $this->nextSignificantToken($tokens, $cursor) : $firstToken;
 			$dot = $this->nextSignificantToken($tokens, $cursor);
 			$first = $this->nextSignificantToken($tokens, $cursor);
 			if (!is_array($dir) || $dir[0] !== T_DIR || $dot !== '.'
@@ -273,21 +275,23 @@ final class VirionClassScanner
 				continue;
 			}
 			$relative = $this->decodeStringToken($first);
-			$separator = $this->nextSignificantToken($tokens, $cursor);
-			if ($separator === '.') {
+			$terminator = $this->nextSignificantToken($tokens, $cursor);
+			if ($terminator === '.') {
 				$second = $this->nextSignificantToken($tokens, $cursor);
 				if (!is_array($second) || $second[0] !== T_CONSTANT_ENCAPSED_STRING) {
 					continue;
 				}
 				$relative .= $this->decodeStringToken($second);
-			} elseif ($separator !== ';') {
-				continue;
-			}
-			if ($separator === '.') {
 				$terminator = $this->nextSignificantToken($tokens, $cursor);
-				if ($terminator !== ';') {
+			}
+			if ($parenthesized) {
+				if ($terminator !== ')') {
 					continue;
 				}
+				$terminator = $this->nextSignificantToken($tokens, $cursor);
+			}
+			if ($terminator !== ';') {
+				continue;
 			}
 
 			return $relative;
