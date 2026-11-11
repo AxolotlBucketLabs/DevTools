@@ -73,6 +73,11 @@ fclose($pipes[1]);
 fclose($pipes[2]);
 $exitCode = proc_close($process);
 
+if (!is_string($stdout) || !is_string($stderr)) {
+	fwrite(STDERR, "Unable to read yamllint output.\n");
+	exit(1);
+}
+
 if ($stdout !== '') {
 	fwrite(STDOUT, $stdout);
 }
