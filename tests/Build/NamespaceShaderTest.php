@@ -127,6 +127,7 @@ PHP);
 		$sources = [
 			'aliased function' => 'use function class_exists as exists; exists($className);',
 			'aliased reflection' => 'use ReflectionClass as ClassInfo; new ClassInfo($className);',
+			'named ReflectionProperty class' => 'new \ReflectionProperty(class: $className, property: "field");',
 			'named target' => 'is_subclass_of(class: $className, object_or_class: \stdClass::class);',
 			'unpacked arguments' => 'is_subclass_of(...$arguments);',
 		];

@@ -271,9 +271,9 @@ final class DynamicClassReferencePolicy
 			return null;
 		}
 		$names = match (self::resolvedName($node->class)) {
-			'reflectionclass', 'reflectionenum', 'reflectionproperty' => ['objectOrClass'],
+			'reflectionclass', 'reflectionenum' => ['objectOrClass'],
 			'reflectionmethod' => ['objectOrMethod'],
-			'reflectionclassconstant' => ['class'],
+			'reflectionproperty', 'reflectionclassconstant' => ['class'],
 			default => [],
 		};
 		if ($names === []) {
