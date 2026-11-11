@@ -15,17 +15,22 @@ use function basename;
 use function count;
 use function dirname;
 use function file_exists;
+use function file_put_contents;
 use function is_file;
 use function pathinfo;
 use function realpath;
 use function rename;
 use function strlen;
+use function str_repeat;
 use function strtolower;
 use function unlink;
 use const PATHINFO_EXTENSION;
 
 final class ZipArchiveWriter
 {
+	private const ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE = "PK\x05\x06";
+	private const ZIP_END_OF_CENTRAL_DIRECTORY_SIZE_BYTES = 22;
+
 	public function __construct(private readonly Filesystem $filesystem) {}
 
 	public function write(ArchiveReader $archive, string $output, bool $overwrite = false) : int
@@ -75,11 +80,19 @@ final class ZipArchiveWriter
 		$temporary = Path::join($realParent, '.' . basename($output) . '.' . $nonce . '.tmp' . ArtifactFile::ZIP_EXTENSION);
 		$backup = null;
 		try {
-			$zip = new PharData($temporary);
-			foreach ($entries as [$relative, $contents]) {
-				$zip[$relative] = $contents;
+			if ($entries === []) {
+				$emptyArchive = self::ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE
+					. str_repeat("\0", self::ZIP_END_OF_CENTRAL_DIRECTORY_SIZE_BYTES - strlen(self::ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE));
+				if (file_put_contents($temporary, $emptyArchive) !== self::ZIP_END_OF_CENTRAL_DIRECTORY_SIZE_BYTES) {
+					throw new BuildException("Cannot create an empty ZIP archive at {$temporary}.");
+				}
+			} else {
+				$zip = new PharData($temporary);
+				foreach ($entries as [$relative, $contents]) {
+					$zip[$relative] = $contents;
+				}
+				unset($zip);
 			}
-			unset($zip);
 			if (file_exists($output)) {
 				$backup = $output . '.backup-' . RandomToken::pathSuffix();
 				if (!rename($output, $backup)) {
