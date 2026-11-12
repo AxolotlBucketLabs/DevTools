@@ -77,14 +77,14 @@ function smokePlugin(string $root, string $name, string $other, string $version)
 	smokeWrite($root . '/' . ArtifactFile::DEVTOOLS_CONFIG, "virions:\n  - name: SmokeLibrary\n    version: ^{$version}.0.0\n");
 	smokeWrite($root . '/' . ArtifactFile::RESOURCE_DIRECTORY . '/probe.txt', 'resource-ok');
 	foreach (['Main', 'AsyncProbe'] as $class) {
-		smokeWrite($root . '/' . ArtifactFile::SOURCE_DIRECTORY . '/' . $class . ArtifactFile::PHP_SOURCE_EXTENSION, strtr(smokeRead($fixture . '/' . $class . '.php.tpl'), ['{{PLUGIN}}' => $name, '{{OTHER}}' => $other, '{{VERSION}}' => $version]));
+		smokeWrite($root . '/' . ArtifactFile::SOURCE_DIRECTORY . '/' . $class . ArtifactFile::PHP_SOURCE_EXTENSION, strtr(smokeRead($fixture . '/' . $class . '.tpl.php'), ['{{PLUGIN}}' => $name, '{{OTHER}}' => $other, '{{VERSION}}' => $version]));
 	}
 }
 
 function smokeVirion(string $root, string $version) : void
 {
 	smokeWrite($root . '/' . ArtifactFile::VIRION_MANIFEST, "name: SmokeLibrary\nversion: {$version}.0.0\nantigen: RuntimeSmoke\\Library\napi: 5.0.0\n");
-	smokeWrite($root . '/' . ArtifactFile::SOURCE_DIRECTORY . '/Value' . ArtifactFile::PHP_SOURCE_EXTENSION, strtr(smokeRead(dirname(__DIR__) . '/tests/Fixtures/RuntimeSmoke/Value.php.tpl'), ['{{VERSION}}' => $version]));
+	smokeWrite($root . '/' . ArtifactFile::SOURCE_DIRECTORY . '/Value' . ArtifactFile::PHP_SOURCE_EXTENSION, strtr(smokeRead(dirname(__DIR__) . '/tests/Fixtures/RuntimeSmoke/Value.tpl.php'), ['{{VERSION}}' => $version]));
 }
 
 function smokeComposerPlugin(string $root, bool $transitive) : void

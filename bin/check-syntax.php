@@ -18,6 +18,9 @@ foreach ($roots as $relativeRoot) {
 		if (!$entry instanceof SplFileInfo || !$entry->isFile() || strtolower($entry->getExtension()) !== 'php') {
 			continue;
 		}
+		if (str_ends_with(strtolower($entry->getFilename()), '.tpl.php')) {
+			continue;
+		}
 		$path = str_replace('\\', '/', $entry->getPathname());
 		if (str_contains($path, '/vendor/')) {
 			continue;

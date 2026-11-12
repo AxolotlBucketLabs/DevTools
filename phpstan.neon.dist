@@ -8,6 +8,7 @@ parameters:
     excludePaths:
         analyseAndScan:
             - tests/Fixtures/PhpStanServer
+            - tests/Fixtures/RuntimeSmoke/*.tpl.php
     tmpDir: .phpstan-cache
     reportUnmatchedIgnoredErrors: true
     checkMissingCallableSignature: true

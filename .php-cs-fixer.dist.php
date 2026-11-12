@@ -7,6 +7,9 @@ use PhpCsFixer\Finder;
 
 $finder = Finder::create()
     ->in([__DIR__ . '/src', __DIR__ . '/tests', __DIR__ . '/bin', __DIR__ . '/examples'])
+    ->notPath('Fixtures/RuntimeSmoke/Main.tpl.php')
+    ->notPath('Fixtures/RuntimeSmoke/AsyncProbe.tpl.php')
+    ->notPath('Fixtures/RuntimeSmoke/Value.tpl.php')
     ->name('*.php');
 
 return (new Config())
