@@ -309,7 +309,8 @@
       "roles": [
         "plugin"
       ],
-      "prepare_dependencies": false
+      "prepare_dependencies": false,
+      "submodules": true
     },
     {
       "repository": "NhanAZ-Plugins/CoinAPI",
