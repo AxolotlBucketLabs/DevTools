@@ -75,7 +75,7 @@ jobs:
           printf 'sha=%s\nrepository=%s\n' "$WORKFLOW_SHA" "$WORKFLOW_REPOSITORY" >> "$GITHUB_OUTPUT"
 
       - name: Check out release verification tools
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ steps.workflow-identity.outputs.repository }}
           ref: ${{ steps.workflow-identity.outputs.sha }}
@@ -93,7 +93,7 @@ jobs:
           test "$CHECKED_OUT_COMMIT" = "$EXPECTED_COMMIT"
 
       - name: Download the exact build artifact
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
           merge-multiple: true
