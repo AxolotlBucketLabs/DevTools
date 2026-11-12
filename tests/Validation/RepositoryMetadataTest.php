@@ -21,7 +21,7 @@ final class RepositoryMetadataTest extends TestCase
 {
 	private const VERSION = '4.0.3';
 	private const COMPATIBILITY_BUILDER_VERSION = '4.0.1';
-	private const PHP_ACTION_COMMIT = 'b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e';
+	private const PHP_ACTION_VERSION = '1.0.0';
 
 	public function test_release_version_is_synchronized() : void
 	{
@@ -112,7 +112,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringContainsString('repository: ${{ steps.workflow-identity.outputs.repository }}', $reusable);
 		self::assertStringContainsString("'.workflow_sha // empty'", $reusable);
 		self::assertStringContainsString("'.workflow_repository // empty'", $reusable);
-		self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $reusable));
+		self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $reusable));
 		self::assertStringContainsString('artifact-id: ${{ steps.upload.outputs.artifact-id }}', $reusable);
 		self::assertStringContainsString('contents: read', $reusable);
 		self::assertStringNotContainsString('devtools-ref', $reusable);
@@ -130,7 +130,7 @@ final class RepositoryMetadataTest extends TestCase
 
 		foreach ([$ci, $candidate, $reusable] as $workflow) {
 			self::assertStringContainsString('repository: axolotl-pm/setup-php-action', $workflow);
-			self::assertStringContainsString('ref: ' . self::PHP_ACTION_COMMIT, $workflow);
+			self::assertStringContainsString('ref: ' . self::PHP_ACTION_VERSION, $workflow);
 			self::assertStringContainsString('setup-php-action/dist/index.js', $workflow);
 			self::assertStringContainsString('Set up Axolotl-PM PHP on Node.js 24', $workflow);
 			self::assertStringNotContainsString('pmmp/setup-php-action', $workflow);
@@ -176,13 +176,13 @@ final class RepositoryMetadataTest extends TestCase
 		self::fail('The server dependency must be present in composer.lock.');
 	}
 
-	public function test_compatibility_monitor_checks_the_pinned_builder_version() : void
+	public function test_compatibility_monitor_checks_the_stable_builder_version() : void
 	{
 		$workflow = file_get_contents(dirname(__DIR__, 2) . '/.github/workflows/axolotl-compatibility.yml');
 		self::assertIsString($workflow);
 		self::assertIsArray(yaml_parse($workflow));
 
-		self::assertSame(1, preg_match('/uses: AxolotlBucketLabs\\/DevTools@[a-f0-9]{40} # v([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $pin));
+		self::assertSame(1, preg_match('/uses: AxolotlBucketLabs\\/DevTools@v([0-9]+\\.[0-9]+\\.[0-9]+)/', $workflow, $pin));
 		if (!isset($pin[1])) {
 			self::fail('Compatibility monitor must declare its pinned builder version.');
 		}
@@ -277,12 +277,12 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertIsString($exampleContents);
 		self::assertStringContainsString("on:\n  push:\n  pull_request:\n  workflow_dispatch:", $exampleContents);
 		self::assertStringContainsString('uses: AxolotlBucketLabs/DevTools@v4', $exampleContents);
-		self::assertSame(1, preg_match('/uses: actions\/upload-artifact@[a-f0-9]{40} # v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
+		self::assertSame(1, preg_match('/uses: actions\/upload-artifact@v[0-9]+\.[0-9]+\.[0-9]+/', $exampleContents));
 		self::assertStringContainsString('path: ${{ steps.build.outputs.phar }}', $exampleContents);
 		self::assertStringNotContainsString('retention-days', $exampleContents);
 		self::assertStringNotContainsString('cancel-in-progress: true', $exampleContents);
 		self::assertStringContainsString('repository: axolotl-pm/setup-php-action', $exampleContents);
-		self::assertStringContainsString('ref: ' . self::PHP_ACTION_COMMIT, $exampleContents);
+		self::assertStringContainsString('ref: ' . self::PHP_ACTION_VERSION, $exampleContents);
 		self::assertStringContainsString('Set up Axolotl-PM PHP on Node.js 24', $exampleContents);
 		self::assertStringContainsString('setup-php-action/dist/index.js', $exampleContents);
 		self::assertStringNotContainsString('pmmp/setup-php-action', $exampleContents);
@@ -317,7 +317,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringNotContainsString('selects `plugins/` or `virions/` when the destination is relative to a project', $contents);
 	}
 
-	public function test_workflow_actions_are_immutable_and_checkouts_do_not_persist_tokens() : void
+	public function test_workflow_actions_use_stable_release_tags_and_checkouts_do_not_persist_tokens() : void
 	{
 		$root = dirname(__DIR__, 2);
 		$paths = array_merge(
@@ -329,9 +329,9 @@ final class RepositoryMetadataTest extends TestCase
 		foreach ($paths as $path) {
 			$contents = file_get_contents($path);
 			self::assertIsString($contents);
-			$checkoutCount += preg_match_all('/uses:\s*actions\\/checkout@[a-f0-9]{40}(?:\s+# [^\r\n]+)?/', $contents);
+			$checkoutCount += preg_match_all('/uses:\s*actions\\/checkout@v[0-9]+\.[0-9]+\.[0-9]+/', $contents);
 			$credentialOptOutCount += preg_match_all('/persist-credentials:\s*false/', $contents);
-			self::assertDoesNotMatchRegularExpression('/uses:\s*actions\\/(?:checkout|cache|upload-artifact|download-artifact)@v/', $contents);
+			self::assertDoesNotMatchRegularExpression('/uses:\s*actions\\/(?:checkout|cache|upload-artifact|download-artifact)@[a-f0-9]{40}/', $contents);
 		}
 
 		self::assertGreaterThan(0, $checkoutCount);

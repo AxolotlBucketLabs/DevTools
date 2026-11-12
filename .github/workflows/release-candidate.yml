@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           repository: axolotl-pm/setup-php-action
-          ref: b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e
+          ref: 1.0.0
           path: .devtools-dependencies/setup-php-action
           persist-credentials: false
 

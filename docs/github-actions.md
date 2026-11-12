@@ -23,7 +23,7 @@ jobs:
       php-version: '8.4'
 ```
 
-The reusable workflow checks out the plugin, sets up Axolotl-PM PHP using setup-helper commit `b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e`, checks out the selected DevTools revision, builds, inspects the PHAR and uploads one artifact containing the PHAR plus `build-metadata.json`. Find that artifact under **Actions -> workflow run -> Artifacts**. The metadata contains the tool version, plugin version, resolved dependency information, checks, and PHAR hash from the versioned [CLI contract](cli.md).
+The reusable workflow checks out the plugin, sets up Axolotl-PM PHP using setup-helper release `1.0.0`, checks out the selected DevTools revision, builds, inspects the PHAR and uploads one artifact containing the PHAR plus `build-metadata.json`. Find that artifact under **Actions -> workflow run -> Artifacts**. The metadata contains the tool version, plugin version, resolved dependency information, checks, and PHAR hash from the versioned [CLI contract](cli.md).
 
 Default `project: .` expects `plugin.yml` and `src/` at the repository root. A plugin without virions needs no Composer manifest or additional DevTools configuration. Local virions remain usable through `virions: virions`. The included `examples/.github/workflows/build.yml` uses the maintained `v4` composite action channel for `HelloShared` and `SharedGreeting`.
 
