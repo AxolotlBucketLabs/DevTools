@@ -76,6 +76,7 @@ jobs:
         with:
           repository: ${{ matrix.repository }}
           path: ecosystem-project
+          submodules: ${{ matrix.submodules }}
           persist-credentials: false
 
       - name: Verify build profile and record source revision
@@ -83,6 +84,7 @@ jobs:
         env:
           PROJECT_REPOSITORY: ${{ matrix.repository }}
           PROJECT_PATH: ${{ matrix.project }}
+          PROJECT_VIRIONS_PATH: ${{ matrix.virions_path }}
           BUILD_TYPE: ${{ matrix.type }}
           EXPECTED_ROLES: ${{ matrix.expected_roles }}
           PREPARE_DEPENDENCIES: ${{ matrix.prepare_dependencies }}
@@ -98,12 +100,8 @@ jobs:
             printf 'Build profile is stale for %s. Expected roles: %s. Found: %s. Refresh docs/ecosystem-compatibility.json.\n' "$PROJECT_REPOSITORY" "$EXPECTED_ROLES" "${actual_roles_csv:-none}" >&2
             exit 1
           fi
-          actual_prepare=false
-          if [[ "$BUILD_TYPE" == plugin && -f "$project_dir/composer.json" && -f "$project_dir/composer.lock" ]]; then
-            actual_prepare=true
-          fi
-          if [[ "$actual_prepare" != "$PREPARE_DEPENDENCIES" ]]; then
-            printf 'Composer preparation profile is stale for %s. Refresh docs/ecosystem-compatibility.json.\n' "$PROJECT_REPOSITORY" >&2
+          if [[ "$PREPARE_DEPENDENCIES" == true && ( ! -f "$project_dir/composer.json" || ! -f "$project_dir/composer.lock" ) ]]; then
+            printf 'Composer preparation is enabled but %s has no committed composer.json and composer.lock. Refresh docs/ecosystem-compatibility.json.\n' "$PROJECT_REPOSITORY" >&2
             exit 1
           fi
           project_sha="$(git -C ecosystem-project rev-parse HEAD)"
@@ -112,7 +110,20 @@ jobs:
             printf -- '- Source: current repository default branch\n'
             printf -- '- Resolved commit: `%s`\n' "$project_sha"
             printf -- '- Composer preparation: `%s`\n' "$PREPARE_DEPENDENCIES"
+            printf -- '- Virions directory: `%s`\n' "$PROJECT_VIRIONS_PATH"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare and combine project virions
+        id: prepare
+        shell: bash
+        env:
+          PROJECT_DIR: ${{ github.workspace }}/ecosystem-project/${{ matrix.project }}
+          DEVTOOLS_DIR: ${{ github.workspace }}/.devtools
+          VIRIONS_PATH: ${{ matrix.virions_path }}
+          PREPARE_DEPENDENCIES: ${{ matrix.prepare_dependencies }}
+          PREPARE_SCRIPT: ${{ matrix.prepare_script }}
+          DEPENDENCIES_JSON: ${{ toJSON(matrix.dependencies) }}
+        run: node .devtools/.github/scripts/prepare-ecosystem-project.mjs
 
       - name: Build project with this DevTools revision
         id: build
@@ -120,8 +131,9 @@ jobs:
         with:
           type: ${{ matrix.type }}
           project: ecosystem-project/${{ matrix.project }}
+          virions: ${{ steps.prepare.outputs.virions }}
           output: build/ecosystem
-          prepare-dependencies: ${{ matrix.prepare_dependencies }}
+          prepare-dependencies: "false"
 
       - name: Record artifact evidence
         shell: bash
