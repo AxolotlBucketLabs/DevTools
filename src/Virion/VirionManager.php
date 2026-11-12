@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use pocketmine\plugin\ApiVersion;
 use Throwable;
 use function array_map;
@@ -58,13 +59,13 @@ final class VirionManager
 	 */
 	public function discoverAndLoad(string $directory, array $requirements = [], array $requirementAliases = [], array $skippedLocations = []) : VirionRegistry
 	{
-		$this->debug?->debug('Loading shared virions from ' . $directory . ' with ' . count($requirements) . ' project requirement(s).');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRIONS_LOADING_STARTED, ['directory' => $directory, 'count' => count($requirements)]);
 		/** @var array<string, list<array{string, VirionProject}>> $projectsByName */
 		$projectsByName = [];
 		/** @var array<string, string> $invalidFolderFailures */
 		$invalidFolderFailures = [];
 		$locations = $this->discovery->discover($directory);
-		$this->debug?->debug('Discovered ' . count($locations) . ' shared virion location(s).');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRION_LOCATIONS_DISCOVERED, ['count' => count($locations)]);
 		foreach ($locations as $location) {
 			try {
 				$project = $this->projectFactory->open($location);
@@ -132,7 +133,7 @@ final class VirionManager
 			$this->registry->record($entry);
 		}
 
-		$this->debug?->debug('Shared virion loading finished with ' . count($this->registry->loaded()) . ' loaded virion(s) and ' . count($this->registry->entries()) . ' registry entr' . (count($this->registry->entries()) === 1 ? 'y' : 'ies') . '.');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRIONS_LOADING_FINISHED, ['loaded' => count($this->registry->loaded()), 'entries' => count($this->registry->entries())]);
 
 		return $this->registry;
 	}
@@ -163,7 +164,7 @@ final class VirionManager
 
 		$this->graphLoadStates[$nameKey] = 'loading';
 		[$location, $project] = $selectedProjects[$nameKey];
-		$this->debug?->debug("Loading selected virion {$project->manifest->name}@{$project->manifest->version} from {$location}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRION_LOADING_SELECTED, ['name' => $project->manifest->name, 'version' => $project->manifest->version, 'location' => $location]);
 		foreach ($project->manifest->requirements as $requirement) {
 			$dependencyKey = VirionName::key($requirement->name);
 			if (!isset($selectedProjects[$dependencyKey])) {
@@ -194,9 +195,7 @@ final class VirionManager
 		$entry = $this->load($location);
 		$loaded = $entry?->status === VirionStatus::LOADED;
 		$this->graphLoadStates[$nameKey] = $loaded ? 'loaded' : 'failed';
-		$this->debug?->debug($loaded
-			? "Loaded virion {$project->manifest->name}."
-			: "Failed to load virion {$project->manifest->name}.");
+		$this->debug?->debugTranslated($loaded ? TranslationKeys::DEBUG_VIRION_LOADED : TranslationKeys::DEBUG_VIRION_LOAD_FAILED, ['name' => $project->manifest->name]);
 
 		return $loaded;
 	}
@@ -311,9 +310,9 @@ final class VirionManager
 
 			$this->registrar->register($manifest->antigen, $project->sourceRoot);
 			$async = $this->registrar->supportsAsyncWorkers();
-			$this->debug?->debug(
-				"Virion {$manifest->name} registered on the shared class loader. " . $this->registrar->asyncSupportDescription(),
-			);
+			$this->debug?->debugTranslated($async
+				? TranslationKeys::DEBUG_VIRION_CLASS_LOADER_REGISTERED
+				: TranslationKeys::DEBUG_VIRION_CLASS_LOADER_REGISTERED_SYNC, ['name' => $manifest->name]);
 			$message = "Loaded {$manifest->name} {$manifest->version} ({$manifest->antigen}).";
 			$entry = new VirionRegistryEntry(
 				$location,

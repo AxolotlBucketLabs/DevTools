@@ -7,6 +7,7 @@ namespace AxolotlBucketLabs\DevTools\Command;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\Server;
@@ -34,6 +35,9 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 		private readonly ?DebugLogger $debug = null,
 		private readonly string $locale = Translator::DEFAULT_LOCALE,
 	) {
+		if ($this->debug?->enabled()) {
+			$this->debug->setTranslator(Translator::fromResources($this->locale));
+		}
 		$this->tickSleeper = $server->getTickSleeper();
 		$requests = new ThreadSafeArray();
 		$responses = new ThreadSafeArray();
@@ -51,7 +55,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 	public function submit(string $operation, array $payload, callable $onComplete) : bool
 	{
 		if ($this->isBusy() || $this->worker->isTerminated()) {
-			$this->debug?->debug("Rejected {$operation} background job because another job is running or the worker is terminated.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_BACKGROUND_JOB_REJECTED, ['operation' => $operation]);
 
 			return false;
 		}
@@ -66,7 +70,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 		$this->activeJobId = $jobId;
 		$this->callbacks[$jobId] = $onComplete;
 		$payload['debug'] = $this->debug?->enabled() ?? false;
-		$this->debug?->debug("Queued {$operation} background job {$jobId}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BACKGROUND_JOB_QUEUED, ['operation' => $operation, 'job_id' => $jobId]);
 		$this->worker->submitRequest(json_encode([
 			'jobId' => $jobId,
 			'operation' => $operation,
@@ -88,7 +92,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 
 	public function shutdown() : void
 	{
-		$this->debug?->debug('Shutting down the DevTools build worker.');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_WORKER_SHUTDOWN);
 		$this->worker->requestShutdown();
 		$this->worker->join();
 		$this->tickSleeper->removeNotifier($this->sleeperEntry->getNotifierId());
@@ -112,7 +116,7 @@ final class ThreadBuildJobRunner implements BuildJobRunner
 					'debug' => $result['debug'] ?? [],
 				]);
 			}
-			$this->debug?->debug("Completed background job {$jobId}.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_BACKGROUND_JOB_COMPLETED, ['job_id' => $jobId]);
 		}
 	}
 }

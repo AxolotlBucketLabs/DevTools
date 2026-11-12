@@ -93,14 +93,16 @@ final class PluginSourceConflictDetector
 
 		$warnings = [];
 		$translator ??= Translator::fromResources();
+		$this->debug?->setTranslator($translator);
 		foreach (array_intersect_key($folders, $phars) as $key => $folderPaths) {
 			$name = $names[$key] ?? $key;
 			$pharPaths = $phars[$key];
 			$warnings[] = $translator->translate(TranslationKeys::RUNTIME_DUPLICATE_SOURCES, ['name' => $name]);
-			$this->debug?->debug(
-				"Plugin {$name} duplicate sources. Development folders: " . implode(', ', $folderPaths)
-				. '; PHARs: ' . implode(', ', $pharPaths) . '.',
-			);
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_PLUGIN_DUPLICATE_SOURCES, [
+				'name' => $name,
+				'folders' => implode(', ', $folderPaths),
+				'phars' => implode(', ', $pharPaths),
+			]);
 		}
 
 		return $warnings;

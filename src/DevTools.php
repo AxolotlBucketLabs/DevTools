@@ -51,15 +51,16 @@ final class DevTools extends PluginBase
 	protected function onLoad() : void
 	{
 		$this->saveDefaultConfig();
+		$server = $this->getServer();
+		$translator = $this->createTranslator($server);
+		$this->translator = $translator;
 		$debug = new DebugLogger((bool) $this->getConfig()->getNested('logging.debug', false)
 			? function (string $message) : void {
 				$this->getLogger()->debug($message);
 			}
-			: null);
-		$debug->debug('Starting DevTools runtime initialization.');
+			: null, $translator);
+		$debug->debugTranslated(TranslationKeys::DEBUG_RUNTIME_INITIALIZATION_STARTED);
 		$this->registerBuildDependencyAutoloader();
-		$server = $this->getServer();
-		$this->translator = $this->createTranslator($server);
 
 		$filesystem = new Filesystem();
 		$yaml = new YamlReader();
@@ -92,17 +93,17 @@ final class DevTools extends PluginBase
 			$virionFactory,
 			(bool) $this->getConfig()->getNested('virions.allow-local-composer', true),
 			$debug,
-			$this->translator,
+			$translator,
 		);
 		$dependencyCollector = new PluginDependencyCollector(
 			$pluginDiscovery,
 			$manifestReader,
 			$sharedConfigResolver,
-			new VirionRequirementChecker($registry, $selector, $this->translator),
+			new VirionRequirementChecker($registry, $selector, $translator),
 			function (string $message) : void {
 				$this->getLogger()->warning($message);
 			},
-			$this->translator,
+			$translator,
 			$debug,
 		);
 		$dependencies = $dependencyCollector->collect($pluginsDirectory, $virionsDirectory);
@@ -141,11 +142,11 @@ final class DevTools extends PluginBase
 				$virionConflictChecker,
 				$dependencies,
 				$debug,
-				$this->translator,
+				$translator,
 			),
 		);
 
-		$this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory, $debug, $this->translator->locale());
+		$this->jobRunner = new ThreadBuildJobRunner($server, $pluginsDirectory, $virionsDirectory, $buildDirectory, $debug, $translator->locale());
 		$this->commandHandler = new DevToolsCommandHandler(
 			$this,
 			$pluginDiscovery,
@@ -160,7 +161,7 @@ final class DevTools extends PluginBase
 				'extract' => (bool) $this->getConfig()->getNested('commands.extract', true),
 			],
 			$debug,
-			$this->translator,
+			$translator,
 		);
 
 		foreach ((new VirionStartupReporter($this->translator))->messages($registry) as $message) {
@@ -173,7 +174,7 @@ final class DevTools extends PluginBase
 				$debug->debug($detail);
 			}
 		}
-		$debug->debug('DevTools runtime initialization completed.');
+		$debug->debugTranslated(TranslationKeys::DEBUG_RUNTIME_INITIALIZATION_COMPLETED);
 	}
 
 	private function createTranslator(Server $server) : Translator

@@ -37,7 +37,7 @@ final class PluginDependencyCollector
 		$requirementsByProject = [];
 		$configurationFailures = [];
 		$projects = $this->discovery->discover($pluginsDirectory);
-		$this->debug?->debug('Discovered ' . count($projects) . ' development plugin folder(s).');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_PLUGIN_FOLDERS_DISCOVERED, ['count' => count($projects)]);
 		foreach ($projects as $project) {
 			try {
 				$manifest = $this->manifestReader->read($project . DIRECTORY_SEPARATOR . ArtifactFile::PLUGIN_MANIFEST);

@@ -11,6 +11,7 @@ use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifest;
 use AxolotlBucketLabs\DevTools\Validation\PluginManifestReader;
@@ -85,7 +86,7 @@ final class PharBuilder
 		bool $overwrite = false,
 		?string $outputName = null,
 	) : BuildResult {
-		$this->debug?->debug("Starting plugin PHAR build for {$projectRoot}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_PLUGIN_STARTED, ['project' => $projectRoot]);
 		$validation = $this->validator->validate($projectRoot);
 		if ($validation->hasErrors()) {
 			$messages = [];
@@ -104,7 +105,7 @@ final class PharBuilder
 		$this->assertStandaloneManifest($manifest);
 		$config = $this->configResolver->resolve($projectRoot, $manifest->description->getName());
 		$virions = $this->virionResolver->resolve($config->virions, $virionsDirectory);
-		$this->debug?->debug('Selected ' . count($virions) . " virion(s) for {$manifest->description->getName()}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_PLUGIN_VIRIONS_SELECTED, ['count' => count($virions), 'name' => $manifest->description->getName()]);
 		$shaded = [];
 		foreach ($virions as $virion) {
 			$shaded[$virion->manifest->antigen] = $this->shadedNamespace($manifest, $virion);
@@ -170,15 +171,15 @@ final class PharBuilder
 			$this->namespaceShader->assertNoNamespaceReferences($stage, $forbiddenStandaloneNamespaces, $shaded);
 			$this->filesystem->assertPortableTree($stage);
 			$fileCount = $this->countFiles($stage);
-			$this->debug?->debug("Staged {$fileCount} file(s) for {$manifest->description->getName()}.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_PLUGIN_STAGED, ['count' => $fileCount, 'name' => $manifest->description->getName()]);
 			$this->writePhar($stage, $temporaryPhar);
 			$this->validatePhar($temporaryPhar, $manifest, $shaded);
 			$this->installer->install([['temporary' => $temporaryPhar, 'output' => $outputPath]], $overwrite);
 
 			$result = new BuildResult($manifest->description->getName(), $outputPath, $fileCount, $shaded, $dependencies);
-			$this->debug?->debug("Installed plugin PHAR at {$outputPath}.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_PLUGIN_INSTALLED, ['path' => $outputPath]);
 		} catch (Throwable $error) {
-			$this->debug?->debug('Plugin PHAR build failed: ' . $error->getMessage());
+			$this->debug?->debugFailure(TranslationKeys::DEBUG_BUILD_PLUGIN_FAILED, $error);
 			$failure = $error instanceof BuildException
 				? $error
 				: new BuildException("Build failed for {$projectRoot}: {$error->getMessage()}", 0, $error);

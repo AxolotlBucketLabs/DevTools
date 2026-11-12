@@ -24,6 +24,7 @@ use AxolotlBucketLabs\DevTools\Build\ZipArchiveWriter;
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\ExceptionMessage;
 use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\Path;
@@ -134,17 +135,18 @@ final class BuildWorkerApplication
 	public static function run(string $operation, array $payload) : array
 	{
 		$debugMessages = [];
-		$translator = null;
 		$debug = new DebugLogger(($payload['debug'] ?? false) === true
 			? static function (string $message) use (&$debugMessages) : void {
 				$debugMessages[] = $message;
 			}
 			: null);
-		$debug->debug("Worker operation {$operation} started.");
+		$translator = Translator::fromResources();
 		try {
 			$translator = Translator::fromResources(is_string($payload['locale'] ?? null) ? $payload['locale'] : Translator::DEFAULT_LOCALE);
+			$debug->setTranslator($translator);
+			$debug->debugTranslated(TranslationKeys::DEBUG_WORKER_OPERATION_STARTED, ['operation' => $operation]);
 			if (!in_array($operation, ['doctor', 'build', 'extract'], true)) {
-				throw new BuildException($translator->translate(TranslationKeys::WORKER_UNKNOWN_OPERATION, ['operation' => $operation]));
+				throw BuildException::fromTranslation($translator, TranslationKeys::WORKER_UNKNOWN_OPERATION, ['operation' => $operation]);
 			}
 			foreach (['pluginsDirectory', 'virionsDirectory', 'buildDirectory'] as $key) {
 				if (!is_string($payload[$key] ?? null) || $payload[$key] === '') {
@@ -157,19 +159,16 @@ final class BuildWorkerApplication
 				'build' => $application->build($payload),
 				'extract' => $application->extract($payload),
 			};
-			$debug->debug("Worker operation {$operation} completed successfully.");
+			$debug->debugTranslated(TranslationKeys::DEBUG_WORKER_OPERATION_COMPLETED, ['operation' => $operation]);
 
 			return ['success' => true, 'messages' => $messages, 'debug' => $debugMessages];
 		} catch (\Throwable $error) {
-			$debug->debug("Worker operation {$operation} failed: {$error->getMessage()}");
+			$debug->setTranslator($translator);
+			$debug->debugFailure(TranslationKeys::DEBUG_WORKER_OPERATION_FAILED, $error, ['operation' => $operation]);
 
 			return [
 				'success' => false,
-				'messages' => [($translator ?? Translator::fromResources())->translate(TranslationKeys::COMMAND_FAILED, [
-					'error' => $error instanceof LocalizedException
-						? $error->render($translator ?? Translator::fromResources())
-						: $error->getMessage(),
-				])],
+				'messages' => [ExceptionMessage::summary($error, $translator, TranslationKeys::COMMAND_FAILED)],
 				'debug' => $debugMessages,
 			];
 		}
@@ -183,7 +182,7 @@ final class BuildWorkerApplication
 	{
 		$selection = $payload['selection'] ?? null;
 		if ($selection !== null && !is_string($selection)) {
-			throw new BuildException($this->translator->translate(TranslationKeys::DOCTOR_INVALID_SELECTION));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::DOCTOR_INVALID_SELECTION);
 		}
 		$projects = $selection === null
 			? $this->pluginDiscovery->discover($this->pluginsDirectory)
@@ -204,7 +203,7 @@ final class BuildWorkerApplication
 				continue;
 			}
 			if ($check->error !== null) {
-				$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_FAILED, ['project' => $project, 'error' => $check->error->getMessage()]);
+				$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_FAILED, ['project' => $project, 'error' => ExceptionMessage::render($check->error, $this->translator)]);
 			} else {
 				$messages[] = $this->translator->translate(TranslationKeys::DOCTOR_PASSED, ['count' => count($check->virions)]);
 			}
@@ -224,7 +223,7 @@ final class BuildWorkerApplication
 		$overwrite = $payload['overwrite'] ?? false;
 		$buildTarget = is_string($target) ? BuildTarget::tryFrom($target) : null;
 		if ($buildTarget === null || !is_string($selection) || !is_bool($overwrite)) {
-			throw new BuildException($this->translator->translate(TranslationKeys::WORKER_INVALID_BUILD_PAYLOAD));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::WORKER_INVALID_BUILD_PAYLOAD);
 		}
 
 		if ($buildTarget === BuildTarget::VIRION) {
@@ -276,7 +275,7 @@ final class BuildWorkerApplication
 		$type = $payload['type'] ?? ExtractType::AUTO->value;
 		$overwrite = $payload['overwrite'] ?? false;
 		if (!is_string($selection) || !is_string($format) || !is_string($type) || !is_bool($overwrite)) {
-			throw new BuildException($this->translator->translate(TranslationKeys::WORKER_INVALID_EXTRACT_PAYLOAD));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::WORKER_INVALID_EXTRACT_PAYLOAD);
 		}
 
 		$path = self::locatePhar($selection, $this->pluginsDirectory, $this->virionsDirectory, $this->buildDirectory);
@@ -285,22 +284,22 @@ final class BuildWorkerApplication
 		$extractType = ExtractType::tryFrom($type);
 		$projectRole = is_string($detectedType) ? ProjectRole::tryFrom($detectedType) : null;
 		if (!is_string($detectedType) || $projectRole === null) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_ARTIFACT_TYPE));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_ARTIFACT_TYPE);
 		}
 		if ($type === BuildTarget::BOTH->value) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DUAL));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_DUAL);
 		}
 		if ($extractType === null || $extractFormat === null) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_USAGE));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_USAGE);
 		}
 		if ($extractType === ExtractType::AUTO) {
 			if ($projectRole === ProjectRole::DUAL) {
-				throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DUAL));
+				throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_DUAL);
 			}
 			$extractType = ExtractType::from($projectRole->value);
 		}
 		if (!ArtifactInspector::roleMatches($detectedType, $extractType->value)) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_MISMATCH, ['detected' => $detectedType, 'requested' => $extractType->value]));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_MISMATCH, ['detected' => $detectedType, 'requested' => $extractType->value]);
 		}
 
 		$name = basename($path);
@@ -308,7 +307,7 @@ final class BuildWorkerApplication
 			$name = substr($name, 0, -strlen(ArtifactFile::PHAR_EXTENSION));
 		}
 		if ($name === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/D', $name) !== 1) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_SAFE_NAME, ['path' => $path]));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_SAFE_NAME, ['path' => $path]);
 		}
 		Path::normalizeRelative($name);
 
@@ -322,11 +321,11 @@ final class BuildWorkerApplication
 		$baseDirectory = $extractType === ExtractType::VIRION ? $this->virionsDirectory : $this->pluginsDirectory;
 		$base = realpath($baseDirectory);
 		if ($base === false) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_DIRECTORY, ['type' => $extractType->value, 'directory' => $baseDirectory]));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_DIRECTORY, ['type' => $extractType->value, 'directory' => $baseDirectory]);
 		}
 		$destination = Path::join($base, $name);
 		if (dirname($destination) !== $base) {
-			throw new BuildException($this->translator->translate(TranslationKeys::EXTRACT_OUTSIDE, ['path' => $base]));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::EXTRACT_OUTSIDE, ['path' => $base]);
 		}
 		$count = $this->extractor->extract(new PharArchiveReader($path), $destination, $overwrite);
 

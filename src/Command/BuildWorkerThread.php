@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Command;
 
 use AxolotlBucketLabs\DevTools\Build\PhpParserNamespaceLoader;
+use AxolotlBucketLabs\DevTools\Support\ExceptionMessage;
 use AxolotlBucketLabs\DevTools\Support\JsonLimits;
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
@@ -96,12 +97,11 @@ final class BuildWorkerThread extends Thread
 			$result = BuildWorkerApplication::run($decoded['operation'], $decoded['payload']);
 			$result['jobId'] = $jobId;
 		} catch (Throwable $error) {
+			$translator ??= Translator::fromResources();
 			$result = [
 				'jobId' => $jobId,
 				'success' => false,
-				'messages' => [$translator === null
-					? $error->getMessage()
-					: $translator->translate(TranslationKeys::WORKER_UNEXPECTED_FAILURE, ['error' => $error->getMessage()])],
+				'messages' => [ExceptionMessage::summary($error, $translator, TranslationKeys::WORKER_UNEXPECTED_FAILURE)],
 			];
 		}
 		$this->responses[] = json_encode($result, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);

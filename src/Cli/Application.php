@@ -22,6 +22,7 @@ use AxolotlBucketLabs\DevTools\Command\ExtractFormat;
 use AxolotlBucketLabs\DevTools\Command\ExtractType;
 use AxolotlBucketLabs\DevTools\Support\ArtifactFile;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\ExceptionMessage;
 use AxolotlBucketLabs\DevTools\Support\LocalizedException;
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
@@ -77,7 +78,6 @@ final class Application
 	/** @param list<string> $arguments */
 	public function run(array $arguments) : int
 	{
-		$this->debug?->debug('CLI invocation started.');
 		$json = in_array('--json', $arguments, true);
 		$command = 'help';
 		$checks = ['structure' => 'not_run', 'dependencies' => 'not_run', 'artifact' => 'not_run', 'static_analysis' => 'not_run', 'runtime' => 'not_run'];
@@ -94,8 +94,10 @@ final class Application
 				}
 			}
 			$translator = $translator->withLocale($locale);
+			$this->debug?->setTranslator($translator);
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_CLI_INVOCATION_STARTED);
 			[$command, $options] = $this->parse($arguments, $command);
-			$this->debug?->debug("CLI command {$command} selected.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_CLI_COMMAND_SELECTED, ['command' => $command]);
 			if ($command === 'help') {
 				$data = ['help' => self::help($translator)];
 			} elseif ($command === 'version') {
@@ -142,9 +144,9 @@ final class Application
 				}
 			}
 		} catch (Throwable $error) {
-			$this->debug?->debug('CLI operation failed: ' . $error->getMessage());
+			$this->debug?->debugFailure(TranslationKeys::DEBUG_CLI_OPERATION_FAILED, $error);
 			$exit = $error instanceof InvalidArgumentException || ($error instanceof LocalizedException && $error->isUsageError()) ? 2 : 1;
-			$message = $error instanceof LocalizedException ? $error->render($translator) : $error->getMessage();
+			$message = ExceptionMessage::summary($error, $translator, TranslationKeys::COMMAND_FAILED);
 			$diagnostics[] = [
 				'code' => $exit === 2 ? 'cli.usage' : 'operation.' . $command . '_failed',
 				'severity' => 'error', 'message' => $message, 'file' => null, 'line' => null,
@@ -154,7 +156,7 @@ final class Application
 			];
 		}
 
-		$this->debug?->debug("CLI command {$command} finished with exit code {$exit}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_CLI_COMMAND_FINISHED, ['command' => $command, 'exit_code' => $exit]);
 		$response = ['schema_version' => self::JSON_RESPONSE_SCHEMA_VERSION, 'success' => $exit === 0, 'command' => $command, 'tool' => ['name' => 'DevTools', 'version' => $this->version], 'data' => (object) $data, 'diagnostics' => $diagnostics, 'checks' => $checks];
 		if ($json) {
 			fwrite(STDOUT, json_encode($response, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) . "\n");

@@ -8,6 +8,7 @@ use AxolotlBucketLabs\DevTools\Build\BuildException;
 
 use AxolotlBucketLabs\DevTools\Loader\FolderPluginDiscovery;
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\ExceptionMessage;
 use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Virion\VirionRegistry;
@@ -60,7 +61,7 @@ final class DevToolsCommandHandler
 		}
 
 		$subcommand = strtolower(array_shift($arguments) ?? 'help');
-		$this->debug?->debug("Received /devtools {$subcommand} command.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_COMMAND_RECEIVED, ['command' => $subcommand]);
 		try {
 			$this->validateArguments($subcommand, $arguments);
 			if ($subcommand !== 'help'
@@ -84,7 +85,7 @@ final class DevToolsCommandHandler
 				default => $this->help($sender),
 			};
 		} catch (Throwable $error) {
-			$sender->sendMessage($this->translate(TranslationKeys::COMMAND_FAILED, ['error' => $error->getMessage()]));
+			$sender->sendMessage(ExceptionMessage::summary($error, $this->translator ?? Translator::fromResources(), TranslationKeys::COMMAND_FAILED));
 
 			return true;
 		}
@@ -98,13 +99,13 @@ final class DevToolsCommandHandler
 				array_shift($arguments);
 			}
 			if ($arguments === [] || str_starts_with($arguments[0], '--')) {
-				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
+				throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]);
 			}
 			$seen = [];
 			foreach (array_slice($arguments, 1) as $argument) {
 				if ($argument === self::OVERWRITE_OPTION) {
 					if (isset($seen['overwrite'])) {
-						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
+						throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]);
 					}
 					$seen['overwrite'] = true;
 					continue;
@@ -114,25 +115,25 @@ final class DevToolsCommandHandler
 					$prefix = $option === self::FORMAT_OPTION_NAME ? self::FORMAT_OPTION_PREFIX : self::TYPE_OPTION_PREFIX;
 					$value = substr($argument, strlen($prefix));
 					if (isset($seen[$option])) {
-						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT));
+						throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_EXTRACT);
 					}
 					if ($option === self::FORMAT_OPTION_NAME && ExtractFormat::tryFrom($value) === null) {
-						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT_FORMAT));
+						throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_EXTRACT_FORMAT);
 					}
 					if ($option === self::TYPE_OPTION_NAME && ExtractType::tryFrom($value) === null) {
-						throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_EXTRACT_TYPE));
+						throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_EXTRACT_TYPE);
 					}
 					$seen[$option] = true;
 					continue;
 				}
-				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]));
+				throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_SELECTION, ['command' => $command]);
 			}
 		} elseif ($command === 'doctor') {
 			if (count($arguments) > 1 || (isset($arguments[0]) && str_starts_with($arguments[0], '--'))) {
-				throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_DOCTOR));
+				throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_DOCTOR);
 			}
 		} elseif (in_array($command, ['status', 'virions', 'help'], true) && $arguments !== []) {
-			throw new BuildException($this->translate(TranslationKeys::COMMAND_USAGE_NO_ARGUMENTS, ['command' => $command]));
+			throw $this->localizedBuildFailure(TranslationKeys::COMMAND_USAGE_NO_ARGUMENTS, ['command' => $command]);
 		}
 	}
 
@@ -272,13 +273,13 @@ final class DevToolsCommandHandler
 	private function submit(CommandSender $sender, string $operation, array $payload, string $queueMessageKey, array $queueMessageParameters, string $description) : bool
 	{
 		if ($this->jobs->isBusy()) {
-			$this->debug?->debug("Rejected {$operation} command because another background job is running.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_COMMAND_REJECTED, ['operation' => $operation]);
 			$sender->sendMessage($this->translate(TranslationKeys::QUEUE_BUSY));
 
 			return true;
 		}
 		$sender->sendMessage($this->translate($queueMessageKey, $queueMessageParameters));
-		$this->debug?->debug("Submitting {$operation} command for {$description}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_COMMAND_SUBMITTING, ['operation' => $operation, 'description' => $description]);
 		$debug = $this->debug;
 		if (!$this->jobs->submit($operation, $payload, static function (array $result) use ($sender, $debug) : void {
 			foreach ($result['debug'] ?? [] as $message) {
@@ -291,7 +292,7 @@ final class DevToolsCommandHandler
 				$sender->sendMessage($message);
 			}
 		})) {
-			$this->debug?->debug("Failed to queue {$operation} command for {$description}.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_COMMAND_QUEUE_FAILED, ['operation' => $operation, 'description' => $description]);
 			$sender->sendMessage($this->translate(TranslationKeys::QUEUE_BUSY));
 		}
 
@@ -302,5 +303,11 @@ final class DevToolsCommandHandler
 	private function translate(string $key, array $parameters = []) : string
 	{
 		return ($this->translator ?? Translator::fromResources())->translate($key, $parameters);
+	}
+
+	/** @param array<string, int|string> $parameters */
+	private function localizedBuildFailure(string $key, array $parameters = []) : BuildException
+	{
+		return BuildException::fromTranslation($this->translator ?? Translator::fromResources(), $key, $parameters);
 	}
 }

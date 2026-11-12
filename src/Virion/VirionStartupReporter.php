@@ -66,8 +66,9 @@ final class VirionStartupReporter
 		return $messages;
 	}
 
-	public function formatDiagnostic(VirionRegistryEntry $entry) : string
+	public function formatDiagnostic(VirionRegistryEntry $entry, ?Translator $translator = null) : string
 	{
+		$translator ??= $this->translator;
 		$key = match ($entry->status) {
 			VirionStatus::FAILED => TranslationKeys::VIRIONS_LOAD_FAILED_DETAIL,
 			VirionStatus::CONFLICT => TranslationKeys::VIRIONS_CONFLICT_DETAIL,
@@ -77,14 +78,14 @@ final class VirionStartupReporter
 		if ($entry->status === VirionStatus::LOADED) {
 			$manifest = $entry->requireManifest();
 
-			return $this->translator->translate($key, [
+			return $translator->translate($key, [
 				'name' => $manifest->name,
 				'version' => $manifest->version,
 				'antigen' => $manifest->antigen,
 			]);
 		}
 
-		return $this->translator->translate($key, [
+		return $translator->translate($key, [
 			'name' => $entry->manifest->name ?? basename($entry->location),
 			'detail' => $entry->message,
 		]);

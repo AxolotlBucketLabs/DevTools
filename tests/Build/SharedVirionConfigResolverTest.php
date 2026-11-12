@@ -91,7 +91,7 @@ final class SharedVirionConfigResolverTest extends TestCase
 	}
 
 	#[DataProvider('runtimeLocales')]
-	public function test_local_selection_and_metadata_errors_follow_the_runtime_locale(string $locale) : void
+	public function test_local_selection_debug_and_metadata_errors_follow_the_runtime_locale(string $locale) : void
 	{
 		[$project, $virions] = $this->project();
 		$translator = Translator::fromResources($locale);

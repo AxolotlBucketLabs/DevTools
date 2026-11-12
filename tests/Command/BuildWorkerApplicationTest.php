@@ -94,9 +94,9 @@ final class BuildWorkerApplicationTest extends TestCase
 			$result = BuildWorkerApplication::run($operation, ['selection' => false, 'locale' => 'vie']);
 
 			self::assertFalse($result['success']);
-			self::assertSame([$translator->translate(TranslationKeys::COMMAND_FAILED, [
-				'error' => $translator->translate(TranslationKeys::WORKER_PATH_MISSING, ['key' => 'pluginsDirectory']),
-			])], $result['messages']);
+			self::assertSame([
+				$translator->translate(TranslationKeys::WORKER_PATH_MISSING, ['key' => 'pluginsDirectory']),
+			], $result['messages']);
 		}
 	}
 

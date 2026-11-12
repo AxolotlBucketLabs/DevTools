@@ -55,6 +55,7 @@ final class SharedVirionConfigResolver
 		?Translator $translator = null,
 	) {
 		$this->translator = $translator ?? Translator::fromResources();
+		$this->debug?->setTranslator($this->translator);
 	}
 
 	/** @return list<VirionRequirement> */
@@ -117,7 +118,7 @@ final class SharedVirionConfigResolver
 								$aliases[VirionName::key($project->manifest->name)] = $requirement->name;
 							}
 						} catch (BuildException|VirionException $error) {
-							$this->debug?->debug($error->getMessage());
+							$this->debug?->debugThrowable($error);
 						}
 					}
 				}
@@ -133,7 +134,7 @@ final class SharedVirionConfigResolver
 				$matchedLocations[$project->location] = true;
 			}
 			if (count($matches) > 1) {
-				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_AMBIGUOUS_PACKAGE, ['package' => $packageName]));
+				throw BuildException::fromTranslation($this->translator, TranslationKeys::VIRIONS_LOCAL_AMBIGUOUS_PACKAGE, ['package' => $packageName]);
 			}
 			if ($matches === []) {
 				continue;
@@ -142,19 +143,19 @@ final class SharedVirionConfigResolver
 			foreach ($projects as $project) {
 				if (!$project->phar && VirionName::key($project->manifest->name) === VirionName::key($name)
 					&& $requirement->matches($project->manifest->version) && !isset($matchedLocations[$project->location])) {
-					throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_UNVERIFIED_NAME, ['name' => $name, 'path' => $project->location]));
+					throw BuildException::fromTranslation($this->translator, TranslationKeys::VIRIONS_LOCAL_UNVERIFIED_NAME, ['name' => $name, 'path' => $project->location]);
 				}
 			}
 			$aliasKey = VirionName::key($name);
 			$claimedBy = $aliasPackages[$aliasKey] ?? $this->aliasPackages[$aliasKey] ?? null;
 			if ($claimedBy !== null && $claimedBy !== $packageName) {
-				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_NAME_CONFLICT, ['name' => $name, 'first' => $claimedBy, 'second' => $packageName]));
+				throw BuildException::fromTranslation($this->translator, TranslationKeys::VIRIONS_LOCAL_NAME_CONFLICT, ['name' => $name, 'first' => $claimedBy, 'second' => $packageName]);
 			}
 			$aliasPackages[$aliasKey] = $packageName;
 			$runtimeName = $this->aliases[$key] ?? $name;
 			$aliases[$key] = $runtimeName;
 			$requirements[$index] = new VirionRequirement($runtimeName, $requirement->constraint->expression, $requirement->source);
-			$this->debug?->debug($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_SELECTED_DEBUG, ['name' => $name, 'package' => $packageName, 'project' => $projectRoot]));
+			$this->debug?->debugTranslated(TranslationKeys::VIRIONS_LOCAL_SELECTED_DEBUG, ['name' => $name, 'package' => $packageName, 'project' => $projectRoot]);
 		}
 		$this->aliases = array_replace($this->aliases, $aliases);
 		$this->aliasPackages = array_replace($this->aliasPackages, $aliasPackages);
@@ -203,12 +204,12 @@ final class SharedVirionConfigResolver
 		}
 		foreach (['autoload', 'require', 'extra'] as $field) {
 			if (!$plan->sameMetadata($metadata[$field] ?? [], $package[$field] ?? [])) {
-				throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH, ['name' => $project->manifest->name, 'field' => $field]));
+				throw BuildException::fromTranslation($this->translator, TranslationKeys::VIRIONS_LOCAL_METADATA_MISMATCH, ['name' => $project->manifest->name, 'field' => $field]);
 			}
 		}
 		if ($project->manifest->antigen !== $plan->antigen($package)
 			|| realpath($project->packageRoot . '/' . $plan->sourceDirectory($package)) !== realpath($project->sourceRoot)) {
-			throw new BuildException($this->translator->translate(TranslationKeys::VIRIONS_LOCAL_LAYOUT_MISMATCH, ['name' => $project->manifest->name]));
+			throw BuildException::fromTranslation($this->translator, TranslationKeys::VIRIONS_LOCAL_LAYOUT_MISMATCH, ['name' => $project->manifest->name]);
 		}
 		$platform = array_filter(
 			$plan->object($metadata['require'] ?? [], $project->packageRoot . '/' . ArtifactFile::COMPOSER_MANIFEST),

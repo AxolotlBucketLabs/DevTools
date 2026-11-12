@@ -6,7 +6,7 @@ namespace AxolotlBucketLabs\DevTools\Support;
 
 use RuntimeException;
 
-final class LocalizedException extends RuntimeException
+final class LocalizedException extends RuntimeException implements LocalizedDiagnostic
 {
 	/** @param array<string, int|string> $parameters */
 	public function __construct(
@@ -20,6 +20,11 @@ final class LocalizedException extends RuntimeException
 	public function render(Translator $translator) : string
 	{
 		return $translator->translate($this->translationKey, $this->parameters);
+	}
+
+	public function hasLocalizedMessage() : bool
+	{
+		return true;
 	}
 
 	public function isUsageError() : bool

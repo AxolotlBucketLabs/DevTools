@@ -73,7 +73,7 @@ final class FolderPluginLoader implements PluginLoader
 			throw new RuntimeException($this->loadFailure($file, "The folder path cannot be resolved at {$file}."));
 		}
 		$normalized = str_replace('\\', '/', $root);
-		$this->debug?->debug("Validating folder plugin {$root}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_FOLDER_PLUGIN_VALIDATING, ['path' => $root]);
 		if (isset($this->registeredPaths[$normalized])) {
 			return;
 		}
@@ -113,7 +113,7 @@ final class FolderPluginLoader implements PluginLoader
 			$root . DIRECTORY_SEPARATOR . ArtifactFile::SOURCE_DIRECTORY,
 		);
 		$this->registeredPaths[$normalized] = true;
-		$this->debug?->debug("Registered folder plugin {$manifest->description->getName()}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_FOLDER_PLUGIN_REGISTERED, ['name' => $manifest->description->getName()]);
 	}
 
 	public function getPluginDescription(string $file) : ?PluginDescription

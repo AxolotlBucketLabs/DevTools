@@ -10,6 +10,7 @@ use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\HashAlgorithm;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Virion\PreparedVirionProvenance;
 use AxolotlBucketLabs\DevTools\Virion\VirionClassScanner;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -58,7 +59,7 @@ final class VirionBuilder
 		bool $overwrite = false,
 		?string $outputName = null,
 	) : VirionBuildResult {
-		$this->debug?->debug("Starting virion PHAR build for {$projectRoot}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_VIRION_STARTED, ['project' => $projectRoot]);
 		if ((string) ini_get('phar.readonly') !== '0') {
 			throw new BuildException('Cannot build a PHAR because phar.readonly is enabled. Start PHP with -d phar.readonly=0.');
 		}
@@ -67,7 +68,7 @@ final class VirionBuilder
 			throw new BuildException("Cannot build a virion from a PHAR. Use the source folder containing virion.yml: {$projectRoot}");
 		}
 		$classes = $this->classScanner->scan($project);
-		$this->debug?->debug('Scanned ' . count($classes) . " virion class(es) for {$project->manifest->name}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_VIRION_CLASSES_SCANNED, ['count' => count($classes), 'name' => $project->manifest->name]);
 		if ($classes === []) {
 			throw new BuildException("Cannot build virion {$project->manifest->name}: no PHP classes were found.");
 		}
@@ -115,9 +116,9 @@ final class VirionBuilder
 			$this->validatePhar($temporaryPhar, $project->manifest->name, $provenance);
 			$this->installer->install([['temporary' => $temporaryPhar, 'output' => $outputPath]], $overwrite);
 			$result = new VirionBuildResult($project->manifest, $outputPath, $fileCount);
-			$this->debug?->debug("Installed virion PHAR at {$outputPath}.");
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_BUILD_VIRION_INSTALLED, ['path' => $outputPath]);
 		} catch (Throwable $error) {
-			$this->debug?->debug('Virion PHAR build failed: ' . $error->getMessage());
+			$this->debug?->debugFailure(TranslationKeys::DEBUG_BUILD_VIRION_FAILED, $error);
 			$failure = $error instanceof BuildException
 				? $error
 				: new BuildException("Virion build failed for {$projectRoot}: {$error->getMessage()}", 0, $error);

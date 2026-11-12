@@ -6,6 +6,8 @@ namespace AxolotlBucketLabs\DevTools\Tests\Virion;
 
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
 use AxolotlBucketLabs\DevTools\Support\PhpSourceInspector;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
+use AxolotlBucketLabs\DevTools\Support\Translator;
 use AxolotlBucketLabs\DevTools\Support\YamlReader;
 use AxolotlBucketLabs\DevTools\Tests\TestCase;
 use AxolotlBucketLabs\DevTools\Virion\ClassLoaderRegistrar;
@@ -422,10 +424,10 @@ final class VirionManagerTest extends TestCase
 			'Loaded SharedVirion 1.0.0 (Shared\\Virion).',
 			$registry->loaded()[0]->message,
 		);
-		self::assertTrue(array_filter(
+		self::assertContains(
+			Translator::fromResources()->translate(TranslationKeys::DEBUG_VIRION_CLASS_LOADER_REGISTERED, ['name' => 'SharedVirion']),
 			$debugMessages,
-			static fn(string $message) : bool => str_contains($message, 'test thread-safe loader'),
-		) !== []);
+		);
 	}
 
 	public function test_duplicate_namespace_is_rejected_as_conflict() : void

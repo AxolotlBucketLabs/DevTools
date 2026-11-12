@@ -9,6 +9,7 @@ use AxolotlBucketLabs\DevTools\Support\Filesystem;
 use AxolotlBucketLabs\DevTools\Support\FilesystemException;
 use AxolotlBucketLabs\DevTools\Support\Path;
 use AxolotlBucketLabs\DevTools\Support\RandomToken;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use function array_map;
 use function array_pop;
 use function basename;
@@ -33,7 +34,7 @@ final class PharExtractor
 
 	public function extract(ArchiveReader $archive, string $destination, bool $overwrite = false) : int
 	{
-		$this->debug?->debug("Starting archive extraction to {$destination}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_ARCHIVE_EXTRACTION_STARTED, ['path' => $destination]);
 		if (Filesystem::isLink($destination)) {
 			throw new BuildException("Refusing symbolic-link extraction destination: {$destination}");
 		}
@@ -137,7 +138,7 @@ final class PharExtractor
 		}
 
 		$count = count($pending);
-		$this->debug?->debug("Extracted {$count} file(s) to {$base}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_ARCHIVE_FILES_EXTRACTED, ['count' => $count, 'path' => $base]);
 
 		return $count;
 	}

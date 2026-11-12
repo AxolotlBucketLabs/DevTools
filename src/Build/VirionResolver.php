@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AxolotlBucketLabs\DevTools\Build;
 
 use AxolotlBucketLabs\DevTools\Support\DebugLogger;
+use AxolotlBucketLabs\DevTools\Support\TranslationKeys;
 use AxolotlBucketLabs\DevTools\Virion\VirionDependencyResolver;
 use AxolotlBucketLabs\DevTools\Virion\VirionDiscovery;
 use AxolotlBucketLabs\DevTools\Virion\VirionException;
@@ -36,7 +37,7 @@ final class VirionResolver
 	 */
 	public function resolve(array $requirements, string $virionsDirectory, bool $snapshotPhars = true) : array
 	{
-		$this->debug?->debug('Resolving ' . count($requirements) . " virion requirement(s) from {$virionsDirectory}.");
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRION_REQUIREMENTS_RESOLVING, ['count' => count($requirements), 'directory' => $virionsDirectory]);
 		if ($requirements === []) {
 			return [];
 		}
@@ -50,7 +51,7 @@ final class VirionResolver
 		$failures = [];
 		$platform = new \AxolotlBucketLabs\DevTools\Virion\VirionPlatformRequirements();
 		$locations = $this->discovery->discover($virionsDirectory);
-		$this->debug?->debug('Discovered ' . count($locations) . ' virion source location(s).');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRION_LOCATIONS_DISCOVERED, ['count' => count($locations)]);
 		foreach ($locations as $location) {
 			try {
 				$project = $this->projectFactory->open($location, $snapshotPhars);
@@ -108,10 +109,10 @@ final class VirionResolver
 		}
 		try {
 			$resolved = (new VirionDependencyResolver($this->selector))->resolve($available, $requirements);
-			$this->debug?->debug('Resolved virions: ' . implode(', ', array_map(
+			$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRIONS_RESOLVED, ['virions' => implode(', ', array_map(
 				static fn(VirionProject $project) : string => $project->manifest->name . '@' . $project->manifest->version,
 				$resolved,
-			)));
+			))]);
 
 			return $resolved;
 		} catch (VirionException $error) {
@@ -131,7 +132,7 @@ final class VirionResolver
 			}
 		}
 
-		$this->debug?->debug('Validated ' . count($projects) . ' virion source project(s) for standalone build checks.');
+		$this->debug?->debugTranslated(TranslationKeys::DEBUG_VIRION_SOURCE_PROJECTS_VALIDATED, ['count' => count($projects)]);
 
 		return $projects;
 	}
