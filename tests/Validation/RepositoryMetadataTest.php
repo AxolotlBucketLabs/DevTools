@@ -125,7 +125,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringContainsString('Optional Axolotl-PM Git ref (release tag, branch, or full commit SHA)', $reusable);
 		self::assertStringContainsString('repository: axolotl-pm/PocketMine-MP', $reusable);
 		self::assertStringContainsString('Inspect built PHAR archive', $reusable);
-		self::assertStringContainsString('Build pinned fixture with PHPStan max', $ci);
+		self::assertStringContainsString('Fixture PHAR', $ci);
 		self::assertStringNotContainsString('default: main', $reusable);
 
 		foreach ([$ci, $candidate, $reusable] as $workflow) {

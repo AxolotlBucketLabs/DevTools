@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   reusable-build:
-    name: Build pinned fixture with PHPStan max
+    name: Fixture PHAR
     uses: ./.github/workflows/build-plugin.yml
     with:
       axolotl-ref: 5.51.1

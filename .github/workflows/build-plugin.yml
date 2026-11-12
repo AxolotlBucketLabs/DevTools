@@ -99,7 +99,7 @@ permissions:
 
 jobs:
   build:
-    name: Build downloadable plugin or virion PHAR
+    name: Build PHAR
     runs-on: ubuntu-24.04
     outputs:
       plugin-name: ${{ steps.devtools.outputs.plugin-name }}
