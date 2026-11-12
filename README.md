@@ -84,6 +84,8 @@ The repository includes an inventory of public repositories whose default-branch
 workflows reference DevTools. See the [ecosystem inventory](docs/ecosystem.md)
 for the summary, canonical JSON data and detection method.
 
+Maintainers can run a scheduled, read-only [ecosystem compatibility check](docs/development.md#ecosystem-compatibility-check) across the projects in the inventory.
+
 - [BedrockNexus](https://bedrocknexus.com/) provides an official [Axolotl-PM workflow template](https://github.com/BedrockNexus/plugin-workflows/blob/main/templates/axolotl.yml) powered by DevTools.
 
 ## Build with a coding agent

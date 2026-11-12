@@ -1,0 +1,138 @@
+name: Check ecosystem build compatibility
+
+on:
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ecosystem-compatibility
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Prepare ecosystem build matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - name: Check out DevTools at the workflow revision
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .devtools
+          persist-credentials: false
+
+      - name: Generate build matrix from the verified inventory
+        id: generate
+        run: node .devtools/.github/scripts/build-ecosystem-matrix.mjs
+
+  build:
+    needs: discover
+    name: Build ${{ matrix.repository }} (${{ matrix.type }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.matrix) }}
+
+    steps:
+      - name: Check out DevTools at the workflow revision
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .devtools
+          persist-credentials: false
+
+      - name: Check out Axolotl-PM PHP setup helper
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: axolotl-pm/setup-php-action
+          ref: 1.0.0
+          path: .devtools-dependencies/setup-php-action
+          persist-credentials: false
+
+      - name: Set up Axolotl-PM PHP
+        shell: bash
+        env:
+          INPUT_PHP-VERSION: "8.4"
+          INPUT_PM-VERSION-MAJOR: "5"
+          INPUT_INSTALL-PATH: ./.php-bin
+          PHP_VERSION: "8.4"
+          PM_VERSION_MAJOR: "5"
+          INSTALL_PATH: ./.php-bin
+        run: |
+          if node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"; then
+            exit 0
+          fi
+          bash .devtools/.github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
+
+      - name: Check out ecosystem project
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ matrix.repository }}
+          path: ecosystem-project
+          persist-credentials: false
+
+      - name: Verify build profile and record source revision
+        shell: bash
+        env:
+          PROJECT_REPOSITORY: ${{ matrix.repository }}
+          PROJECT_PATH: ${{ matrix.project }}
+          BUILD_TYPE: ${{ matrix.type }}
+          EXPECTED_ROLES: ${{ matrix.expected_roles }}
+          PREPARE_DEPENDENCIES: ${{ matrix.prepare_dependencies }}
+        run: |
+          set -euo pipefail
+          project_dir="$GITHUB_WORKSPACE/ecosystem-project/$PROJECT_PATH"
+          project_dir="${project_dir%/.}"
+          actual_roles=()
+          if [[ -f "$project_dir/plugin.yml" ]]; then actual_roles+=(plugin); fi
+          if [[ -f "$project_dir/virion.yml" ]]; then actual_roles+=(virion); fi
+          actual_roles_csv="$(IFS=,; echo "${actual_roles[*]}")"
+          if [[ "$actual_roles_csv" != "$EXPECTED_ROLES" ]]; then
+            printf 'Build profile is stale for %s. Expected roles: %s. Found: %s. Refresh docs/ecosystem-compatibility.json.\n' "$PROJECT_REPOSITORY" "$EXPECTED_ROLES" "${actual_roles_csv:-none}" >&2
+            exit 1
+          fi
+          actual_prepare=false
+          if [[ "$BUILD_TYPE" == plugin && -f "$project_dir/composer.json" && -f "$project_dir/composer.lock" ]]; then
+            actual_prepare=true
+          fi
+          if [[ "$actual_prepare" != "$PREPARE_DEPENDENCIES" ]]; then
+            printf 'Composer preparation profile is stale for %s. Refresh docs/ecosystem-compatibility.json.\n' "$PROJECT_REPOSITORY" >&2
+            exit 1
+          fi
+          project_sha="$(git -C ecosystem-project rev-parse HEAD)"
+          {
+            printf '## Ecosystem build: %s (%s)\n\n' "$PROJECT_REPOSITORY" "$BUILD_TYPE"
+            printf -- '- Source: current repository default branch\n'
+            printf -- '- Resolved commit: `%s`\n' "$project_sha"
+            printf -- '- Composer preparation: `%s`\n' "$PREPARE_DEPENDENCIES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build project with this DevTools revision
+        id: build
+        uses: ./.devtools
+        with:
+          type: ${{ matrix.type }}
+          project: ecosystem-project/${{ matrix.project }}
+          output: build/ecosystem
+          prepare-dependencies: ${{ matrix.prepare_dependencies }}
+
+      - name: Record artifact evidence
+        shell: bash
+        env:
+          ARTIFACT_TYPE: ${{ steps.build.outputs.artifact-type }}
+          ARTIFACT_NAME: ${{ steps.build.outputs.artifact-name }}
+          ARTIFACT_VERSION: ${{ steps.build.outputs.artifact-version }}
+          ARTIFACT_SHA256: ${{ steps.build.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          {
+            printf -- '- Artifact: `%s` `%s` version `%s`\n' "$ARTIFACT_TYPE" "$ARTIFACT_NAME" "$ARTIFACT_VERSION"
+            printf -- '- SHA-256: `%s`\n' "$ARTIFACT_SHA256"
+          } >> "$GITHUB_STEP_SUMMARY"

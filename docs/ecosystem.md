@@ -2,7 +2,7 @@
 
 This page gives a short human-readable summary of public projects whose default-branch workflows reference DevTools. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
 
-The stable release represented by this inventory is DevTools `v4.0.1`. Repositories in AxolotlBucketLabs use the `v4.0.1` release. External consumers may use the maintained `@latest` channel or an exact release commit according to their compatibility policy.
+The latest stable release represented by this inventory is DevTools `v4.0.3`, at commit `106547e8b142a3f6a65a4b3c66d1ace477e56f10`. Use `@v4` for compatible v4 updates or `@latest` to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin.
 
 ## Inventory
 
@@ -32,3 +32,5 @@ The transferred ScoreHud and await-generator repositories are also excluded beca
 ## Limitations
 
 This inventory is maintained documentation, not telemetry. It can become stale when a project changes its workflow. Update [`ecosystem.json`](ecosystem.json) when the inventory needs to reflect a later state.
+
+The [ecosystem compatibility check](development.md#ecosystem-compatibility-check) builds every listed repository for each recorded artifact role. It uses a separate build profile so the inventory remains a simple repository list.

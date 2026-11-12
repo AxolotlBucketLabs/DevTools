@@ -1,0 +1,1154 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "repository": "AxolotlBucketLabs/arithmexp",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/FormAPI",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "AxolotlBucketLabs/PersonaSkin",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/pmforms",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/PureChat",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/PurePerms",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/SimplePacketHandler",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Libraries/BedrockQuery",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Libraries/BlockData",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Libraries/CustomToast",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Libraries/EcoAPI",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Libraries/FrozenEffect",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Libraries/libBedrock",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Libraries/libRegRsp",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/aBuyParticles",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AdvancedRules",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Alias",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AnimatedWings",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AnonChat",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiExplosions",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiFallDamage",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiFurry",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiServerStop",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiToolBox",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AntiTrampleFarmland",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/ArcoLife",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/AutoClearLagg",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BackgroundMusic",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BanItem",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BetterCancel",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BlockDataExample",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BlockDataRecorder",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BlockGenerationMachine",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BlockGenerator",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/BuyFix",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Calculator",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CoinAPI",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CommandBlocker",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Coordinates",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CopyPasteBuildDP",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CropGrowth",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Plugins/CropsXP",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CustomJoinSound",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/CustomToastExample",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/DataCleaner",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/DebugStick",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/DevilMode",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Disable_TNT",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/DumpIdItem",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/EcoAPIScore",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Plugins/EffectBlock-HiroTeam",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/EmojiAttack",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/FaceLogin",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Farms",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Fly",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/FormDebug",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/FrameKeeper",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/GolemAgent",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/GuardianJoin",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/HealBar",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/HealthLimit",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/IDItem",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/isEvenOrOdd",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/ItemDropText",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/ItemEffect",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/ItemSender",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/KeepExp",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/KeepInventory",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/KeepItems",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Mask",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NapThe",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NoAD",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NoCraftItem",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NoEmoteMessage",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NoFlyWorld",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/NoTP",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/OhMyTest",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/OnlyOneBiome",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/OpList",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Particles_Shape",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Pets",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/PlayerVaults",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/PocketMine-Plugin-Template",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/ProfanityFilter",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/RainbowChat",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/RedSkyBlockX",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Plugins/RegionProtect",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/RevivalTax",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/RulesBook",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Sell",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/SimpleEconomy",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "NhanAZ-Plugins/SimpleEconomyExample",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/SlapperParticle",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/SoundAPI",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Spawner",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/SpawnParticles",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Stalker",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/StealSkin",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/TerrainGenerator",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/TopIS",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/TradeNPC",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Uncensor",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/UnlimitedSlots",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/VisibleBorder",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/Wings",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/WorldsLoader",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "NhanAZ-Plugins/XYZ",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "ReinfyTeam/AntiVPN",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/DiscordWebhookAPI",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "ReinfyTeam/FakeWaterdogTransfer",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/FancyPlayerCount",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/libpf",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "ReinfyTeam/libpmform",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "ReinfyTeam/LibVapmPMMP",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/SlapBack",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/Slapper",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/SlapperCooldown",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/SlapperParticles",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "ReinfyTeam/SlapperRotation",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/AdvancedPluginManager",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/BetterConfig",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/Commando",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/Hydrogen",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/HyperBackup",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/ktpmpl-cfs",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/KygekClearConsole",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekEasyGamemode",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekEatHeal",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekJoinUI",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekLastPosition",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekPingTPS",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekPotionDisabler",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekRanksUI",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekRulesUI",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekTagsShop",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/KygekWhitelistKick",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/libMCUnicodeChars",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/LuckyPlayer",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/oh-my-pmmp",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/pmforms",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/promise",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "thebigcrafter/TrashCan",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    },
+    {
+      "repository": "thebigcrafter/XPShop",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true
+    }
+  ]
+}

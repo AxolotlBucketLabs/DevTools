@@ -59,6 +59,16 @@ the [team workflow guide](https://docs.graphify.com/cookbooks/shared-team-graph)
 - `examples/` is an integration fixture as well as user documentation.
 - A release candidate should receive a live compatible-server smoke test with the built DevTools PHAR, folder example, shared virion, and produced standalone plugin when practical.
 
+## Ecosystem compatibility check
+
+The scheduled and manually dispatched [`ecosystem-compatibility.yml`](../.github/workflows/ecosystem-compatibility.yml) workflow builds every repository in the [ecosystem inventory](ecosystem.md), once for each declared root role. The current inventory produces 148 plugin or virion builds across 143 repositories, including five dual-role projects.
+
+[`ecosystem-compatibility.json`](ecosystem-compatibility.json) records each repository's root project path, plugin or virion roles, and whether a plugin build needs locked Composer preparation. Each job checks out the repository's current default branch. The matrix generator checks that its repository set matches the public inventory, and each job checks the current manifests against the recorded profile before building. Refresh the profile when a repository is added to or removed from the inventory, changes its root role manifests, or changes whether it needs Composer preparation.
+
+Runs are weekly and manual, use the DevTools revision that owns the workflow run, and build up to 12 projects at a time. Each job records the resolved source commit and, after a successful build, the PHAR identity and SHA-256 in its Actions summary. The workflow has read-only repository permissions, does not run on pull requests, and does not create issues, upload artifacts, publish releases, or gate releases.
+
+A failed build is evidence to investigate, not an automatic verdict that DevTools caused it. This workflow checks packaging against the current PHP 8.4 build environment. It does not prove runtime behavior on Axolotl-PM. The separate [runtime smoke harness](runtime-validation.md) remains responsible for that evidence.
+
 ## Release process
 
 The candidate and publication steps are separate. A tag push does not build or publish anything. Existing published releases are never overwritten.

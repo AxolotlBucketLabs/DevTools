@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds. Virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in the `v4.0.2` release. Most repositories should use the maintained `v4` channel: `AxolotlBucketLabs/DevTools@v4` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` or `build-virion.yml@v4` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v4.0.2` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
+These interfaces are available in the `v4.0.3` release. Most repositories should use the maintained `v4` channel: `AxolotlBucketLabs/DevTools@v4` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` or `build-virion.yml@v4` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v4.0.3` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
 
 ## Short build workflow
 
@@ -185,24 +185,24 @@ DevTools moves `latest` only to a validated stable release. It may move from v4 
 Use an exact release when a repository needs controlled upgrades.
 
 ```yaml
-uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4.0.2
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4.0.3
 ```
 
 Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment.
 
 ```sh
-git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v4.0.2^{}'
+git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v4.0.3^{}'
 ```
 
 ```yaml
-uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@<full-commit-sha> # v4.0.2
+uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@106547e8b142a3f6a65a4b3c66d1ace477e56f10 # v4.0.3
 ```
 
 The called job reads its own `workflow_sha` and `workflow_repository`, checks out that revision, and verifies the checked-out HEAD and CLI contract before building. The same rule applies to release verification. The workflow contract no longer accepts the removed `devtools-ref` input. Remove it when migrating a v1 caller. GitHub's workflow identity context is available on GitHub.com. These reusable workflows are not supported on GitHub Enterprise Server without that context.
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v4` and remove legacy inputs that the current workflow does not declare. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v4.0.2` or a full SHA when the repository requires a controlled or strict pin.
+Update the reusable workflow reference to `@v4` and remove legacy inputs that the current workflow does not declare. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v4.0.3` or a full SHA when the repository requires a controlled or strict pin.
 
 ```diff
  with:
