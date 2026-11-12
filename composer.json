@@ -69,6 +69,7 @@
         "ecosystem": "@php bin/check-ecosystem.php",
         "check": [
             "composer validate --strict",
+            "composer audit --no-interaction --abandoned=report",
             "@syntax",
             "@yamllint",
             "@lint",
