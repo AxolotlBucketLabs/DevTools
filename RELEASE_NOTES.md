@@ -1,29 +1,26 @@
-# DevTools 4.0.2
+# DevTools 4.0.3
 
-DevTools 4.0.2 hardens YAML and archive processing and closes runtime, extraction and localization edge cases.
-
-## Security
-
-- Disable PHP object decoding when parsing YAML.
-- Reject archives with more than 10,000 entries, any entry larger than 64 MiB, or more than 256 MiB of uncompressed content.
+DevTools 4.0.3 hardens path validation, background build failures and localized diagnostics without changing the public command or manifest contracts.
 
 ## Fixed
 
-- Preserve background job results when errors contain invalid UTF-8.
-- Report the resolved plugin or virion type during extraction.
-- Tighten dynamic class annotation checks used by PHAR namespace shading.
-- Complete runtime, virion, queue and extraction messages in all 14 locales.
+- Preserve worker identifiers and typed responses when background jobs fail.
+- Keep source paths, Windows roots, locale identifiers and Composer PHP constraints intact across build and validation flows.
+- Reject unsafe virion paths, reserved Windows device names, duplicate manifest sections and external project paths.
+- Improve namespace reference detection for dynamic strings, reflection properties and compound function guards.
+- Preserve extracted files during rollback and create valid empty ZIP archives.
+- Localize diagnostics consistently across the CLI, workers, runtime loader and all 14 supported locales.
+- Clarify validation failures for PHPStan, YAML linting and unsupported PHP constraints.
 
 ## Compatibility
 
-- Existing commands, manifests and workflow inputs are unchanged.
+- Existing commands, manifests, workflow inputs and public runtime APIs are unchanged.
 - PHP 8.4 remains the minimum supported version. CI covers PHP 8.4 and 8.5.
-- Archives above the new processing limits are rejected.
 
 ## Upgrading
 
 - Replace `plugins/DevTools.phar` and restart the server.
 - No manifest or workflow changes are required for supported projects.
-- Reduce archives that exceed the documented processing limits before building or extracting them.
+- Projects using the existing DevTools workflows do not need configuration changes.
 
 The release tag and checksum manifest are signed with the maintainer's GPG key. Verify `SHA256SUMS.txt.asc` before checking the downloaded assets against `SHA256SUMS.txt`.
