@@ -317,7 +317,7 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertStringNotContainsString('selects `plugins/` or `virions/` when the destination is relative to a project', $contents);
 	}
 
-	public function test_workflow_actions_use_stable_release_tags_and_checkouts_do_not_persist_tokens() : void
+	public function test_workflow_actions_use_pinned_refs_and_checkouts_do_not_persist_tokens() : void
 	{
 		$root = dirname(__DIR__, 2);
 		$paths = array_merge(
@@ -329,9 +329,12 @@ final class RepositoryMetadataTest extends TestCase
 		foreach ($paths as $path) {
 			$contents = file_get_contents($path);
 			self::assertIsString($contents);
-			$checkoutCount += preg_match_all('/uses:\s*actions\\/checkout@v[0-9]+\.[0-9]+\.[0-9]+/', $contents);
+			$checkoutCount += preg_match_all('/uses:\s*actions\\/checkout@(?:v[0-9]+\.[0-9]+\.[0-9]+|[a-f0-9]{40})(?:\s|$)/', $contents);
 			$credentialOptOutCount += preg_match_all('/persist-credentials:\s*false/', $contents);
-			self::assertDoesNotMatchRegularExpression('/uses:\s*actions\\/(?:checkout|cache|upload-artifact|download-artifact)@[a-f0-9]{40}/', $contents);
+			preg_match_all('/uses:\s*actions\\/(?:checkout|cache|upload-artifact|download-artifact)@([^\s#]+)/', $contents, $matches);
+			foreach ($matches[1] as $reference) {
+				self::assertMatchesRegularExpression('/^(?:v[0-9]+\.[0-9]+\.[0-9]+|[a-f0-9]{40})$/', $reference);
+			}
 		}
 
 		self::assertGreaterThan(0, $checkoutCount);

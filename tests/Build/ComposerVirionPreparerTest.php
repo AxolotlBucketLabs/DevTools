@@ -648,6 +648,33 @@ final class ComposerVirionPreparerTest extends TestCase
 		self::assertDirectoryDoesNotExist($destination);
 	}
 
+	public function test_devtools_self_packaging_prepare_keeps_its_locked_php_parser_include_paths() : void
+	{
+		$project = $this->copyFixture('BuildPlugin');
+		$manifest = file_get_contents($project . '/plugin.yml');
+		self::assertIsString($manifest);
+		file_put_contents($project . '/plugin.yml', str_replace('name: BuildFixture', 'name: DevTools', $manifest));
+		$this->json($project . '/composer.json', [
+			'name' => 'axolotlbucketlabs/devtools',
+			'require' => ['nikic/php-parser' => '^5.6'],
+			'autoload' => ['files' => ['src/Build/php-parser-bootstrap.php']],
+		]);
+		$this->json($project . '/composer.lock', ['packages' => []]);
+		file_put_contents($project . '/devtools.yml', "include-paths:\n  - vendor/nikic/php-parser/lib\n  - vendor/nikic/php-parser/LICENSE\n");
+		$this->filesystem->ensureDirectory($project . '/vendor/nikic/php-parser/lib/PhpParser');
+		file_put_contents($project . '/vendor/nikic/php-parser/lib/PhpParser/Parser.php', '<?php final class Parser {}');
+		file_put_contents($project . '/vendor/nikic/php-parser/LICENSE', 'Fixture license');
+
+		$destination = $this->temporaryDirectory . '/prepared';
+		self::assertSame([], (new ComposerVirionPreparer($this->filesystem))->prepare($project, $destination));
+		self::assertDirectoryDoesNotExist($destination);
+
+		$result = $this->builder()->build($project, $destination, $project . '/build');
+		$phar = new Phar($result->outputPath);
+		self::assertTrue(isset($phar['vendor/nikic/php-parser/lib/PhpParser/Parser.php']));
+		self::assertTrue(isset($phar['vendor/nikic/php-parser/LICENSE']));
+	}
+
 	public function test_root_mapping_under_src_must_match_axolotl_namespace_layout() : void
 	{
 		$project = $this->copyFixture('BuildPlugin');

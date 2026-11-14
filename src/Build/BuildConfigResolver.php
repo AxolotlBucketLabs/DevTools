@@ -118,13 +118,8 @@ final class BuildConfigResolver
 			}
 		}
 
-		$selfPackaging = strtolower($pluginName) === 'devtools'
-			&& in_array('vendor/nikic/php-parser/lib', $includePaths, true)
-			&& in_array('vendor/nikic/php-parser/LICENSE', $includePaths, true);
-		if (!$selfPackaging) {
-			foreach ((new ComposerVirionPlan())->requirements($projectRoot) as $requirement) {
-				$this->addRequirement($requirement, $virions);
-			}
+		foreach ((new ComposerVirionPlan())->requirements($projectRoot) as $requirement) {
+			$this->addRequirement($requirement, $virions);
 		}
 
 		return new BuildConfig(array_values($virions), array_values($includePaths));
