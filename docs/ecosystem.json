@@ -34,8 +34,8 @@
     ]
   },
   "devtools": {
-    "stable_version": "v4.0.3",
-    "stable_commit": "106547e8b142a3f6a65a4b3c66d1ace477e56f10",
+    "stable_version": "v4.0.4",
+    "stable_commit": "cd05e444a26b3c63720b443961b3646e22307f56",
     "reference_policy": "Use @v4 for compatible v4 updates or @latest to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin."
   },
   "summary": {

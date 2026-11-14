@@ -2,7 +2,7 @@
 
 This page gives a short human-readable summary of public projects whose default-branch workflows reference DevTools. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
 
-The latest stable release represented by this inventory is DevTools `v4.0.3`, at commit `106547e8b142a3f6a65a4b3c66d1ace477e56f10`. Use `@v4` for compatible v4 updates or `@latest` to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin.
+The latest stable release represented by this inventory is DevTools `v4.0.4`, at commit `cd05e444a26b3c63720b443961b3646e22307f56`. Use `@v4` for compatible v4 updates or `@latest` to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin.
 
 ## Inventory
 
