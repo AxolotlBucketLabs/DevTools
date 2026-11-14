@@ -1,16 +1,11 @@
-# DevTools 4.0.3
+# DevTools 4.0.4
 
-DevTools 4.0.3 hardens path validation, background build failures and localized diagnostics without changing the public command or manifest contracts.
+DevTools 4.0.4 fixes Composer dependency preparation when DevTools builds itself in automated workflows.
 
 ## Fixed
 
-- Preserve worker identifiers and typed responses when background jobs fail.
-- Keep source paths, Windows roots, locale identifiers and Composer PHP constraints intact across build and validation flows.
-- Reject unsafe virion paths, reserved Windows device names, duplicate manifest sections and external project paths.
-- Improve namespace reference detection for dynamic strings, reflection properties and compound function guards.
-- Preserve extracted files during rollback and create valid empty ZIP archives.
-- Localize diagnostics consistently across the CLI, workers, runtime loader and all 14 supported locales.
-- Clarify validation failures for PHPStan, YAML linting and unsupported PHP constraints.
+- Keep DevTools' locked Composer packages available as build assets without treating them as virions during its own build.
+- Accept full-SHA-pinned first-party GitHub Actions while requiring checkout credentials to remain disabled.
 
 ## Compatibility
 
@@ -19,8 +14,7 @@ DevTools 4.0.3 hardens path validation, background build failures and localized 
 
 ## Upgrading
 
-- Replace `plugins/DevTools.phar` and restart the server.
-- No manifest or workflow changes are required for supported projects.
-- Projects using the existing DevTools workflows do not need configuration changes.
+- Projects using Composer-prepared BedrockNexus workflows should update to this release to build DevTools correctly.
+- Other projects do not need configuration changes.
 
 The release tag and checksum manifest are signed with the maintainer's GPG key. Verify `SHA256SUMS.txt.asc` before checking the downloaded assets against `SHA256SUMS.txt`.

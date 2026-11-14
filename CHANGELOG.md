@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 4.0.4 - 2026-11-14
+
+### Fixed
+
+- Skip Composer virion preparation when building DevTools itself while keeping locked Composer packages available as configured build assets.
+- Accept full-SHA-pinned first-party GitHub Actions while continuing to require checkout credentials to be disabled.
+
 ## 4.0.3 - 2026-11-12
 
 ### Fixed
