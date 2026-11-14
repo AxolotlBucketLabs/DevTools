@@ -56,6 +56,9 @@ final class ComposerVirionPlan
 		if (!is_file($path)) {
 			return [];
 		}
+		if (DevToolsSelfPackaging::matchesProject($projectRoot)) {
+			return [];
+		}
 		$composer = $this->readJson($path);
 		$rootAutoload = $composer['autoload'] ?? [];
 		if (!is_array($rootAutoload) || array_diff(array_keys($rootAutoload), ['psr-4', 'psr-0']) !== []) {
