@@ -2,7 +2,7 @@
 
 ## Fresh install
 
-1. Use Axolotl-PM with the API declared by DevTools and its required PHP extensions. See the [verified runtime target](runtime-validation.md).
+1. Use Axolotl-PM with the API declared by DevTools and PHP extensions `ext-json`, `ext-phar`, `ext-zip` and `ext-yaml`. See the [verified runtime target](runtime-validation.md).
 2. Download the PHAR from the [latest DevTools release](https://github.com/AxolotlBucketLabs/DevTools/releases/latest) and compare its SHA-256 with the release checksum. GitHub's "Source code" archives are not installable plugins.
 3. Stop the server and copy the file to `plugins/DevTools.phar`.
 4. Start the server. DevTools creates server-root `virions/` and `build/` directories if they are missing.

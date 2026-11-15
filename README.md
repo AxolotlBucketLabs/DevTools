@@ -43,7 +43,7 @@ For troubleshooting, set `logging.debug: true` in the server `config.yml`, or ad
 
 ## Requirements
 
-- PHP `8.4` or newer, 64-bit, with the extensions required by the server
+- PHP `8.4` or newer, 64-bit, with `ext-json`, `ext-phar`, `ext-zip` and `ext-yaml`
 - Axolotl-PM with the API declared by `plugin.yml`
 - `phar.readonly=0` only when building PHARs
 
