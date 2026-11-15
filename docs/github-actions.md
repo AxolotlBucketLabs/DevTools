@@ -2,7 +2,7 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds. Virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
-These interfaces are available in the `v4.0.4` release. Most repositories should use the maintained `v4` channel: `AxolotlBucketLabs/DevTools@v4` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` or `build-virion.yml@v4` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use `@v4.0.4` when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
+These interfaces are available through the maintained `v4` release channel. Most repositories should use `AxolotlBucketLabs/DevTools@v4` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` or `build-virion.yml@v4` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use a reviewed `vX.Y.Z` tag when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
 
 ## Short build workflow
 
@@ -188,7 +188,7 @@ Use an exact release when a repository needs controlled upgrades.
 uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4.0.4
 ```
 
-Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment.
+Use a full commit SHA for strict reproducibility or a supply-chain policy. Resolve the commit behind the reviewed release tag and keep the version in a comment. This example uses the published `v4.0.4` release. Replace it with the release you reviewed.
 
 ```sh
 git ls-remote https://github.com/AxolotlBucketLabs/DevTools.git 'refs/tags/v4.0.4^{}'
@@ -202,7 +202,7 @@ The called job reads its own `workflow_sha` and `workflow_repository`, checks ou
 
 ## Migrate from v1
 
-Update the reusable workflow reference to `@v4` and remove legacy inputs that the current workflow does not declare. Use `@latest` only if the repository intentionally accepts major upgrades. Use `@v4.0.4` or a full SHA when the repository requires a controlled or strict pin.
+Update the reusable workflow reference to `@v4` and remove legacy inputs that the current workflow does not declare. Use `@latest` only if the repository intentionally accepts major upgrades. Use a reviewed `@vX.Y.Z` tag or a full SHA when the repository requires a controlled or strict pin.
 
 ```diff
  with:

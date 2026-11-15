@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 const JSON_MAX_NESTING_DEPTH = 512;
 const EXPECTED_ECOSYSTEM_SCHEMA_VERSION = 2;
+const ECOSYSTEM_STABLE_VERSION_PATTERN = '/^v\d+\.\d+\.\d+$/';
 
 $projectRoot = dirname(__DIR__);
 $dataPath = $projectRoot . '/docs/ecosystem.json';
@@ -74,6 +75,9 @@ $requireKeys($summary, ['total_repositories', 'organization_totals'], 'data.summ
 
 if (($scope['include_archived'] ?? null) !== false) {
 	$failures[] = 'data.scope.include_archived must be false';
+}
+if (!is_string($devtools['stable_version'] ?? null) || preg_match(ECOSYSTEM_STABLE_VERSION_PATTERN, $devtools['stable_version']) !== 1) {
+	$failures[] = 'data.devtools.stable_version must be a stable v-prefixed semantic version';
 }
 if (!is_array($scope['organizations'] ?? null) || $scope['organizations'] === []) {
 	$failures[] = 'data.scope.organizations must be a non-empty array';

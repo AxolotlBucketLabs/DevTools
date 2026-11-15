@@ -2,7 +2,7 @@
 
 This page gives a short human-readable summary of public projects whose default-branch workflows reference DevTools. The complete inventory and its counts are stored in [`ecosystem.json`](ecosystem.json). The data contract is described by [`ecosystem.schema.json`](ecosystem.schema.json).
 
-The latest stable release represented by this inventory is DevTools `v4.0.4`, at commit `cd05e444a26b3c63720b443961b3646e22307f56`. Use `@v4` for compatible v4 updates or `@latest` to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin.
+The latest stable release version and source commit represented by this inventory are stored in the `devtools` object in [`ecosystem.json`](ecosystem.json). The inventory records the current stable release, not each project's selected pin.
 
 ## Inventory
 
@@ -21,7 +21,7 @@ The table below summarizes the repository totals stored in `ecosystem.json`.
 
 Use [`ecosystem.json`](ecosystem.json) when a script or report needs the full repository list or organization totals. Use this page when a person only needs the scope, method, or current summary.
 
-Run `composer ecosystem` after changing the JSON or schema. The check validates the JSON structure used by this repository, repository URLs, organization totals, duplicate entries, and the relationship between the two repository groups.
+Run `composer ecosystem` after changing the JSON or schema. After a stable release is published and its tag is available locally, run `composer ecosystem:sync-release` to update the stable version and commit from the latest stable Git tag. The check validates the inventory structure, release metadata, repository URLs, organization totals, duplicate entries, and the relationship between the two repository groups.
 
 ## Scope and method
 

@@ -13,9 +13,9 @@ HelloShared and SharedGreeting are dedicated examples maintained by DevTools. Th
 
 This example also contains `.github/workflows/build.yml`. Extract the complete examples ZIP into an empty GitHub repository and push it. The public action builds `HelloShared.phar` on every push and pull request, then uploads it to that run's **Artifacts** section.
 
-The bundled workflow uses the `AxolotlBucketLabs/DevTools@v4` action channel. For reusable workflows, use the corresponding `@v4` reference from the main GitHub Actions guide. Replace `@v4` with `@latest` only when the repository intentionally accepts stable major upgrades. Use `@v4.0.4` for a release-pinned workflow or a full commit SHA for strict reproducibility. The called workflow selects its builder from the same reference. The action step performs the build. The following `actions/upload-artifact` step makes the resulting PHAR downloadable. The PHAR is not committed back into the repository. New plugin repositories can use the reusable workflow described in the main guide instead.
+The bundled workflow uses the `AxolotlBucketLabs/DevTools@v4` action channel. For reusable workflows, use the corresponding `@v4` reference from the main GitHub Actions guide. Replace `@v4` with `@latest` only when the repository intentionally accepts stable major upgrades. Use a reviewed `@vX.Y.Z` tag for a release-pinned workflow or a full commit SHA for strict reproducibility. The called workflow selects its builder from the same reference. The action step performs the build. The following `actions/upload-artifact` step makes the resulting PHAR downloadable. The PHAR is not committed back into the repository. New plugin repositories can use the reusable workflow described in the main guide instead.
 
-The example intentionally omits `phpstan`, so analysis is off. The [GitHub Actions guide](https://github.com/AxolotlBucketLabs/DevTools/blob/v4.0.4/docs/github-actions.md) shows how to opt in with an explicitly pinned server source.
+The example intentionally omits `phpstan`, so analysis is off. The [GitHub Actions guide](https://github.com/AxolotlBucketLabs/DevTools/blob/v4/docs/github-actions.md) shows how to opt in with an explicitly pinned server source.
 
 ## Composer-prepared virion example
 
@@ -33,4 +33,4 @@ DevTools still does not download dependencies during server startup or an ordina
 
 ## Coding agent template
 
-The ZIP also includes `agent/AGENTS.md`. Copy it to the root of a plugin repository when AI coding agents should preserve DevTools workflow rules across sessions. For a one-time setup, paste the [versioned AI agent prompt](https://github.com/AxolotlBucketLabs/DevTools/blob/v4.0.4/docs/ai-agent.md) into the agent instead.
+The ZIP also includes `agent/AGENTS.md`. Copy it to the root of a plugin repository when AI coding agents should preserve DevTools workflow rules across sessions. For a one-time setup, paste the [versioned AI agent prompt](https://github.com/AxolotlBucketLabs/DevTools/blob/v4/docs/ai-agent.md) into the agent instead.

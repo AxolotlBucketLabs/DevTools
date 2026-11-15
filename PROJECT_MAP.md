@@ -31,6 +31,7 @@ Build code works without a running server. Commands orchestrate services rather 
 | `bin/check-syntax.php` | Validate project PHP syntax |
 | `bin/check-doc-links.php` | Check local documentation links and punctuation |
 | `bin/check-ecosystem.php` | Validate the structured DevTools ecosystem inventory |
+| `bin/sync-ecosystem-release.php` | Refresh the inventory's stable release version and commit from Git tags |
 | `bin/validate-artifact.php` | Validate the actual DevTools PHAR |
 | `bin/verify-version.php` | Verify synchronized release metadata |
 | `action.yml` | Build an external plugin through the same CLI |

@@ -67,6 +67,10 @@
         "build:self": "@build",
         "docs": "@php bin/check-doc-links.php",
         "ecosystem": "@php bin/check-ecosystem.php",
+        "ecosystem:sync-release": [
+            "@php bin/sync-ecosystem-release.php",
+            "@ecosystem"
+        ],
         "check": [
             "composer validate --strict",
             "composer audit --no-interaction --abandoned=report",
