@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "87ffb6aa7dcd41bcfad38b61d02d4bea",
+    "content-hash": "c2d9b2c9207ad21effa8d849c2106727",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -300,16 +300,16 @@
         },
         {
             "name": "axolotl-pm/pocketmine-mp",
-            "version": "5.51.1",
+            "version": "5.51.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/axolotl-pm/PocketMine-MP",
-                "reference": "e881fc1bc1c401545baf6bd1f824e41ff3f57bd1"
+                "reference": "208bd1202ccbda139b67b2ca9088d8eb08549b66"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/axolotl-pm/PocketMine-MP/zipball/e881fc1bc1c401545baf6bd1f824e41ff3f57bd1",
-                "reference": "e881fc1bc1c401545baf6bd1f824e41ff3f57bd1",
+                "url": "https://api.github.com/repos/axolotl-pm/PocketMine-MP/zipball/208bd1202ccbda139b67b2ca9088d8eb08549b66",
+                "reference": "208bd1202ccbda139b67b2ca9088d8eb08549b66",
                 "shasum": ""
             },
             "require": {
@@ -413,7 +413,7 @@
             ],
             "description": "A server software for Minecraft: Bedrock Edition written in PHP",
             "homepage": "https://pmmp.io",
-            "time": "2026-11-02T00:58:31+00:00"
+            "time": "2026-11-14T03:56:46+00:00"
         },
         {
             "name": "axolotl-pm/xoroshiro128pp",

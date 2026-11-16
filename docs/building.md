@@ -64,7 +64,7 @@ Server `doctor` checks project structure, build declarations and that project's 
 
 Unknown or repeated server build and extract options are rejected before writing output. Declared virions are the supported injection boundary. Plugin builds shade selected virions into a private namespace. Virion builds preserve their own source and do not merge plugins or other virions. A plugin folder supplied as a virion is rejected by virion manifest validation.
 
-Virion discovery prefers a source folder over a same-name PHAR, records the PHAR as skipped and logs the reason. This preference is applied before platform filtering. If the preferred folder is invalid or incompatible, the build or server load fails instead of silently falling back to an older PHAR. For plugin duplicates, DevTools emits a warning when a folder and PHAR declare the same plugin name. Axolotl-PM 5.51.1 exposes only append-only loader registration, so its built-in PHAR loader can still win that plugin duplicate during server triage. Remove the duplicate PHAR or verify the startup log before relying on the folder copy.
+Virion discovery prefers a source folder over a same-name PHAR, records the PHAR as skipped and logs the reason. This preference is applied before platform filtering. If the preferred folder is invalid or incompatible, the build or server load fails instead of silently falling back to an older PHAR. For plugin duplicates, DevTools emits a warning when a folder and PHAR declare the same plugin name. Axolotl-PM 5.51.2 exposes only append-only loader registration, so its built-in PHAR loader can still win that plugin duplicate during server triage. Remove the duplicate PHAR or verify the startup log before relying on the folder copy.
 
 ## What the builder validates
 

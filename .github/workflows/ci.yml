@@ -18,7 +18,7 @@ jobs:
     name: Fixture PHAR
     uses: ./.github/workflows/build-plugin.yml
     with:
-      axolotl-ref: 5.51.1
+      axolotl-ref: 5.51.2
       project: tests/Fixtures/ValidPlugin
       phpstan: max
 

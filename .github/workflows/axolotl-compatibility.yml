@@ -22,8 +22,8 @@ jobs:
   representative:
     runs-on: ubuntu-24.04
     env:
-      BASELINE_TAG: "5.51.1"
-      BASELINE_SHA: e881fc1bc1c401545baf6bd1f824e41ff3f57bd1
+      BASELINE_TAG: "5.51.2"
+      BASELINE_SHA: 208bd1202ccbda139b67b2ca9088d8eb08549b66
     steps:
       - name: Resolve latest stable Axolotl-PM release
         id: release
