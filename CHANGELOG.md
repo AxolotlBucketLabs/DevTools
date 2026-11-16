@@ -138,7 +138,7 @@
 
 ## 2.0.0 - 2026-11-02
 
-- Remove the obsolete `devtools-ref` reusable-workflow input; builder identity now always follows the called workflow revision.
+- Remove the obsolete `devtools-ref` reusable-workflow input. Builder identity now always follows the called workflow revision.
 - Let GitHub repository and organization policy control Actions artifact retention instead of imposing a DevTools-specific default.
 - Keep consumer builds eligible to finish for every push and pull request by removing template cancellation of in-progress runs.
 - Add migration guidance for v1 workflow callers.
@@ -165,7 +165,7 @@
 - Handle numeric-leading package names and attributed anonymous classes correctly when preparing namespaces and inspecting source.
 - Close shading guard gaps involving imported aliases, named arguments and argument unpacking while preserving supported static references.
 - Apply semantic version precedence consistently when selecting virions, including prereleases, build metadata and large version components.
-- Reject empty plugin API lists, invalid source paths and malformed release tags with clear diagnostics; support qualified server command aliases.
+- Reject empty plugin API lists, invalid source paths and malformed release tags with clear diagnostics. Support qualified server command aliases.
 - Remove duplicate validation and unused imports, align PHPStan with PHP 8.4, expand regression coverage and shorten documentation.
 
 ## 1.0.16 - 2026-10-20
@@ -193,14 +193,14 @@
 
 ## 1.0.12 - 2026-10-13
 
-- Allow only variable class operands of `instanceof`, which perform type checks without autoloading; computed targets remain rejected.
-- Rewrite the exact `Fiber::getCurrent()`, non-null guard and `suspend()` pattern to `\Fiber::suspend()`; other dynamic static calls remain rejected.
+- Allow only variable class operands of `instanceof`, which perform type checks without autoloading. Computed targets remain rejected.
+- Rewrite the exact `Fiber::getCurrent()`, non-null guard and `suspend()` pattern to `\Fiber::suspend()`. Other dynamic static calls remain rejected.
 - Rewrite `ReflectionClass($className)` only when the immediately preceding statement assigns that variable from `get_called_class()` inside a non-static closure with a bound object. Also allow `ReflectionClass($this)` where `$this` is available.
 - Keep regression tests for each accepted pattern and for similar unproven patterns that must remain rejected.
 
 ## 1.0.11 - 2026-10-13
 
-- Allow dynamic `is_a()` target types when `allow_string` is omitted and the target is a variable. PHP compares that target without autoloading it; calls with an explicit third argument remain subject to the dynamic-reference guard.
+- Allow dynamic `is_a()` target types when `allow_string` is omitted and the target is a variable. PHP compares that target without autoloading it. Calls with an explicit third argument remain subject to the dynamic-reference guard.
 - Add regression tests for the allowed comparison and the rejected autoload-enabled form.
 
 ## 1.0.10 - 2026-10-11
@@ -229,7 +229,7 @@
 
 ## 1.0.6 - 2026-10-11
 
-- Initially allow an object-class expression after an explicit `instanceof ... || throw ...` guard; version 1.0.7 tightens the control-flow requirement.
+- Initially allow an object-class expression after an explicit `instanceof ... || throw ...` guard. Version 1.0.7 tightens the control-flow requirement.
 - Add a regression test for guarded object-class inspection without weakening rejection of unproven dynamic class operations.
 
 ## 1.0.5 - 2026-10-11
@@ -248,7 +248,7 @@
 
 - Check out the build and release verification tools from the exact commit that defines each reusable workflow job.
 - Let Dependabot update one reusable workflow reference without a second revision input becoming stale.
-- Keep `devtools-ref` as a deprecated, ignored input for existing callers; warn when it is provided.
+- Keep `devtools-ref` as a deprecated, ignored input for existing callers. Warn when it is provided.
 
 ## 1.0.2 - 2026-10-10
 

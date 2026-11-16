@@ -273,6 +273,6 @@ jobs:
             printf 'Source commit: `%s`\n\n' "$SERVER_SHA"
             printf 'DevTools-owned fixture check: %s\n\n' "$GATE_STATUS"
             printf 'Workflow evidence: %s/%s/actions/runs/%s\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
-            printf 'This gate covers examples/HelloShared with examples/SharedGreeting only. It does not certify every external plugin; run consumer-specific checks before changing external projects.\n'
+            printf 'This gate covers examples/HelloShared with examples/SharedGreeting only. It does not certify every external plugin. Run consumer-specific checks before changing external projects.\n'
           } > compatibility/issue-body.md
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file compatibility/issue-body.md

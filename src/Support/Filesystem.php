@@ -61,7 +61,7 @@ final class Filesystem
 			return false;
 		}
 
-		// An NTFS short name still identifies the same entry; a junction has its own identity.
+		// An NTFS short name identifies the same entry. A junction has its own identity.
 		$entry = lstat($path);
 		$target = lstat($resolved);
 		return $entry === false || $target === false || $entry['ino'] === 0

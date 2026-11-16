@@ -45,7 +45,7 @@ outputs:
     description: Absolute path to the validated PHAR.
     value: ${{ steps.build.outputs.phar }}
   plugin-name:
-    description: Backward-compatible identity name output; plugin name for plugin builds and virion name for virion builds.
+    description: Backward-compatible output containing the plugin or virion name.
     value: ${{ steps.build.outputs.plugin-name }}
   plugin-version:
     description: Backward-compatible identity version output for the built artifact.
@@ -99,7 +99,7 @@ runs:
           *) echo "Input prepare-dependencies must be true or false." >&2; exit 2 ;;
         esac
         if [ "$INPUT_TYPE" = "virion" ]; then
-          echo "Composer dependency preparation is only supported for plugin builds; build virion source from its checked-out project instead." >&2
+          echo "Composer dependency preparation is only supported for plugin builds. Build virion source from its checked-out project instead." >&2
           exit 2
         fi
         PROJECT_PATH="$GITHUB_WORKSPACE/$INPUT_PROJECT"
@@ -147,7 +147,7 @@ runs:
             ;;
         esac
         if [ "$INPUT_TYPE" = "virion" ]; then
-          echo "PHPStan analysis for virion artifacts is not available through this action yet; use phpstan=off or analyze the virion project with its own configuration." >&2
+          echo "PHPStan analysis for virion artifacts is not available through this action yet. Set phpstan=off or analyze the virion project with its own configuration." >&2
           exit 2
         fi
 

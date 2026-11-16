@@ -466,8 +466,8 @@ final class DynamicClassReferencePolicy
 
 	/**
 	 * Preserves a virion's `__CLASS__ !== 'original\\Class'` packaging sentinel.
-	 * The literal must be the exact fully-qualified enclosing class name; it is
-	 * a comparison marker, not a runtime class lookup that should be shaded.
+	 * The literal must be the exact fully-qualified enclosing class name. It marks
+	 * a comparison, not a runtime class lookup that should be shaded.
 	 * @param array<string, string> $shadedNamespaces Original namespace => shaded namespace.
 	 */
 	public static function allowsOriginalClassIdentityString(String_ $node, array $shadedNamespaces = []) : bool
