@@ -148,6 +148,29 @@ A tag must match the complete `plugin.yml` version, with an optional leading `v`
 
 An existing release is not replaced. A rerun that reaches an already published release fails rather than overwriting its assets. The workflow exports `artifact-id`, `sha256`, and `release-url`. Tag publication is allowed only for tag push events. Pull requests cannot publish through this workflow.
 
+### Optional SLSA build provenance
+
+Set `attest: true` to create a GitHub artifact attestation for the exact PHAR that will be published. The attestation job downloads the immutable build artifact, checks its SHA-256 against the build job output, and then creates SLSA v1 build provenance. If attestation fails, publication does not run. The input defaults to `false`, so existing workflows keep their current permission requirements.
+
+When enabling attestation, grant these permissions to the job that calls `release-plugin.yml`:
+
+```yaml
+jobs:
+  release:
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/release-plugin.yml@v4
+    with:
+      mode: tag
+      attest: true
+```
+
+The attestation signer is `AxolotlBucketLabs/DevTools/.github/workflows/release-plugin.yml`. A plugin registry must trust this signer workflow before it can mark these releases as verified. To verify a downloaded PHAR with GitHub CLI, run `gh attestation verify Plugin.phar --repo owner/PluginRepo --signer-workflow AxolotlBucketLabs/DevTools/.github/workflows/release-plugin.yml`.
+
 ## Optional nightly prereleases
 
 Create a separate workflow only if nightly publication is wanted.

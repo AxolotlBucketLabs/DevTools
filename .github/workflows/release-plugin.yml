@@ -23,6 +23,10 @@ on:
       php-version:
         type: string
         default: '8.4'
+      attest:
+        description: Generate a GitHub artifact attestation for the published PHAR.
+        type: boolean
+        default: false
     outputs:
       artifact-id:
         value: ${{ jobs.build.outputs.artifact-id }}
@@ -50,8 +54,54 @@ jobs:
       prepare-dependencies: ${{ inputs.prepare-dependencies }}
       php-version: ${{ inputs.php-version }}
 
-  publish:
+  attest:
+    if: inputs.attest && needs.build.result == 'success'
     needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Download the exact build artifact
+        uses: actions/download-artifact@v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/attested-artifact
+
+      - name: Verify the PHAR digest
+        shell: bash
+        env:
+          ARTIFACT_DIRECTORY: ${{ runner.temp }}/attested-artifact
+          EXPECTED_SHA256: ${{ needs.build.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          mapfile -t PHARS < <(find "$ARTIFACT_DIRECTORY" -maxdepth 1 -type f -name '*.phar' -print)
+          if [ "${#PHARS[@]}" -ne 1 ]; then
+            echo "Expected exactly one PHAR in the build artifact." >&2
+            exit 1
+          fi
+
+          ACTUAL_SHA256="$(sha256sum "${PHARS[0]}" | cut -d ' ' -f 1)"
+          if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "Downloaded PHAR does not match the build job SHA-256." >&2
+            exit 1
+          fi
+
+      - name: Generate SLSA build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/attested-artifact/*.phar
+
+  publish:
+    needs: [build, attest]
+    if: >-
+      always() &&
+      needs.build.result == 'success' &&
+      (needs.attest.result == 'success' || needs.attest.result == 'skipped')
     runs-on: ubuntu-24.04
     permissions:
       actions: read
