@@ -2,6 +2,8 @@
 
 The composite action calls `bin/devtools.php build --json`, using the same builder as the CLI and server command. It accepts `type: plugin` (default) or `type: virion`, verifies the reported PHAR SHA-256 and exposes the actual path from that result. PHPStan and Composer dependency preparation are opt-in for plugin builds. Virion builds use `phpstan: off` because the action's PHPStan helper is plugin-oriented. A successful build verifies packaging. It does not prove an Axolotl-PM runtime boot.
 
+GitHub-maintained actions generally use major version tags to avoid patch-level Dependabot PRs. Major tags can move within that release line. Actions maintained by trusted Axolotl-PM and AxolotlBucketLabs projects use their release tags. Pin other third-party and security-sensitive actions to a full commit SHA with a version comment. The BedrockNexus publishing template keeps SHA pins because it is installed externally and needs a fixed, traceable build definition.
+
 These interfaces are available through the maintained `v4` release channel. Most repositories should use `AxolotlBucketLabs/DevTools@v4` for the composite action and `AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4` or `build-virion.yml@v4` for reusable workflows. The `latest` channel is also available for repositories that intentionally want every stable release, including future major versions. Use `AxolotlBucketLabs/DevTools@latest` or the corresponding reusable workflow reference. Use a reviewed `vX.Y.Z` tag when a repository should stay on one release, or a full commit SHA for a strict reproducible pin. The called workflow checks out its builder from the resolved reference using the current job's workflow identity. Installing DevTools does not publish a release.
 
 ## Short build workflow
@@ -70,7 +72,7 @@ Use the composite action when your repository needs extra checkouts or checks. S
           virions: virions
           output: build
 
-      - uses: actions/upload-artifact@v7.0.2
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build.outputs.plugin-name }}-${{ github.sha }}
           path: ${{ steps.build.outputs.phar }}
@@ -106,7 +108,7 @@ The reusable build workflow adds `php-version`, `pm-version-major`, `artifact-na
 Check out the Axolotl-PM source, then pass its local path to the composite action.
 
 ```yaml
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
         with:
           repository: axolotl-pm/PocketMine-MP
           ref: 5.51.2

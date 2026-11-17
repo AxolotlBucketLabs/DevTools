@@ -20,7 +20,7 @@ jobs:
       matrix: ${{ steps.generate.outputs.matrix }}
     steps:
       - name: Check out DevTools at the workflow revision
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           path: .devtools
@@ -42,14 +42,14 @@ jobs:
 
     steps:
       - name: Check out DevTools at the workflow revision
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           path: .devtools
           persist-credentials: false
 
       - name: Check out Axolotl-PM PHP setup helper
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           repository: axolotl-pm/setup-php-action
           ref: 1.0.0
@@ -72,7 +72,7 @@ jobs:
           bash .devtools/.github/scripts/setup-axolotl-php-fallback.sh "$PHP_VERSION" "$PM_VERSION_MAJOR" "$INSTALL_PATH"
 
       - name: Check out ecosystem project
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           repository: ${{ matrix.repository }}
           path: ecosystem-project

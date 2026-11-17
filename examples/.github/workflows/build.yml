@@ -15,12 +15,12 @@ jobs:
 
     steps:
       - name: Check out plugin source
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Check out Axolotl-PM PHP setup helper
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           repository: axolotl-pm/setup-php-action
           ref: 1.0.0
@@ -44,7 +44,7 @@ jobs:
           output: build
 
       - name: Upload PHAR from this commit
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build.outputs.plugin-name }}-${{ github.sha }}
           path: ${{ steps.build.outputs.phar }}

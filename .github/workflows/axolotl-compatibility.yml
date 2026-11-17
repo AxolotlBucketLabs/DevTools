@@ -54,14 +54,14 @@ jobs:
 
       - name: Check out DevTools fixture source
         if: steps.release.outputs.candidate == 'true'
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check out candidate Axolotl-PM source
         if: steps.release.outputs.candidate == 'true'
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           repository: axolotl-pm/PocketMine-MP
           ref: ${{ steps.release.outputs.sha }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Check out Axolotl-PM PHP setup helper
         if: steps.release.outputs.candidate == 'true'
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           repository: axolotl-pm/setup-php-action
           ref: 1.0.0
@@ -234,7 +234,7 @@ jobs:
 
       - name: Upload compatibility evidence
         if: always() && steps.release.outputs.candidate == 'true'
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7
         with:
           name: axolotl-${{ steps.release.outputs.tag }}-devtools-fixture
           path: |
