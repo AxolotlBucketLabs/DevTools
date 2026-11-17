@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 4.1.0 - 2026-11-17
+
+### Added
+
+- Add optional GitHub artifact attestations with SLSA build provenance for published PHARs.
+- Add a BedrockNexus publishing workflow template and a tool to synchronize ecosystem release metadata.
+
+### Compatibility
+
+- Attestation is disabled by default. Existing workflow callers and runtime APIs need no changes.
+- PHP 8.4 remains the minimum supported version. CI covers PHP 8.4 and 8.5.
+
 ## 4.0.4 - 2026-11-14
 
 ### Fixed

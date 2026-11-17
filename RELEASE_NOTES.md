@@ -1,20 +1,20 @@
-# DevTools 4.0.4
+# DevTools 4.1.0
 
-DevTools 4.0.4 fixes Composer dependency preparation when DevTools builds itself in automated workflows.
+DevTools 4.1.0 adds optional SLSA provenance for published PHARs and improves BedrockNexus publishing support.
 
-## Fixed
+## Added
 
-- Keep DevTools' locked Composer packages available as build assets without treating them as virions during its own build.
-- Accept full-SHA-pinned first-party GitHub Actions while requiring checkout credentials to remain disabled.
+- Generate a GitHub artifact attestation for the exact published PHAR when `attest: true` is enabled.
+- Add a BedrockNexus publishing workflow template and a tool to synchronize ecosystem release metadata.
 
 ## Compatibility
 
-- Existing commands, manifests, workflow inputs and public runtime APIs are unchanged.
+- Attestation is disabled by default. Existing workflow callers do not need permission or configuration changes.
+- Existing commands, manifests and public runtime APIs are unchanged.
 - PHP 8.4 remains the minimum supported version. CI covers PHP 8.4 and 8.5.
 
 ## Upgrading
 
-- Projects using Composer-prepared BedrockNexus workflows should update to this release to build DevTools correctly.
-- Other projects do not need configuration changes.
+- No changes are required. To enable attestations, follow the permissions guidance in the GitHub Actions documentation.
 
 The release tag and checksum manifest are signed with the maintainer's GPG key. Verify `SHA256SUMS.txt.asc` before checking the downloaded assets against `SHA256SUMS.txt`.
