@@ -43,11 +43,11 @@
     "organization_totals": [
       {
         "organization": "AxolotlBucketLabs",
-        "repositories": 7
+        "repositories": 8
       },
       {
         "organization": "NhanAZ-Plugins",
-        "repositories": 93
+        "repositories": 92
       },
       {
         "organization": "NhanAZ-Libraries",
@@ -270,9 +270,9 @@
       "url": "https://github.com/NhanAZ-Plugins/RulesBook"
     },
     {
-      "organization": "NhanAZ-Plugins",
+      "organization": "AxolotlBucketLabs",
       "name": "SimpleEconomy",
-      "url": "https://github.com/NhanAZ-Plugins/SimpleEconomy"
+      "url": "https://github.com/AxolotlBucketLabs/SimpleEconomy"
     },
     {
       "organization": "NhanAZ-Plugins",

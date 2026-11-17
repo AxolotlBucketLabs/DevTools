@@ -766,7 +766,7 @@
       "prepare_dependencies": false
     },
     {
-      "repository": "NhanAZ-Plugins/SimpleEconomy",
+      "repository": "AxolotlBucketLabs/SimpleEconomy",
       "project": ".",
       "roles": [
         "plugin"
