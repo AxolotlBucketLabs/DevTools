@@ -84,7 +84,7 @@
       "prepare_dependencies": false
     },
     {
-      "repository": "NhanAZ-Libraries/EcoAPI",
+      "repository": "AxolotlBucketLabs/EconomyProviderAPI",
       "project": ".",
       "roles": [
         "plugin",
@@ -424,22 +424,6 @@
         "plugin"
       ],
       "prepare_dependencies": false
-    },
-    {
-      "repository": "NhanAZ-Plugins/EcoAPIScore",
-      "project": ".",
-      "roles": [
-        "plugin"
-      ],
-      "prepare_dependencies": true,
-      "dependencies": [
-        {
-          "type": "git",
-          "name": "EcoAPI",
-          "repository": "NhanAZ-Libraries/EcoAPI",
-          "ref": "343aef3606da1bc16d006799b27914cc8ff31d17"
-        }
-      ]
     },
     {
       "repository": "NhanAZ-Plugins/EffectBlock-HiroTeam",

@@ -12,7 +12,7 @@ test('ecosystem compatibility profiles produce one build for every declared role
 	const expectedRoleCount = compatibility.projects.reduce((count, project) => count + project.roles.length, 0);
 
 	assert.equal(matrix.length, expectedRoleCount);
-	assert.equal(matrix.length, 148);
+	assert.equal(matrix.length, 147);
 	assert.ok(matrix.some(({ repository, type, submodules }) => repository === 'NhanAZ-Plugins/AdvancedRules' && type === 'plugin' && submodules === 'true'));
 	assert.ok(matrix.some(({ repository, type, submodules }) => repository === 'NhanAZ-Plugins/Calculator' && type === 'plugin' && submodules === 'true'));
 	assert.ok(matrix.some(({ repository, type, dependencies }) => repository === 'thebigcrafter/TrashCan' && type === 'plugin' && dependencies[0]?.type === 'phar'));

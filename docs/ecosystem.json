@@ -39,19 +39,19 @@
     "reference_policy": "Use the maintained major channel for compatible updates or @latest to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin."
   },
   "summary": {
-    "total_repositories": 143,
+    "total_repositories": 142,
     "organization_totals": [
       {
         "organization": "AxolotlBucketLabs",
-        "repositories": 8
+        "repositories": 9
       },
       {
         "organization": "NhanAZ-Plugins",
-        "repositories": 92
+        "repositories": 91
       },
       {
         "organization": "NhanAZ-Libraries",
-        "repositories": 7
+        "repositories": 6
       },
       {
         "organization": "thebigcrafter",
@@ -541,11 +541,6 @@
     },
     {
       "organization": "NhanAZ-Plugins",
-      "name": "EcoAPIScore",
-      "url": "https://github.com/NhanAZ-Plugins/EcoAPIScore"
-    },
-    {
-      "organization": "NhanAZ-Plugins",
       "name": "EffectBlock-HiroTeam",
       "url": "https://github.com/NhanAZ-Plugins/EffectBlock-HiroTeam"
     },
@@ -725,9 +720,9 @@
       "url": "https://github.com/NhanAZ-Libraries/CustomToast"
     },
     {
-      "organization": "NhanAZ-Libraries",
-      "name": "EcoAPI",
-      "url": "https://github.com/NhanAZ-Libraries/EcoAPI"
+      "organization": "AxolotlBucketLabs",
+      "name": "EconomyProviderAPI",
+      "url": "https://github.com/AxolotlBucketLabs/EconomyProviderAPI"
     },
     {
       "organization": "ReinfyTeam",

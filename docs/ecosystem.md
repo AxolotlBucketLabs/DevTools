@@ -10,12 +10,12 @@ The table below summarizes the repository totals stored in `ecosystem.json`.
 
 | Organization | Repositories |
 | --- | ---: |
-| [AxolotlBucketLabs](https://github.com/AxolotlBucketLabs) | 7 |
-| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 93 |
-| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 7 |
+| [AxolotlBucketLabs](https://github.com/AxolotlBucketLabs) | 9 |
+| [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins) | 91 |
+| [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries) | 6 |
 | [thebigcrafter](https://github.com/thebigcrafter) | 24 |
 | [ReinfyTeam](https://github.com/ReinfyTeam) | 12 |
-| **Total** | **143** |
+| **Total** | **142** |
 
 ## Using the data
 
