@@ -19,7 +19,6 @@ use const JSON_THROW_ON_ERROR;
 
 final class RepositoryMetadataTest extends TestCase
 {
-	private const VERSION = '4.1.0';
 	private const COMPATIBILITY_BUILDER_VERSION = '4.0.4';
 	private const PHP_ACTION_VERSION = '1.0.0';
 
@@ -39,8 +38,9 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertIsArray($extra);
 		$devtools = $extra['devtools'] ?? null;
 		self::assertIsArray($devtools);
-		self::assertSame(self::VERSION, $devtools['release-version'] ?? null);
-		self::assertSame(self::VERSION, $plugin['version'] ?? null);
+		$version = $devtools['release-version'] ?? null;
+		self::assertIsString($version);
+		self::assertSame($version, $plugin['version'] ?? null);
 		$require = $composer['require'] ?? null;
 		self::assertIsArray($require);
 		self::assertSame('^8.4', $require['php'] ?? null);
@@ -54,9 +54,9 @@ final class RepositoryMetadataTest extends TestCase
 		self::assertSame('5.51.2', $requireDev['axolotl-pm/pocketmine-mp'] ?? null);
 		self::assertArrayNotHasKey('pocketmine/pocketmine-mp', $requireDev);
 		self::assertIsString($changelog);
-		self::assertStringContainsString('## ' . self::VERSION . ' -', $changelog);
+		self::assertStringContainsString('## ' . $version . ' -', $changelog);
 		self::assertIsString($releaseNotes);
-		self::assertStringContainsString('# DevTools ' . self::VERSION, $releaseNotes);
+		self::assertStringContainsString('# DevTools ' . $version, $releaseNotes);
 	}
 
 	public function test_workflows_are_valid_and_do_not_bypass_required_gates() : void

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 4.1.1 - 2026-11-18
+
+### Changed
+
+- Refresh the verified ecosystem records and compatibility documentation.
+
+### Compatibility
+
+- No runtime behavior or public APIs changed.
+- PHP 8.4 remains the minimum supported version. CI covers PHP 8.4 and 8.5.
+
 ## 4.1.0 - 2026-11-17
 
 ### Added
