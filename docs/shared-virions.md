@@ -2,11 +2,13 @@
 
 A shared virion is trusted local development code registered once on Axolotl-PM's shared `ThreadSafeClassLoader`. Multiple folder plugins can use its classes without embedding duplicate copies during development. DevTools never downloads virions.
 
+A virion is a PocketMine-family integration for reusable library code. It is distinct from the Composer package used to resolve PHP dependencies and autoload source. A project may support Composer and Virion together. If it also has independent plugin behavior, `plugin.yml` and `virion.yml` describe separate outputs. See the [AxolotlBucketLabs project model](https://github.com/AxolotlBucketLabs/axolotl-bucket-labs/blob/main/references/project-model.md).
+
 ## Package layout
 
 | Path under `virions/ExampleVirion/` | Contents |
 | --- | --- |
-| `virion.yml` | Library manifest |
+| `virion.yml` | Virion manifest and server compatibility contract |
 | `src/Example/Virion/ClassName.php` | Class below the antigen namespace |
 | `src/<Antigen>/...` | PHP source and resources colocated with that source |
 | `LICENSE` | Library license |
