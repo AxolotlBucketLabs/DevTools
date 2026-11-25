@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 4.1.2 - 2026-11-26
+
+### Fixed
+
+- Resolve the nested plugin build workflow from the DevTools repository when publishing releases from consumer projects.
+
+### Compatibility
+
+- No runtime behavior or public APIs changed.
+- PHP 8.4 remains the minimum supported version. CI covers PHP 8.4 and 8.5.
+
 ## 4.1.1 - 2026-11-18
 
 ### Changed

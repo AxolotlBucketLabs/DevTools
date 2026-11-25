@@ -1,6 +1,6 @@
-# DevTools 4.1.1
+# DevTools 4.1.2
 
-DevTools 4.1.1 refreshes the verified ecosystem records and compatibility documentation. Runtime behavior and public APIs are unchanged.
+DevTools 4.1.2 fixes reusable release workflows called from other repositories.
 
 ## Compatibility
 
