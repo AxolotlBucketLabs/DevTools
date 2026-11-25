@@ -45,7 +45,7 @@ concurrency:
 jobs:
   build:
     if: (inputs.mode == 'tag' && github.ref_type == 'tag' && github.event_name == 'push') || (inputs.mode == 'nightly' && github.ref_type == 'branch' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'))
-    uses: $/.github/workflows/build-plugin.yml
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v4.1.2
     permissions:
       contents: read
     with:
