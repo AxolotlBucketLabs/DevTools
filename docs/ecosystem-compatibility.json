@@ -110,14 +110,6 @@
       "prepare_dependencies": true
     },
     {
-      "repository": "NhanAZ-Libraries/libRegRsp",
-      "project": ".",
-      "roles": [
-        "virion"
-      ],
-      "prepare_dependencies": false
-    },
-    {
       "repository": "NhanAZ-Plugins/aBuyParticles",
       "project": ".",
       "roles": [
@@ -758,14 +750,6 @@
       "prepare_dependencies": true
     },
     {
-      "repository": "NhanAZ-Plugins/SimpleEconomyExample",
-      "project": ".",
-      "roles": [
-        "plugin"
-      ],
-      "prepare_dependencies": false
-    },
-    {
       "repository": "NhanAZ-Plugins/SlapperParticle",
       "project": ".",
       "roles": [
@@ -1199,6 +1183,108 @@
         "plugin"
       ],
       "prepare_dependencies": true
+    },
+    {
+      "repository": "AxolotlBucketLabs/Commando",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/FormImagesFix",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/libpmform",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/MultiWorld",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false,
+      "virions_path": ".devtools-virions",
+      "dependencies": [
+        {
+          "type": "git",
+          "name": "Commando",
+          "repository": "AxolotlBucketLabs/Commando",
+          "ref": "e5a61ae53dca8d5aafd91bbd5ebfa5220858f922"
+        },
+        {
+          "type": "git",
+          "name": "PacketHandler",
+          "repository": "AxolotlBucketLabs/SimplePacketHandler",
+          "ref": "71e08e41c7aebae181647b26eb9bb30e4ff0a99e"
+        },
+        {
+          "type": "git",
+          "name": "libpmform",
+          "repository": "AxolotlBucketLabs/libpmform",
+          "ref": "86648c2ff09fefd0daa8a6f75c1a31d29689da6d"
+        },
+        {
+          "type": "git",
+          "name": "VanillaGenerator",
+          "repository": "AxolotlBucketLabs/VanillaGenerator",
+          "ref": "4a7a5dfe352378f44cdb4a67047a777049ad62eb"
+        }
+      ]
+    },
+    {
+      "repository": "AxolotlBucketLabs/NPC",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": true,
+      "virions_path": ".devtools-virions"
+    },
+    {
+      "repository": "AxolotlBucketLabs/ResourcePackManager",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "AxolotlBucketLabs/VanillaGenerator",
+      "project": ".",
+      "roles": [
+        "plugin",
+        "virion"
+      ],
+      "prepare_dependencies": false
+    },
+    {
+      "repository": "ReinfyTeam/BVC-PM",
+      "project": ".",
+      "roles": [
+        "plugin"
+      ],
+      "prepare_dependencies": false,
+      "submodules": true
+    },
+    {
+      "repository": "ReinfyTeam/libpmcurl",
+      "project": ".",
+      "roles": [
+        "virion"
+      ],
+      "prepare_dependencies": false
     }
   ]
 }

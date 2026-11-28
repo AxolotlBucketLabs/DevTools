@@ -61,7 +61,7 @@ the [team workflow guide](https://docs.graphify.com/cookbooks/shared-team-graph)
 
 ## Ecosystem compatibility check
 
-The scheduled and manually dispatched [`ecosystem-compatibility.yml`](../.github/workflows/ecosystem-compatibility.yml) workflow builds every repository in the [ecosystem inventory](ecosystem.md), once for each declared root role. The current inventory produces 147 plugin or virion builds across 142 repositories, including five dual-role projects.
+The scheduled and manually dispatched [`ecosystem-compatibility.yml`](../.github/workflows/ecosystem-compatibility.yml) workflow builds every repository in the [ecosystem inventory](ecosystem.md), once for each declared root role. The current inventory produces 155 plugin or virion builds across 149 repositories, including six dual-role projects.
 
 [`ecosystem-compatibility.json`](ecosystem-compatibility.json) records each repository's root project path, plugin or virion roles, and whether a plugin build needs locked Composer preparation. Each job checks out the repository's current default branch. The matrix generator checks that its repository set matches the public inventory, and each job checks the current manifests against the recorded profile before building. Refresh the profile when a repository is added to or removed from the inventory, changes its root role manifests, or changes whether it needs Composer preparation.
 

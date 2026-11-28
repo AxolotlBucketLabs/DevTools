@@ -11,8 +11,8 @@
       "ReinfyTeam"
     ],
     "include_archived": false,
-    "repositories_inspected": 178,
-    "workflow_files_inspected": 208,
+    "repositories_inspected": 168,
+    "workflow_files_inspected": 203,
     "counting_rule": "Count a repository when its public default-branch workflow references DevTools or one of DevTools' reusable workflows.",
     "exclusions": [
       {
@@ -34,24 +34,24 @@
     ]
   },
   "devtools": {
-    "stable_version": "v4.1.1",
-    "stable_commit": "c2eb715205a9dcb485a4ecabd17512f32f24d5d7",
+    "stable_version": "v4.1.2",
+    "stable_commit": "0dccde8a34282bf09510f67d51f458bb8cb5c5ca",
     "reference_policy": "Use the maintained major channel for compatible updates or @latest to follow stable releases across major versions. Exact release tags and commit pins are also supported. This inventory records the current stable release, not each project's selected pin."
   },
   "summary": {
-    "total_repositories": 142,
+    "total_repositories": 149,
     "organization_totals": [
       {
         "organization": "AxolotlBucketLabs",
-        "repositories": 9
+        "repositories": 16
       },
       {
         "organization": "NhanAZ-Plugins",
-        "repositories": 91
+        "repositories": 90
       },
       {
         "organization": "NhanAZ-Libraries",
-        "repositories": 6
+        "repositories": 5
       },
       {
         "organization": "thebigcrafter",
@@ -59,7 +59,7 @@
       },
       {
         "organization": "ReinfyTeam",
-        "repositories": 12
+        "repositories": 14
       }
     ]
   },
@@ -323,11 +323,6 @@
       "organization": "NhanAZ-Libraries",
       "name": "libBedrock",
       "url": "https://github.com/NhanAZ-Libraries/libBedrock"
-    },
-    {
-      "organization": "NhanAZ-Libraries",
-      "name": "libRegRsp",
-      "url": "https://github.com/NhanAZ-Libraries/libRegRsp"
     },
     {
       "organization": "thebigcrafter",
@@ -666,11 +661,6 @@
     },
     {
       "organization": "NhanAZ-Plugins",
-      "name": "SimpleEconomyExample",
-      "url": "https://github.com/NhanAZ-Plugins/SimpleEconomyExample"
-    },
-    {
-      "organization": "NhanAZ-Plugins",
       "name": "SlapperParticle",
       "url": "https://github.com/NhanAZ-Plugins/SlapperParticle"
     },
@@ -773,6 +763,51 @@
       "organization": "thebigcrafter",
       "name": "TrashCan",
       "url": "https://github.com/thebigcrafter/TrashCan"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "Commando",
+      "url": "https://github.com/AxolotlBucketLabs/Commando"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "FormImagesFix",
+      "url": "https://github.com/AxolotlBucketLabs/FormImagesFix"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "libpmform",
+      "url": "https://github.com/AxolotlBucketLabs/libpmform"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "MultiWorld",
+      "url": "https://github.com/AxolotlBucketLabs/MultiWorld"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "NPC",
+      "url": "https://github.com/AxolotlBucketLabs/NPC"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "ResourcePackManager",
+      "url": "https://github.com/AxolotlBucketLabs/ResourcePackManager"
+    },
+    {
+      "organization": "AxolotlBucketLabs",
+      "name": "VanillaGenerator",
+      "url": "https://github.com/AxolotlBucketLabs/VanillaGenerator"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "BVC-PM",
+      "url": "https://github.com/ReinfyTeam/BVC-PM"
+    },
+    {
+      "organization": "ReinfyTeam",
+      "name": "libpmcurl",
+      "url": "https://github.com/ReinfyTeam/libpmcurl"
     }
   ]
 }
